@@ -1,0 +1,197 @@
+name: Build & Push Docker Image to Docker Hub
+
+on:
+  # 触发器一：手动触发
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker Tag (e.g., latest, v1.2.3)'
+        required: false
+        default: 'latest'
+        type: string
+      force_rebuild:
+        description: 'Force rebuild without using cache'
+        required: false
+        default: false
+        type: boolean
+  # 触发器二：推送到分支或标签
+  push:
+    branches: [ main, master ] # 对应 dev 标签的构建
+    tags: [ 'v*' ]            # 对应 latest 和版本标签的构建
+    paths-ignore:
+      - '**.md'
+  # 触发器三：拉取请求
+  pull_request:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO_NAME }}
+  REGISTRY: docker.io
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+jobs:
+  build-and-push:
+    name: 🚀 Build & Push Multi-Platform Image to Docker Hub
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: ⚡ Maximize build space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          df -h
+
+      # fetch-depth 必须是 2 才能比较版本
+      - name: 📥 Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 
+
+      # Node.js 构建环境
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: 📦 Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: 📜 Generate version and changelog
+        run: node scripts/convert-changelog.js
+
+      - name: 🔍 Check if version changed in package.json
+        id: version_check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          if git show HEAD~1:package.json > package.json.old 2>/dev/null; then
+            PREVIOUS_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('./package.json.old', 'utf8')).version")
+            rm package.json.old
+          else
+            PREVIOUS_VERSION="0.0.0"
+          fi
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🎯 Setup QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🔍 Network diagnostic and Docker status check
+        run: |
+          echo "====== Docker Version ======"
+          docker version
+          echo ""
+          echo "====== Docker Info ======"
+          docker info
+          echo ""
+          echo "====== Testing Registry Connectivity ======"
+          curl -I https://registry.hub.docker.com || echo "Registry connection check completed"
+          echo ""
+          echo "====== Current Docker Context ======"
+          docker context ls
+          echo ""
+          echo "====== Available Docker Builders ======"
+          docker buildx ls || echo "No builders found yet"
+
+      - name: 🔧 Setup Docker Buildx for advanced features
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          install: true
+        timeout-minutes: 10
+
+      - name: ✅ Verify Buildx setup
+        run: |
+          echo "====== Buildx Version ======"
+          docker buildx version
+          echo ""
+          echo "====== Buildx Builders List ======"
+          docker buildx ls
+          echo ""
+          echo "====== Inspect Current Builder ======"
+          docker buildx inspect --bootstrap
+          echo ""
+          echo "====== Builder setup completed successfully ======"
+
+      - name: 🔐 Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      # 【新增】再次设置小写的镜像名称 (每个 job 都是独立环境)
+      - name: 📝 Set lowercase image name
+        run: echo "IMAGE_NAME_LC=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      # 在原有的标签规则基础上，增加一条基于 package.json 的规则
+      - name: 🏷️ Extract intelligent Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # 【修改】使用新的小写环境变量
+          images: ${{ env.IMAGE_NAME_LC }}
+          tags: |
+            # 规则一 (dev): 推送到默认分支时打 'dev' 标签
+            # 这用于 CI 检查，确保代码总是可构建和推送的。
+            type=raw,value=dev,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+            # 规则二 (git tag): 推送 "v" 开头 Git 标签时，生成 'latest' 和版本号
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            
+            # 规则三 (package.json): 如果 package.json 版本变化，也打上版本号标签
+            type=raw,value=${{ steps.version_check.outputs.current_version }},enable=${{ steps.version_check.outputs.version_changed == 'true' }}
+
+            # 规则四 (手动): 手动触发
+            type=raw,value=${{ github.event.inputs.tag || 'latest' }},enable=${{ github.event_name == 'workflow_dispatch' }}
+
+            # 规则五 (调试): SHA 标签
+            type=sha,prefix=sha-,format=short
+
+      # 核心构建与推送
+      - name: 🚀 Build and push multi-platform image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=multiarch-${{ github.workflow }}
+          cache-to: type=gha,mode=max,scope=multiarch-${{ github.workflow }}
+          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
+          provenance: false
+          sbom: false
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            NODE_ENV=production
+            SHARP_IGNORE_GLOBAL_LIBVIPS=1
+
+  # 清理任务
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: always()
+    steps:
+      - name: 🧹 Cleanup workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 2
+          keep_minimum_runs: 3

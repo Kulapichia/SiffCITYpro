@@ -1,0 +1,52 @@
+  # 新增一个Nginx代理服务，专门用于流量分发
+  shihiütv-proxy:
+    image: nginx:alpine
+    container_name: shihiütv-proxy
+    restart: unless-stopped
+    volumes:
+      # 挂载我们刚刚创建的Nginx配置文件
+      - ./shihiütv_nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - moontv-network
+    depends_on:
+      - shihiütv-core # 确保先启动应用再启动代理
+    # ports: # 如果需要本地调试，可以打开这个端口映射
+      # - "3080:80"
+
+  shihiütv-core:
+    image: hnctth/shihiütv:latest
+    container_name: shihiütv-core
+    restart: unless-stopped
+    environment:
+      - USERNAME=root
+      - PASSWORD=xxxxxxxxx
+      - NEXT_PUBLIC_STORAGE_TYPE=kvrocks
+      - KVROCKS_URL=redis://moontv-kvrocks:6666
+      - NEXT_PUBLIC_ENABLE_REGISTER=true
+      - NEXT_PUBLIC_SITE_NAME=shihiütv
+      - SITE_BASE=https://tv.xxxx.com
+    networks:
+      - moontv-network
+    depends_on:
+      - moontv-kvrocks
+    # 如需自定义配置，可挂载文件
+    # volumes:
+      # - ./route.js:/app/.next/server/app/api/admin/user/route.js
+  moontv-kvrocks:
+    image: apache/kvrocks
+    container_name: moontv-kvrocks
+    restart: unless-stopped
+    volumes:
+      - kvrocks-data:/var/lib/kvrocks
+    networks:
+      - moontv-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-shiyutv
+    restart: unless-stopped
+    networks:
+      - moontv-network
+    # 关键修改：让隧道指向新的代理服务，而不是直接指向应用
+    # 如果用command参数配置，应类似如下:
+    command: tunnel --no-autoupdate --url http://shihiütv-proxy:80 run --token eyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXNMSJ9

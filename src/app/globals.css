@@ -1,0 +1,2117 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+  *:not(.artplayer):not(.artplayer *)::-webkit-scrollbar {
+    display: none;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  @keyframes slide-from-top {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-from-top {
+    animation: slide-from-top 0.3s ease-out;
+  }
+
+  @keyframes slide-from-bottom {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-from-bottom {
+    animation: slide-from-bottom 0.3s ease-out;
+  }
+
+  @keyframes card-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+  /* Toast animations */
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-in {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+  }
+
+  .slide-in-from-right-2 {
+    animation-name: slide-in-from-right;
+  }
+
+  /* *** 为 ShortDramaSelector 和其他组件提供优雅的进入动画 *** */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /* 弹窗淡入动画 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* 弹窗缩放进入动画 */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  /* 默认主题（当前蓝色系主题） */
+  --color-primary-50: 240, 249, 255;
+  --color-primary-100: 224, 242, 254;
+  --color-primary-200: 186, 230, 253;
+  --color-primary-300: 125, 211, 252;
+  --color-primary-400: 56, 189, 248;
+  --color-primary-500: 14, 165, 233;
+  --color-primary-600: 2, 132, 199;
+  --color-primary-700: 3, 105, 161;
+  --color-primary-800: 7, 89, 133;
+  --color-primary-900: 12, 74, 110;
+  --color-dark: 34, 34, 34;
+
+  /* 主题颜色变量（默认使用蓝色系） */
+  --color-theme-bg: 255, 255, 255;
+  --color-theme-surface: 249, 250, 251;
+  --color-theme-accent: 14, 165, 233;
+  --color-theme-text: 17, 24, 39;
+  --color-theme-text-secondary: 107, 114, 128;
+  --color-theme-border: 229, 231, 235;
+  --color-theme-success: 34, 197, 94;
+  --color-theme-warning: 245, 158, 11;
+  --color-theme-error: 239, 68, 68;
+  --color-theme-info: 59, 130, 246;
+}
+
+.dark {
+  /* 默认深色主题 */
+  --color-theme-bg: 17, 24, 39;
+  --color-theme-surface: 31, 41, 55;
+  --color-theme-accent: 56, 189, 248;
+  --color-theme-text: 243, 244, 246;
+  --color-theme-text-secondary: 156, 163, 175;
+  --color-theme-border: 75, 85, 99;
+  --color-theme-success: 74, 222, 128;
+  --color-theme-warning: 251, 191, 36;
+  --color-theme-error: 248, 113, 113;
+  --color-theme-info: 96, 165, 250;
+}
+
+/* 视频卡片播放按钮hover填充颜色适配 */
+
+/* 极简主题视频卡片播放按钮适配 */
+[data-theme='minimal'] .hover\:fill-blue-500:hover {
+  fill: rgb(82, 82, 82) !important;
+}
+
+[data-theme='minimal'].dark .hover\:fill-blue-500:hover {
+  fill: rgb(163, 163, 163) !important;
+}
+
+/* 暖色主题视频卡片播放按钮适配 */
+[data-theme='warm'] .hover\:fill-blue-500:hover {
+  fill: rgb(234, 88, 12) !important;
+}
+
+[data-theme='warm'].dark .hover\:fill-blue-500:hover {
+  fill: rgb(251, 146, 60) !important;
+}
+
+/* 视频卡片hover时资源名称和视频名称适配 */
+
+/* 极简主题视频卡片文字适配 */
+[data-theme='minimal'] .group-hover\:text-blue-600:hover,
+[data-theme='minimal'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .group-hover\:text-blue-400:hover,
+[data-theme='minimal'] .group:hover .group-hover\:text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'] .group-hover\:border-blue-500\/60:hover,
+[data-theme='minimal'] .group:hover .group-hover\:border-blue-500\/60 {
+  border-color: rgba(82, 82, 82, 0.6) !important;
+}
+
+[data-theme='minimal'].dark .group-hover\:text-blue-600:hover,
+[data-theme='minimal'].dark .group:hover .group-hover\:text-blue-600 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .group-hover\:text-blue-400:hover,
+[data-theme='minimal'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+
+/* 暖色主题视频卡片文字适配 */
+[data-theme='warm'] .group-hover\:text-blue-600:hover,
+[data-theme='warm'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .group-hover\:text-blue-400:hover,
+[data-theme='warm'] .group:hover .group-hover\:text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'] .group-hover\:border-blue-500\/60:hover,
+[data-theme='warm'] .group:hover .group-hover\:border-blue-500\/60 {
+  border-color: rgba(234, 88, 12, 0.6) !important;
+}
+
+[data-theme='warm'].dark .group-hover\:text-blue-600:hover,
+[data-theme='warm'].dark .group:hover .group-hover\:text-blue-600 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .group-hover\:text-blue-400:hover,
+[data-theme='warm'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+
+/* 清新主题视频卡片文字适配 */
+[data-theme='fresh'] .group-hover\:text-blue-600:hover,
+[data-theme='fresh'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .group-hover\:text-blue-400:hover,
+[data-theme='fresh'] .group:hover .group-hover\:text-blue-400 {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .group-hover\:border-blue-500\/60:hover,
+[data-theme='fresh'] .group:hover .group-hover\:border-blue-500\/60 {
+  border-color: rgba(63, 204, 113, 0.6) !important;
+}
+
+[data-theme='fresh'].dark .group-hover\:text-blue-600:hover,
+[data-theme='fresh'].dark .group:hover .group-hover\:text-blue-600 {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .group-hover\:text-blue-400:hover,
+[data-theme='fresh'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(74, 222, 128) !important;
+}
+
+/* 侧边栏hover颜色适配 */
+
+/* 极简主题侧边栏适配 */
+[data-theme='minimal'] .hover\:text-blue-600:hover {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .hover\:text-blue-700:hover {
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .group-hover\:text-blue-600:hover,
+[data-theme='minimal'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .group-data-\[active\=true\]\:text-blue-700,
+[data-theme='minimal'] .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-700 {
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .data-\[active\=true\]\:text-blue-700[data-active='true'] {
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .data-\[active\=true\]\:bg-blue-500\/20[data-active='true'] {
+  background-color: rgba(82, 82, 82, 0.2) !important;
+}
+
+[data-theme='minimal'].dark .hover\:text-blue-400:hover {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .hover\:text-blue-300:hover {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .group-hover\:text-blue-400:hover,
+[data-theme='minimal'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .group-data-\[active\=true\]\:text-blue-400,
+[data-theme='minimal'].dark .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .data-\[active\=true\]\:text-blue-400[data-active='true'] {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .data-\[active\=true\]\:bg-blue-500\/10[data-active='true'] {
+  background-color: rgba(163, 163, 163, 0.1) !important;
+}
+
+/* 暖色主题侧边栏适配 */
+[data-theme='warm'] .hover\:text-blue-600:hover {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .hover\:text-blue-700:hover {
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .group-hover\:text-blue-600:hover,
+[data-theme='warm'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .group-data-\[active\=true\]\:text-blue-700,
+[data-theme='warm'] .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-700 {
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .data-\[active\=true\]\:text-blue-700[data-active='true'] {
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .data-\[active\=true\]\:bg-blue-500\/20[data-active='true'] {
+  background-color: rgba(234, 88, 12, 0.2) !important;
+}
+
+[data-theme='warm'].dark .hover\:text-blue-400:hover {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .hover\:text-blue-300:hover {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .group-hover\:text-blue-400:hover,
+[data-theme='warm'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .group-data-\[active\=true\]\:text-blue-400,
+[data-theme='warm'].dark .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .data-\[active\=true\]\:text-blue-400[data-active='true'] {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .data-\[active\=true\]\:bg-blue-500\/10[data-active='true'] {
+  background-color: rgba(251, 146, 60, 0.1) !important;
+}
+
+/* 搜索页面聚焦状态和加载元素适配 */
+
+/* 极简主题搜索页面适配 */
+[data-theme='minimal'] .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(115, 115, 115, 0.5) !important;
+}
+[data-theme='minimal'] .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(115, 115, 115, 0.25) !important;
+}
+[data-theme='minimal'] .border-t-blue-500 {
+  border-top-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(115, 115, 115, 0.5) !important;
+}
+
+[data-theme='minimal'].dark .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(163, 163, 163, 0.5) !important;
+}
+[data-theme='minimal'].dark .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(163, 163, 163, 0.25) !important;
+}
+[data-theme='minimal'].dark .border-t-blue-500 {
+  border-top-color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(163, 163, 163, 0.5) !important;
+}
+
+/* 暖色主题搜索页面适配 */
+[data-theme='warm'] .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.5) !important;
+}
+[data-theme='warm'] .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25) !important;
+}
+[data-theme='warm'] .border-t-blue-500 {
+  border-top-color: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(249, 115, 22, 0.5) !important;
+}
+
+[data-theme='warm'].dark .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.5) !important;
+}
+[data-theme='warm'].dark .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.25) !important;
+}
+[data-theme='warm'].dark .border-t-blue-500 {
+  border-top-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(251, 146, 60, 0.5) !important;
+}
+
+/* 播放页视频加载元素适配 */
+
+/* 极简主题播放页加载适配 */
+[data-theme='minimal'] .from-blue-500 {
+  --tw-gradient-from: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .to-blue-600 {
+  --tw-gradient-to: rgb(82, 82, 82) !important;
+}
+
+[data-theme='minimal'].dark .from-blue-500 {
+  --tw-gradient-from: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .to-blue-600 {
+  --tw-gradient-to: rgb(212, 212, 212) !important;
+}
+
+/* 暖色主题播放页加载适配 */
+[data-theme='warm'] .from-blue-500 {
+  --tw-gradient-from: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .to-blue-600 {
+  --tw-gradient-to: rgb(234, 88, 12) !important;
+}
+
+[data-theme='warm'].dark .from-blue-500 {
+  --tw-gradient-from: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .to-blue-600 {
+  --tw-gradient-to: rgb(253, 186, 116) !important;
+}
+
+/* 清新主题搜索页面适配 */
+[data-theme='fresh'] .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(63, 204, 113, 0.5) !important;
+}
+[data-theme='fresh'] .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(63, 204, 113, 0.25) !important;
+}
+[data-theme='fresh'] .border-t-blue-500 {
+  border-top-color: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(63, 204, 113, 0.5) !important;
+}
+
+[data-theme='fresh'].dark .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.5) !important;
+}
+[data-theme='fresh'].dark .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25) !important;
+}
+[data-theme='fresh'].dark .border-t-blue-500 {
+  border-top-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(74, 222, 128, 0.5) !important;
+}
+
+/* 清新主题播放页加载适配 */
+[data-theme='fresh'] .from-blue-500 {
+  --tw-gradient-from: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .to-blue-600 {
+  --tw-gradient-to: rgb(22, 163, 74) !important;
+}
+
+[data-theme='fresh'].dark .from-blue-500 {
+  --tw-gradient-from: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .to-blue-600 {
+  --tw-gradient-to: rgb(134, 239, 172) !important;
+}
+
+/* 极简主题 */
+[data-theme='minimal'] {
+  --color-primary-50: 250, 250, 250;
+  --color-primary-100: 245, 245, 245;
+  --color-primary-200: 229, 229, 229;
+  --color-primary-300: 212, 212, 212;
+  --color-primary-400: 163, 163, 163;
+  --color-primary-500: 115, 115, 115;
+  --color-primary-600: 82, 82, 82;
+  --color-primary-700: 64, 64, 64;
+  --color-primary-800: 38, 38, 38;
+  --color-primary-900: 23, 23, 23;
+
+  --color-theme-bg: 255, 255, 255;
+  --color-theme-surface: 252, 252, 252;
+  --color-theme-accent: 82, 82, 82;
+  --color-theme-text: 23, 23, 23;
+  --color-theme-text-secondary: 115, 115, 115;
+  --color-theme-border: 229, 229, 229;
+  --color-theme-success: 34, 197, 94;
+  --color-theme-warning: 245, 158, 11;
+  --color-theme-error: 239, 68, 68;
+  --color-theme-info: 115, 115, 115;
+}
+
+/* 极简主题蓝色元素覆盖 */
+[data-theme='minimal'] .text-blue-600 {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .text-blue-700 {
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'] .bg-blue-500\/20 {
+  background-color: rgba(82, 82, 82, 0.2) !important;
+}
+[data-theme='minimal'] .bg-blue-500\/10 {
+  background-color: rgba(82, 82, 82, 0.1) !important;
+}
+[data-theme='minimal'] .bg-blue-500 {
+  background-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .fill-blue-500,
+[data-theme='minimal'] .hover\\:fill-blue-500:hover {
+  fill: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .border-blue-500\/30 {
+  border-color: rgba(82, 82, 82, 0.3) !important;
+}
+[data-theme='minimal'] .hover\\:text-blue-600:hover {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .bg-blue-100 {
+  background-color: rgb(245, 245, 245) !important;
+}
+[data-theme='minimal'] .text-blue-800 {
+  color: rgb(38, 38, 38) !important;
+}
+[data-theme='minimal'] .hover\\:bg-blue-200:hover {
+  background-color: rgb(229, 229, 229) !important;
+}
+
+[data-theme='minimal'].dark {
+  --color-theme-bg: 18, 18, 18;
+  --color-theme-surface: 28, 28, 28;
+  --color-theme-accent: 163, 163, 163;
+  --color-theme-text: 250, 250, 250;
+  --color-theme-text-secondary: 163, 163, 163;
+  --color-theme-border: 64, 64, 64;
+  --color-theme-success: 74, 222, 128;
+  --color-theme-warning: 251, 191, 36;
+  --color-theme-error: 248, 113, 113;
+  --color-theme-info: 163, 163, 163;
+}
+
+/* 极简主题深色模式蓝色元素覆盖 */
+[data-theme='minimal'].dark .text-blue-600 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .text-blue-700 {
+  color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'].dark .text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .bg-blue-500\/20 {
+  background-color: rgba(163, 163, 163, 0.2) !important;
+}
+[data-theme='minimal'].dark .bg-blue-500\/10 {
+  background-color: rgba(163, 163, 163, 0.1) !important;
+}
+[data-theme='minimal'].dark .bg-blue-500 {
+  background-color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .fill-blue-500,
+[data-theme='minimal'].dark .hover\\:fill-blue-500:hover {
+  fill: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .border-blue-500\/30 {
+  border-color: rgba(163, 163, 163, 0.3) !important;
+}
+[data-theme='minimal'].dark .hover\\:text-blue-400:hover {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .bg-blue-900\/40 {
+  background-color: rgba(38, 38, 38, 0.4) !important;
+}
+[data-theme='minimal'].dark .hover\\:bg-blue-900\/60:hover {
+  background-color: rgba(38, 38, 38, 0.6) !important;
+}
+[data-theme='minimal'].dark .text-blue-200 {
+  color: rgb(212, 212, 212) !important;
+}
+
+/* 暖色主题 */
+[data-theme='warm'] {
+  --color-primary-50: 255, 247, 237;
+  --color-primary-100: 255, 237, 213;
+  --color-primary-200: 254, 215, 170;
+  --color-primary-300: 253, 186, 116;
+  --color-primary-400: 251, 146, 60;
+  --color-primary-500: 249, 115, 22;
+  --color-primary-600: 234, 88, 12;
+  --color-primary-700: 194, 65, 12;
+  --color-primary-800: 154, 52, 18;
+  --color-primary-900: 124, 45, 18;
+
+  --color-theme-bg: 255, 253, 247;
+  --color-theme-surface: 254, 250, 240;
+  --color-theme-accent: 234, 88, 12;
+  --color-theme-text: 124, 45, 18;
+  --color-theme-text-secondary: 154, 52, 18;
+  --color-theme-border: 253, 230, 138;
+  --color-theme-success: 22, 163, 74;
+  --color-theme-warning: 217, 119, 6;
+  --color-theme-error: 220, 38, 38;
+  --color-theme-info: 194, 65, 12;
+}
+
+/* 暖色主题蓝色元素覆盖 */
+[data-theme='warm'] .text-blue-600 {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .text-blue-700 {
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'] .bg-blue-500\/20 {
+  background-color: rgba(234, 88, 12, 0.2) !important;
+}
+[data-theme='warm'] .bg-blue-500\/10 {
+  background-color: rgba(234, 88, 12, 0.1) !important;
+}
+[data-theme='warm'] .bg-blue-500 {
+  background-color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .fill-blue-500,
+[data-theme='warm'] .hover\\:fill-blue-500:hover {
+  fill: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .border-blue-500\/30 {
+  border-color: rgba(234, 88, 12, 0.3) !important;
+}
+[data-theme='warm'] .hover\\:text-blue-600:hover {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .bg-blue-100 {
+  background-color: rgb(255, 237, 213) !important;
+}
+[data-theme='warm'] .text-blue-800 {
+  color: rgb(154, 52, 18) !important;
+}
+[data-theme='warm'] .hover\\:bg-blue-200:hover {
+  background-color: rgb(254, 215, 170) !important;
+}
+
+[data-theme='warm'].dark {
+  --color-theme-bg: 28, 25, 23;
+  --color-theme-surface: 41, 37, 36;
+  --color-theme-accent: 251, 146, 60;
+  --color-theme-text: 254, 243, 199;
+  --color-theme-text-secondary: 214, 158, 46;
+  --color-theme-border: 87, 83, 78;
+  --color-theme-success: 74, 222, 128;
+  --color-theme-warning: 251, 191, 36;
+  --color-theme-error: 248, 113, 113;
+  --color-theme-info: 251, 146, 60;
+}
+
+/* 暖色主题深色模式蓝色元素覆盖 */
+[data-theme='warm'].dark .text-blue-600 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .text-blue-700 {
+  color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'].dark .text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .bg-blue-500\/20 {
+  background-color: rgba(251, 146, 60, 0.2) !important;
+}
+[data-theme='warm'].dark .bg-blue-500\/10 {
+  background-color: rgba(251, 146, 60, 0.1) !important;
+}
+[data-theme='warm'].dark .bg-blue-500 {
+  background-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .fill-blue-500,
+[data-theme='warm'].dark .hover\\:fill-blue-500:hover {
+  fill: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .border-blue-500\/30 {
+  border-color: rgba(251, 146, 60, 0.3) !important;
+}
+[data-theme='warm'].dark .hover\\:text-blue-400:hover {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .bg-blue-900\/40 {
+  background-color: rgba(154, 52, 18, 0.4) !important;
+}
+[data-theme='warm'].dark .hover\\:bg-blue-900\/60:hover {
+  background-color: rgba(154, 52, 18, 0.6) !important;
+}
+[data-theme='warm'].dark .text-blue-200 {
+  color: rgb(253, 186, 116) !important;
+}
+
+/* 通用蓝色样式覆盖 - 用于其他可能的蓝色元素 */
+
+/* 清新主题 */
+[data-theme='fresh'] {
+  --color-primary-50: 240, 253, 244;
+  --color-primary-100: 220, 252, 231;
+  --color-primary-200: 187, 247, 208;
+  --color-primary-300: 134, 239, 172;
+  --color-primary-400: 74, 222, 128;
+  --color-primary-500: 63, 204, 113;
+  --color-primary-600: 22, 163, 74;
+  --color-primary-700: 21, 128, 61;
+  --color-primary-800: 22, 101, 52;
+  --color-primary-900: 20, 83, 45;
+
+  --color-theme-bg: 247, 253, 249;
+  --color-theme-surface: 240, 253, 244;
+  --color-theme-accent: 63, 204, 113;
+  --color-theme-text: 20, 83, 45;
+  --color-theme-text-secondary: 22, 101, 52;
+  --color-theme-border: 187, 247, 208;
+  --color-theme-success: 34, 197, 94;
+  --color-theme-warning: 245, 158, 11;
+  --color-theme-error: 239, 68, 68;
+  --color-theme-info: 63, 204, 113;
+}
+
+/* 清新主题蓝色元素覆盖 */
+/* 注意：移除了通用的 .text-blue-* 覆盖，只保留有条件的状态覆盖 */
+[data-theme='fresh'] .bg-blue-500\/20 {
+  background-color: rgba(63, 204, 113, 0.2) !important;
+}
+[data-theme='fresh'] .bg-blue-500\/10 {
+  background-color: rgba(63, 204, 113, 0.1) !important;
+}
+[data-theme='fresh'] .bg-blue-500 {
+  background-color: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .hover\:fill-blue-500:hover {
+  fill: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .border-blue-500\/30 {
+  border-color: rgba(63, 204, 113, 0.3) !important;
+}
+[data-theme='fresh'] .hover\:text-blue-600:hover {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .bg-blue-100 {
+  background-color: rgb(220, 252, 231) !important;
+}
+/* 注意：移除了 .text-blue-800 的通用覆盖 */
+[data-theme='fresh'] .hover\:bg-blue-200:hover {
+  background-color: rgb(187, 247, 208) !important;
+}
+[data-theme='fresh'] .border-blue-200 {
+  border-color: rgb(187, 247, 208) !important;
+}
+[data-theme='fresh'] .border-blue-300 {
+  border-color: rgb(134, 239, 172) !important;
+}
+[data-theme='fresh'] .border-blue-500 {
+  border-color: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .bg-blue-600 {
+  background-color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .hover\:bg-blue-600:hover {
+  background-color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .hover\:bg-blue-700:hover {
+  background-color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .focus\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(63, 204, 113, 0.1) !important;
+}
+/* 版本面板和品牌元素适配 */
+[data-theme='fresh'] .bg-blue-100 {
+  background-color: rgb(220, 252, 231) !important;
+}
+[data-theme='fresh'] .text-blue-800 {
+  color: rgb(22, 101, 52) !important;
+}
+[data-theme='fresh'] .text-blue-700 {
+  color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .text-blue-600 {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .text-blue-500 {
+  color: rgb(34, 197, 94) !important;
+}
+/* 登录页面和按钮适配 */
+[data-theme='fresh'] .bg-blue-600 {
+  background-color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgb(34, 197, 94) !important;
+}
+[data-theme='fresh'] .bg-blue-50 {
+  background-color: rgb(240, 253, 244) !important;
+}
+[data-theme='fresh'] .border-blue-200 {
+  border-color: rgb(187, 247, 208) !important;
+}
+[data-theme='fresh'] .peer-focus\:text-blue-600:focus {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .peer:focus ~ .peer-focus\:text-blue-600 {
+  color: rgb(22, 163, 74) !important;
+}
+
+[data-theme='fresh'].dark {
+  --color-theme-bg: 20, 29, 24;
+  --color-theme-surface: 31, 41, 35;
+  --color-theme-accent: 74, 222, 128;
+  --color-theme-text: 240, 253, 244;
+  --color-theme-text-secondary: 187, 247, 208;
+  --color-theme-border: 75, 85, 79;
+  --color-theme-success: 74, 222, 128;
+  --color-theme-warning: 251, 191, 36;
+  --color-theme-error: 248, 113, 113;
+  --color-theme-info: 74, 222, 128;
+}
+
+/* 清新主题深色模式蓝色元素覆盖 */
+/* 注意：移除了通用的 .text-blue-* 覆盖，只保留有条件的状态覆盖 */
+[data-theme='fresh'].dark .bg-blue-500\/20 {
+  background-color: rgba(74, 222, 128, 0.2) !important;
+}
+[data-theme='fresh'].dark .bg-blue-500\/10 {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+}
+[data-theme='fresh'].dark .bg-blue-500 {
+  background-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .hover\:fill-blue-500:hover {
+  fill: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .border-blue-500\/30 {
+  border-color: rgba(74, 222, 128, 0.3) !important;
+}
+[data-theme='fresh'].dark .hover\:text-blue-400:hover {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .bg-blue-900\/40 {
+  background-color: rgba(22, 101, 52, 0.4) !important;
+}
+[data-theme='fresh'].dark .hover\:bg-blue-900\/60:hover {
+  background-color: rgba(22, 101, 52, 0.6) !important;
+}
+/* 注意：移除了 .text-blue-200 的通用覆盖 */
+[data-theme='fresh'].dark .border-blue-200 {
+  border-color: rgb(22, 101, 52) !important;
+}
+[data-theme='fresh'].dark .border-blue-300 {
+  border-color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'].dark .border-blue-500 {
+  border-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .bg-blue-600 {
+  background-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .hover\:bg-blue-600:hover {
+  background-color: rgb(134, 239, 172) !important;
+}
+[data-theme='fresh'].dark .hover\:bg-blue-700:hover {
+  background-color: rgb(134, 239, 172) !important;
+}
+[data-theme='fresh'].dark .focus\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1) !important;
+}
+/* 深色模式版本面板和品牌元素适配 */
+[data-theme='fresh'].dark .bg-blue-900\/30 {
+  background-color: rgba(22, 101, 52, 0.3) !important;
+}
+[data-theme='fresh'].dark .text-blue-300 {
+  color: rgb(134, 239, 172) !important;
+}
+[data-theme='fresh'].dark .text-blue-400 {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .text-blue-500 {
+  color: rgb(74, 222, 128) !important;
+}
+/* 深色模式登录页面适配 */
+[data-theme='fresh'].dark .bg-blue-600 {
+  background-color: rgb(34, 197, 94) !important;
+}
+[data-theme='fresh'].dark .bg-blue-900\/20 {
+  background-color: rgba(20, 83, 45, 0.2) !important;
+}
+[data-theme='fresh'].dark .border-blue-800 {
+  border-color: rgb(22, 101, 52) !important;
+}
+[data-theme='fresh'].dark .peer-focus\:dark\:text-blue-400:focus {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .peer:focus ~ .peer-focus\:dark\:text-blue-400 {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .text-blue-200 {
+  color: rgb(134, 239, 172) !important;
+}
+[data-theme='fresh'].dark .bg-blue-800\/40 {
+  background-color: rgba(22, 101, 52, 0.4) !important;
+}
+html:not(.dark) body {
+  background-image: radial-gradient(
+      circle at 80% 20%,
+      rgba(156, 189, 248, 0.15) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(235, 149, 248, 0.15) 0%,
+      transparent 30%
+    );
+}
+/* 极简主题额外覆盖 */
+[data-theme='minimal'] .bg-blue-50 {
+  background-color: rgb(250, 250, 250) !important;
+}
+[data-theme='minimal'] .hover\\:bg-blue-50:hover {
+  background-color: rgb(250, 250, 250) !important;
+}
+[data-theme='minimal'] .text-blue-500 {
+  color: rgb(115, 115, 115) !important;
+}
+/* 极简主题登录页面适配 */
+[data-theme='minimal'] .bg-blue-600 {
+  background-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .bg-blue-50 {
+  background-color: rgb(250, 250, 250) !important;
+}
+[data-theme='minimal'] .border-blue-200 {
+  border-color: rgb(229, 229, 229) !important;
+}
+[data-theme='minimal'] .peer-focus\:text-blue-600:focus {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .peer:focus ~ .peer-focus\:text-blue-600 {
+  color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .hover\\:text-blue-500:hover {
+  color: rgb(115, 115, 115) !important;
+}
+
+[data-theme='minimal'].dark .bg-blue-50 {
+  background-color: rgb(28, 28, 28) !important;
+}
+[data-theme='minimal'].dark .hover\\:bg-blue-50:hover {
+  background-color: rgb(28, 28, 28) !important;
+}
+[data-theme='minimal'].dark .text-blue-500 {
+  color: rgb(163, 163, 163) !important;
+}
+/* 极简主题深色模式登录页面适配 */
+[data-theme='minimal'].dark .bg-blue-600 {
+  background-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'].dark .bg-blue-900\/20 {
+  background-color: rgba(64, 64, 64, 0.2) !important;
+}
+[data-theme='minimal'].dark .border-blue-800 {
+  border-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'].dark .peer-focus\:dark\:text-blue-400:focus {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .peer:focus ~ .peer-focus\:dark\:text-blue-400 {
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .hover\\:text-blue-500:hover {
+  color: rgb(163, 163, 163) !important;
+}
+
+/* 暖色主题额外覆盖 */
+[data-theme='warm'] .bg-blue-50 {
+  background-color: rgb(255, 247, 237) !important;
+}
+[data-theme='warm'] .hover\\:bg-blue-50:hover {
+  background-color: rgb(255, 247, 237) !important;
+}
+[data-theme='warm'] .text-blue-500 {
+  color: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .hover\\:text-blue-500:hover {
+  color: rgb(249, 115, 22) !important;
+}
+
+[data-theme='warm'].dark .bg-blue-50 {
+  background-color: rgb(41, 37, 36) !important;
+}
+[data-theme='warm'].dark .hover\\:bg-blue-50:hover {
+  background-color: rgb(41, 37, 36) !important;
+}
+[data-theme='warm'].dark .text-blue-500 {
+  color: rgb(251, 146, 60) !important;
+}
+/* 暖色主题深色模式登录页面适配 */
+[data-theme='warm'].dark .bg-blue-600 {
+  background-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .bg-blue-900\/20 {
+  background-color: rgba(154, 52, 18, 0.2) !important;
+}
+[data-theme='warm'].dark .border-blue-800 {
+  border-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'].dark .peer-focus\:dark\:text-blue-400:focus {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .peer:focus ~ .peer-focus\:dark\:text-blue-400 {
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .hover\\:text-blue-500:hover {
+  color: rgb(251, 146, 60) !important;
+}
+
+/* 清新主题额外覆盖 */
+[data-theme='fresh'] .bg-blue-50 {
+  background-color: rgb(240, 253, 244) !important;
+}
+[data-theme='fresh'] .hover\\:bg-blue-50:hover {
+  background-color: rgb(240, 253, 244) !important;
+}
+/* 保留hover状态的覆盖 */
+[data-theme='fresh'] .hover\\:text-blue-500:hover {
+  color: rgb(63, 204, 113) !important;
+}
+
+[data-theme='fresh'].dark .bg-blue-50 {
+  background-color: rgb(31, 41, 35) !important;
+}
+[data-theme='fresh'].dark .hover\\:bg-blue-50:hover {
+  background-color: rgb(31, 41, 35) !important;
+}
+/* 保留hover状态的覆盖 */
+[data-theme='fresh'].dark .hover\\:text-blue-500:hover {
+  color: rgb(74, 222, 128) !important;
+}
+
+/* VideoCard 和其他组件的蓝色样式覆盖 */
+
+/* 极简主题组件样式覆盖 */
+[data-theme='minimal'] .border-blue-200 {
+  border-color: rgb(229, 229, 229) !important;
+}
+[data-theme='minimal'] .text-blue-300 {
+  color: rgb(163, 163, 163) !important;
+}
+
+[data-theme='minimal'].dark .bg-blue-900\/20 {
+  background-color: rgba(23, 23, 23, 0.2) !important;
+}
+[data-theme='minimal'].dark .border-blue-800 {
+  border-color: rgb(38, 38, 38) !important;
+}
+[data-theme='minimal'].dark .bg-blue-900\/30 {
+  background-color: rgba(23, 23, 23, 0.3) !important;
+}
+
+/* 暖色主题组件样式覆盖 */
+[data-theme='warm'] .border-blue-200 {
+  border-color: rgb(253, 230, 138) !important;
+}
+[data-theme='warm'] .peer-focus\:text-blue-600:focus {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .peer:focus ~ .peer-focus\:text-blue-600 {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .text-blue-300 {
+  color: rgb(251, 146, 60) !important;
+}
+
+[data-theme='warm'].dark .bg-blue-900\/20 {
+  background-color: rgba(124, 45, 18, 0.2) !important;
+}
+[data-theme='warm'].dark .border-blue-800 {
+  border-color: rgb(154, 52, 18) !important;
+}
+[data-theme='warm'].dark .bg-blue-900\/30 {
+  background-color: rgba(124, 45, 18, 0.3) !important;
+}
+
+/* 补充更多蓝色元素覆盖 */
+
+/* 极简主题补充覆盖 */
+[data-theme='minimal'] .text-blue-900 {
+  color: rgb(23, 23, 23) !important;
+}
+[data-theme='minimal'] .bg-blue-200 {
+  background-color: rgb(229, 229, 229) !important;
+}
+[data-theme='minimal'] .bg-blue-300 {
+  background-color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'] .bg-blue-600 {
+  background-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .bg-blue-700 {
+  background-color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .border-blue-100 {
+  border-color: rgb(245, 245, 245) !important;
+}
+[data-theme='minimal'] .border-blue-300 {
+  border-color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'] .border-blue-500 {
+  border-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .hover\\:border-blue-300:hover {
+  border-color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'] .hover\\:bg-blue-700:hover {
+  background-color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .focus\\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(115, 115, 115, 0.1) !important;
+}
+
+[data-theme='minimal'].dark .text-blue-900 {
+  color: rgb(250, 250, 250) !important;
+}
+[data-theme='minimal'].dark .bg-blue-200 {
+  background-color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'].dark .bg-blue-300 {
+  background-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'].dark .bg-blue-600 {
+  background-color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .bg-blue-700 {
+  background-color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'].dark .border-blue-100 {
+  border-color: rgb(38, 38, 38) !important;
+}
+[data-theme='minimal'].dark .border-blue-300 {
+  border-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'].dark .border-blue-500 {
+  border-color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .hover\\:border-blue-300:hover {
+  border-color: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'].dark .hover\\:bg-blue-700:hover {
+  background-color: rgb(212, 212, 212) !important;
+}
+[data-theme='minimal'].dark .focus\\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(163, 163, 163, 0.1) !important;
+}
+
+/* 暖色主题补充覆盖 */
+[data-theme='warm'] .text-blue-900 {
+  color: rgb(124, 45, 18) !important;
+}
+[data-theme='warm'] .bg-blue-200 {
+  background-color: rgb(254, 215, 170) !important;
+}
+[data-theme='warm'] .bg-blue-300 {
+  background-color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'] .bg-blue-600 {
+  background-color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .bg-blue-700 {
+  background-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .border-blue-100 {
+  border-color: rgb(255, 237, 213) !important;
+}
+[data-theme='warm'] .border-blue-300 {
+  border-color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'] .border-blue-500 {
+  border-color: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .hover\\:border-blue-300:hover {
+  border-color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'] .hover\\:bg-blue-700:hover {
+  background-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .focus\\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+}
+
+[data-theme='warm'].dark .text-blue-900 {
+  color: rgb(254, 243, 199) !important;
+}
+[data-theme='warm'].dark .bg-blue-200 {
+  background-color: rgb(154, 52, 18) !important;
+}
+[data-theme='warm'].dark .bg-blue-300 {
+  background-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'].dark .bg-blue-600 {
+  background-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .bg-blue-700 {
+  background-color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'].dark .border-blue-100 {
+  border-color: rgb(87, 83, 78) !important;
+}
+[data-theme='warm'].dark .border-blue-300 {
+  border-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'].dark .border-blue-500 {
+  border-color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .hover\\:border-blue-300:hover {
+  border-color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'].dark .hover\\:bg-blue-700:hover {
+  background-color: rgb(253, 186, 116) !important;
+}
+[data-theme='warm'].dark .focus\\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1) !important;
+}
+
+/* 导航组件蓝色元素覆盖 - 直接覆盖具体元素，避免复杂选择器 */
+
+/* 极简主题导航覆盖 */
+/* 选中状态背景和文字颜色 */
+[data-theme='minimal'] *[data-active='true'] {
+  background-color: rgba(82, 82, 82, 0.2) !important;
+  color: rgb(64, 64, 64) !important;
+}
+[data-theme='minimal'] .group[data-active='true'] svg {
+  color: rgb(64, 64, 64) !important;
+}
+
+[data-theme='minimal'].dark *[data-active='true'] {
+  background-color: rgba(163, 163, 163, 0.1) !important;
+  color: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .group[data-active='true'] svg {
+  color: rgb(163, 163, 163) !important;
+}
+
+/* hover状态文字颜色 */
+[data-theme='minimal'] .hover\\:text-blue-300:hover {
+  color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'].dark .dark\\:hover\\:text-blue-300:hover {
+  color: rgb(163, 163, 163) !important;
+}
+
+/* 暖色主题导航覆盖 */
+[data-theme='warm'] *[data-active='true'] {
+  background-color: rgba(234, 88, 12, 0.2) !important;
+  color: rgb(194, 65, 12) !important;
+}
+[data-theme='warm'] .group[data-active='true'] svg {
+  color: rgb(194, 65, 12) !important;
+}
+
+[data-theme='warm'].dark *[data-active='true'] {
+  background-color: rgba(251, 146, 60, 0.1) !important;
+  color: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .group[data-active='true'] svg {
+  color: rgb(251, 146, 60) !important;
+}
+
+[data-theme='warm'] .hover\\:text-blue-300:hover {
+  color: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'].dark .dark\\:hover\\:text-blue-300:hover {
+  color: rgb(251, 146, 60) !important;
+}
+
+/* 清新主题侧边栏hover颜色适配 */
+[data-theme='fresh'] .hover\:text-blue-600:hover {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .hover\:text-blue-700:hover {
+  color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .group-hover\:text-blue-600:hover,
+[data-theme='fresh'] .group:hover .group-hover\:text-blue-600 {
+  color: rgb(22, 163, 74) !important;
+}
+[data-theme='fresh'] .group-data-\[active\=true\]\:text-blue-700,
+[data-theme='fresh'] .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-700 {
+  color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .data-\[active\=true\]\:text-blue-700[data-active='true'] {
+  color: rgb(21, 128, 61) !important;
+}
+[data-theme='fresh'] .data-\[active\=true\]\:bg-blue-500\/20[data-active='true'] {
+  background-color: rgba(63, 204, 113, 0.2) !important;
+}
+
+[data-theme='fresh'].dark .hover\:text-blue-400:hover {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .hover\:text-blue-300:hover {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .group-hover\:text-blue-400:hover,
+[data-theme='fresh'].dark .group:hover .group-hover\:text-blue-400 {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .group-data-\[active\=true\]\:text-blue-400,
+[data-theme='fresh'].dark .group[data-active='true'] .group-data-\[active\=true\]\:text-blue-400 {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .data-\[active\=true\]\:text-blue-400[data-active='true'] {
+  color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .data-\[active\=true\]\:bg-blue-500\/10[data-active='true'] {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+}
+[data-theme='fresh'].dark .dark\\:hover\\:text-blue-300:hover {
+  color: rgb(74, 222, 128) !important;
+}
+
+/* 清新主题导航覆盖 */
+/* 选中状态背景和文字颜色 */
+[data-theme='fresh'] *[data-active='true'] {
+  background-color: rgba(63, 204, 113, 0.2) !important;
+  color: rgb(21, 128, 61) !important;
+}
+
+[data-theme='fresh'].dark *[data-active='true'] {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+  color: rgb(74, 222, 128) !important;
+}
+
+/* 视频卡片播放按钮和标签元素覆盖 */
+
+/* 极简主题视频卡片覆盖 */
+[data-theme='minimal'] .fill-blue-500,
+[data-theme='minimal'] .hover\\:fill-blue-500:hover {
+  fill: rgb(82, 82, 82) !important;
+}
+[data-theme='minimal'] .bg-blue-400 {
+  background-color: rgb(115, 115, 115) !important;
+}
+[data-theme='minimal'] .hover\\:bg-blue-600:hover {
+  background-color: rgb(64, 64, 64) !important;
+}
+
+[data-theme='minimal'].dark .fill-blue-500,
+[data-theme='minimal'].dark .hover\\:fill-blue-500:hover {
+  fill: rgb(163, 163, 163) !important;
+}
+[data-theme='minimal'].dark .hover\\:bg-blue-600:hover {
+  background-color: rgb(212, 212, 212) !important;
+}
+
+/* 暖色主题视频卡片覆盖 */
+[data-theme='warm'] .fill-blue-500,
+[data-theme='warm'] .hover\\:fill-blue-500:hover {
+  fill: rgb(234, 88, 12) !important;
+}
+[data-theme='warm'] .bg-blue-400 {
+  background-color: rgb(249, 115, 22) !important;
+}
+[data-theme='warm'] .hover\\:bg-blue-600:hover {
+  background-color: rgb(194, 65, 12) !important;
+}
+
+[data-theme='warm'].dark .fill-blue-500,
+[data-theme='warm'].dark .hover\\:fill-blue-500:hover {
+  fill: rgb(251, 146, 60) !important;
+}
+[data-theme='warm'].dark .hover\\:bg-blue-600:hover {
+  background-color: rgb(253, 186, 116) !important;
+}
+
+/* 清新主题视频卡片覆盖 */
+[data-theme='fresh'] .hover\\:fill-blue-500:hover {
+  fill: rgb(63, 204, 113) !important;
+}
+[data-theme='fresh'] .bg-blue-400 {
+  background-color: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'] .hover\\:bg-blue-600:hover {
+  background-color: rgb(21, 128, 61) !important;
+}
+
+[data-theme='fresh'].dark .hover\\:fill-blue-500:hover {
+  fill: rgb(74, 222, 128) !important;
+}
+[data-theme='fresh'].dark .hover\\:bg-blue-600:hover {
+  background-color: rgb(134, 239, 172) !important;
+}
+
+/* ======================================================================== */
+/* 紫/粉色主题 (Purple Theme) - */
+/* ======================================================================== */
+
+[data-theme='purple'] {
+  /* 定义紫粉色系的基础色板 */
+  --color-primary-50: 245, 243, 255;
+  --color-primary-100: 237, 233, 254;
+  --color-primary-200: 221, 214, 254;
+  --color-primary-300: 196, 181, 253;
+  --color-primary-400: 167, 139, 250;
+  --color-primary-500: 139, 92, 246;
+  --color-primary-600: 124, 58, 237;
+  --color-primary-700: 109, 40, 217;
+  --color-primary-800: 91, 33, 182;
+  --color-primary-900: 76, 29, 149;
+
+  /* 定义紫粉色系的主题语义化颜色 */
+  --color-theme-bg: 253, 252, 255;
+  --color-theme-surface: 255, 255, 255;
+  --color-theme-accent: 124, 58, 237; /* 主色调：紫色 */
+  --color-theme-text: 31, 41, 55;
+  --color-theme-text-secondary: 107, 114, 128;
+  --color-theme-border: 229, 231, 235;
+  --color-theme-success: 22, 163, 74;
+  --color-theme-warning: 245, 158, 11;
+  --color-theme-error: 239, 68, 68;
+  --color-theme-info: 109, 40, 217;
+}
+
+[data-theme='purple'].dark {
+  --color-theme-bg: 24, 24, 29;
+  --color-theme-surface: 30, 30, 37;
+  --color-theme-accent: 167, 139, 250; /* 亮紫色 */
+  --color-theme-text: 243, 244, 246;
+  --color-theme-text-secondary: 156, 163, 175;
+  --color-theme-border: 55, 65, 81;
+  --color-theme-success: 74, 222, 128;
+  --color-theme-warning: 251, 191, 36;
+  --color-theme-error: 248, 113, 113;
+  --color-theme-info: 139, 92, 246;
+}
+
+/* 覆盖原有蓝色硬编码样式，使其适应紫粉色主题 */
+/* 文本颜色 */
+[data-theme='purple'] .text-blue-300 {
+  color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'] .text-blue-500 {
+  color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .text-blue-600 {
+  color: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .text-blue-700 {
+  color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'] .text-blue-800 {
+  color: rgb(91, 33, 182) !important;
+}
+[data-theme='purple'] .text-blue-900 {
+  color: rgb(76, 29, 149) !important;
+}
+
+/* 背景颜色 */
+[data-theme='purple'] .bg-blue-50 {
+  background-color: rgb(245, 243, 255) !important;
+}
+[data-theme='purple'] .bg-blue-100 {
+  background-color: rgb(237, 233, 254) !important;
+}
+[data-theme='purple'] .bg-blue-200 {
+  background-color: rgb(221, 214, 254) !important;
+}
+[data-theme='purple'] .bg-blue-400 {
+  background-color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'] .bg-blue-500 {
+  background-color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .bg-blue-600 {
+  background-color: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .bg-blue-500\/10 {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+[data-theme='purple'] .bg-blue-500\/20 {
+  background-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+/* 边框颜色 */
+[data-theme='purple'] .border-blue-200 {
+  border-color: rgb(221, 214, 254) !important;
+}
+[data-theme='purple'] .border-blue-300 {
+  border-color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'] .border-blue-500 {
+  border-color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .border-t-blue-500 {
+  border-top-color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .border-blue-500\/30 {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+[data-theme='purple'] .group-hover\:border-blue-500\/60:hover,
+[data-theme='purple'] .group:hover .group-hover\:border-blue-500\/60 {
+  border-color: rgba(139, 92, 246, 0.6) !important;
+}
+
+/* 交互状态 (hover, focus, etc.) */
+[data-theme='purple'] .hover\:bg-blue-50:hover {
+  background-color: rgb(245, 243, 255) !important;
+}
+[data-theme='purple'] .hover\:bg-blue-200:hover {
+  background-color: rgb(221, 214, 254) !important;
+}
+[data-theme='purple'] .hover\:bg-blue-600:hover {
+  background-color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'] .hover\:bg-blue-700:hover {
+  background-color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'] .hover\:text-blue-500:hover {
+  color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .hover\:text-blue-600:hover {
+  color: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .hover\:text-blue-700:hover {
+  color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'] .peer-focus\:text-blue-600:focus,
+[data-theme='purple'] .peer:focus ~ .peer-focus\:text-blue-600 {
+  color: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgb(139, 92, 246) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.5) !important;
+}
+[data-theme='purple'] .focus\:ring-blue-400:focus {
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5) !important;
+}
+[data-theme='purple'] .focus\:ring-blue-400\/50:focus {
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.25) !important;
+}
+
+/* SVG 和其他 */
+[data-theme='purple'] .fill-blue-500,
+[data-theme='purple'] .hover\:fill-blue-500:hover {
+  fill: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .from-blue-500 {
+  --tw-gradient-from: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'] .to-blue-600 {
+  --tw-gradient-to: rgb(124, 58, 237) !important;
+}
+[data-theme='purple'] .hover\:shadow-blue-500\/50:hover {
+  box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.5) !important;
+}
+
+/* 深色模式覆盖 */
+[data-theme='purple'].dark .text-blue-200 {
+  color: rgb(221, 214, 254) !important;
+}
+[data-theme='purple'].dark .text-blue-300 {
+  color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'].dark .text-blue-400 {
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .text-blue-600 {
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .text-blue-700 {
+  color: rgb(196, 181, 253) !important;
+}
+
+[data-theme='purple'].dark .bg-blue-500 {
+  background-color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .bg-blue-600 {
+  background-color: rgb(139, 92, 246) !important;
+}
+[data-theme='purple'].dark .bg-blue-500\/10 {
+  background-color: rgba(167, 139, 250, 0.1) !important;
+}
+[data-theme='purple'].dark .bg-blue-500\/20 {
+  background-color: rgba(167, 139, 250, 0.2) !important;
+}
+[data-theme='purple'].dark .bg-blue-800\/40 {
+  background-color: rgba(91, 33, 182, 0.4) !important;
+}
+[data-theme='purple'].dark .bg-blue-900\/20 {
+  background-color: rgba(76, 29, 149, 0.2) !important;
+}
+[data-theme='purple'].dark .bg-blue-900\/30 {
+  background-color: rgba(76, 29, 149, 0.3) !important;
+}
+[data-theme='purple'].dark .bg-blue-900\/40 {
+  background-color: rgba(76, 29, 149, 0.4) !important;
+}
+
+[data-theme='purple'].dark .border-blue-500 {
+  border-color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .border-blue-800 {
+  border-color: rgb(91, 33, 182) !important;
+}
+[data-theme='purple'].dark .border-t-blue-500 {
+  border-top-color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .border-b-2.border-blue-500 {
+  border-bottom-color: rgb(167, 139, 250) !important;
+}
+
+[data-theme='purple'].dark .hover\:text-blue-300:hover {
+  color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'].dark .hover\:text-blue-400:hover {
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .hover\:text-blue-500:hover {
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .peer-focus\:dark\:text-blue-400:focus,
+[data-theme='purple'].dark .peer:focus ~ .peer-focus\:dark\:text-blue-400 {
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .hover\:bg-blue-600:hover {
+  background-color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'].dark .hover\:bg-blue-700:hover {
+  background-color: rgb(196, 181, 253) !important;
+}
+[data-theme='purple'].dark .hover\:bg-blue-900\/60:hover {
+  background-color: rgba(76, 29, 149, 0.6) !important;
+}
+
+[data-theme='purple'].dark .fill-blue-500,
+[data-theme='purple'].dark .hover\:fill-blue-500:hover {
+  fill: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .from-blue-500 {
+  --tw-gradient-from: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'].dark .to-blue-600 {
+  --tw-gradient-to: rgb(196, 181, 253) !important;
+}
+
+/* 导航激活状态适配 */
+[data-theme='purple'] *[data-active='true'] {
+  background-color: rgba(124, 58, 237, 0.1) !important;
+  color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'].dark *[data-active='true'] {
+  background-color: rgba(167, 139, 250, 0.1) !important;
+  color: rgb(167, 139, 250) !important;
+}
+[data-theme='purple'] .group[data-active='true'] svg {
+  color: rgb(109, 40, 217) !important;
+}
+[data-theme='purple'].dark .group[data-active='true'] svg {
+  color: rgb(167, 139, 250) !important;
+}
+
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+  /* 阻止 iOS Safari 拉动回弹 */
+  overscroll-behavior: none;
+}
+
+body {
+  /* 解决 iOS Safari 底部导航栏遮挡内容的问题 */
+  padding-bottom: constant(safe-area-inset-bottom); /* For iOS < 11.2 */
+  padding-bottom: env(safe-area-inset-bottom); /* For iOS 11.2+ and other modern browsers */
+  /* 添加顶部安全区域内边距，解决状态栏遮挡问题 */
+  padding-top: constant(safe-area-inset-top); /* For iOS < 11.2 */
+  padding-top: env(safe-area-inset-top); /* For iOS 11.2+ and other modern browsers */
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+html:not(.dark) body {
+  background: linear-gradient(
+    180deg,
+    #e6f3fb 0%,
+    #eaf3f7 18%,
+    #f7f7f3 38%,
+    #e9ecef 60%,
+    #dbe3ea 80%,
+    #d3dde6 100%
+  );
+  background-attachment: fixed;
+}
+
+/* 主题背景渐变覆盖 */
+[data-theme='minimal']:not(.dark) body {
+  background: linear-gradient(
+    180deg,
+    #fafafa 0%,
+    #f5f5f5 25%,
+    #f0f0f0 50%,
+    #ebebeb 75%,
+    #e5e5e5 100%
+  );
+  background-attachment: fixed;
+}
+
+[data-theme='warm']:not(.dark) body {
+  background: linear-gradient(
+    180deg,
+    #fffdf7 0%,
+    #fefaf0 25%,
+    #fef7e0 50%,
+    #fef3c7 75%,
+    #fde68a 100%
+  );
+  background-attachment: fixed;
+}
+
+[data-theme='fresh']:not(.dark) body {
+  background: linear-gradient(
+    180deg,
+    #f7fdf9 0%,
+    #f0fdf4 25%,
+    #ecfdf5 50%,
+    #d1fae5 75%,
+    #a7f3d0 100%
+  );
+  background-attachment: fixed;
+}
+
+.dark body {
+  background: linear-gradient(
+    180deg,
+    rgb(var(--color-theme-bg)) 0%,
+    rgb(var(--color-theme-surface)) 100%
+  );
+  background-attachment: fixed;
+}
+
+/* 通用主题类 */
+.theme-transition {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.theme-card {
+  @apply bg-theme-surface border border-theme-border rounded-lg shadow-sm theme-transition;
+}
+
+.theme-button {
+  @apply bg-theme-accent text-white border border-theme-accent rounded-lg px-4 py-2 hover:opacity-90 theme-transition;
+}
+
+.theme-button-secondary {
+  @apply bg-theme-surface text-theme-text border border-theme-border rounded-lg px-4 py-2 hover:bg-theme-accent/10 theme-transition;
+}
+
+.theme-input {
+  @apply bg-theme-surface text-theme-text border border-theme-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-theme-accent/50 theme-transition;
+}
+
+/* 确保自定义主题色类在所有主题下正确显示 */
+.bg-theme-accent {
+  background-color: rgb(var(--color-theme-accent)) !important;
+}
+
+.text-theme-accent {
+  color: rgb(var(--color-theme-accent)) !important;
+}
+
+.border-theme-accent {
+  border-color: rgb(var(--color-theme-accent)) !important;
+}
+
+.hover\:bg-theme-accent\/5:hover {
+  background-color: rgba(var(--color-theme-accent), 0.05) !important;
+}
+
+.hover\:bg-theme-accent\/10:hover {
+  background-color: rgba(var(--color-theme-accent), 0.1) !important;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.5);
+}
+
+/* 视频卡片悬停效果 */
+.video-card-hover {
+  transition: transform 0.3s ease;
+}
+
+.video-card-hover:hover {
+  transform: scale(1.05);
+}
+
+/* 渐变遮罩 */
+.gradient-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+}
+
+/* 隐藏移动端（<768px）垂直滚动条 */
+@media (max-width: 767px) {
+  html,
+  body {
+    -ms-overflow-style: none; /* IE & Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none; /* Chrome Safari */
+  }
+}
+
+/* 隐藏所有滚动条（兼容 WebKit、Firefox、IE/Edge）- 排除ArtPlayer */
+:not(div[data-radix-scroll-area-viewport]):not(.artplayer):not(.artplayer *):not(pre *) {
+  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+:not(div[data-radix-scroll-area-viewport]):not(.artplayer):not(.artplayer *):not(pre *)::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* View Transitions API 动画 */
+@keyframes slide-from-top {
+  from {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes slide-from-bottom {
+  from {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+/*
+  切换时，旧的视图不应该有动画，它应该在下面，等待被新的视图覆盖。
+  这可以防止在动画完成前，页面底部提前变色。
+*/
+::view-transition-old(root) {
+  animation: none;
+}
+
+/* 从浅色到深色：新内容（深色）从顶部滑入 */
+html.dark::view-transition-new(root) {
+  animation-name: slide-from-top;
+}
+
+/* 从深色到浅色：新内容（浅色）从底部滑入 */
+html:not(.dark)::view-transition-new(root) {
+  animation-name: slide-from-bottom;
+}
+
+/* 强制播放器内部的 video 元素高度为 100%，并保持内容完整显示 */
+div[data-media-provider] video {
+  height: 100%;
+  object-fit: contain;
+}
+
+.art-poster {
+  background-size: contain !important; /* 使图片完整展示 */
+  background-position: center center !important; /* 居中显示 */
+  background-repeat: no-repeat !important; /* 防止重复 */
+  background-color: #000 !important; /* 其余区域填充为黑色 */
+}
+
+/* 隐藏移动端竖屏时的 pip 按钮 */
+@media (max-width: 1024px) {
+  .art-control-pip {
+    display: none !important;
+  }
+
+  .art-control-fullscreenWeb {
+    display: none !important;
+  }
+
+  .art-control-volume {
+    display: none !important;
+  }
+}
+
+/* 修复音量控制hover区域 - 精确控制触发范围 */
+@media (hover: hover) {
+  .art-control-volume {
+    position: relative !important;
+    padding: 3px; /* 和弹幕按钮一样的hover区域 */
+  }
+
+  /* 缩小hover检测区域，只稍微扩展到面板方向 */
+  .art-control-volume::before {
+    content: '';
+    position: absolute;
+    top: -20px; /* 只扩展20px，避免过早触发 */
+    left: -5px;
+    right: -5px;
+    bottom: -3px;
+    z-index: -1;
+    pointer-events: auto;
+  }
+
+  /* 按钮或面板hover时都显示音量面板 */
+  .art-control-volume:hover .art-volume-panel,
+  .art-volume-panel:hover {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    transition:
+      opacity 0.15s ease 0.1s,
+      transform 0.15s ease 0.1s !important; /* 0.1s显示延迟 */
+  }
+
+  /* 音量面板默认隐藏状态，和弹幕一样的延迟 */
+  .art-volume-panel {
+    transition:
+      opacity 0.15s ease 0.3s,
+      transform 0.15s ease 0.3s !important; /* 0.3s隐藏延迟 */
+  }
+}
+
+/* 修复移动端弹幕面板定位问题 - 根据不同挂载位置处理 */
+@media (max-width: 768px) {
+  /* 当弹幕插件挂载到控制栏中心时（横屏，宽度>=512px） */
+  .art-controls-center .artplayer-plugin-danmuku .apd-config-panel,
+  .art-controls-center .artplayer-plugin-danmuku .apd-style-panel {
+    position: absolute !important; /* 加上这个关键属性！ */
+    left: 10% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+
+  /* 当弹幕插件挂载到播放器容器时（竖屏，宽度<512px） */
+  .art-video-player .artplayer-plugin-danmuku .apd-config-panel,
+  .art-video-player .artplayer-plugin-danmuku .apd-style-panel {
+    position: absolute !important;
+    left: 50% !important; /* 竖屏时居中 */
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+}
+
+/* VideoCard 光泽扫过动画 */
+@keyframes card-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 平滑动画效果 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+/* 状态过渡动画 */
+.smooth-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* 移动端隐藏弹幕配置按钮 */
+@media (max-width: 1080px), (hover: none) {
+  .artplayer-plugin-danmuku .apd-config {
+    display: none !important;
+  }
+}
+
+/* 修复桌面端弹幕配置弹窗hover不稳定问题 */
+@media (min-width: 1081px) and (hover: hover) {
+  /* 扩大按钮的实际hover区域，但不影响视觉 */
+  .artplayer-plugin-danmuku .apd-config {
+    position: relative;
+    padding: 3px; /* 增加一点内边距扩大hover区域 */
+  }
+
+  /* 按钮或面板hover时都显示面板 */
+  .artplayer-plugin-danmuku .apd-config:hover .apd-config-panel,
+  .artplayer-plugin-danmuku .apd-config .apd-config-panel:hover {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    transition: opacity 0.15s ease 0.1s !important; /* 添加0.1s显示延迟 */
+  }
+
+  /* 确保面板默认状态是隐藏的，隐藏时有延迟 */
+  .artplayer-plugin-danmuku .apd-config-panel {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity 0.15s ease 0.3s,
+      visibility 0s ease 0.45s; /* 0.3s隐藏延迟 */
+  }
+
+  /* 面板内部元素在显示时可交互 */
+  .artplayer-plugin-danmuku .apd-config-panel * {
+    pointer-events: auto;
+  }
+
+  /* 防止进度条拖拽时弹窗干扰 */
+  .artplayer[data-dragging='true'] .artplayer-plugin-danmuku .apd-config-panel {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: none !important;
+  }
+}

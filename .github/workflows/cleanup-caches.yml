@@ -1,0 +1,43 @@
+name: 🧹 Cleanup Old Caches
+
+on:
+  # 允许手动触发
+  workflow_dispatch:
+  # 每周日凌晨 3 点定时触发
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    # 明确为这个任务授予删除 Actions 缓存所需的权限
+    permissions:
+      actions: write
+
+    steps:
+      - name: 🗑️ Delete old caches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const caches = await github.rest.actions.getActionsCacheList({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            const mainBranchRef = 'refs/heads/main'; // 你的主分支
+            let cachesToDelete = caches.data.actions_caches.filter(cache => !cache.key.includes(mainBranchRef));
+
+            console.log(`总共找到 ${caches.data.total_count} 个缓存。`);
+            console.log(`将要删除 ${cachesToDelete.length} 个非主分支的缓存。`);
+
+            for (const cache of cachesToDelete) {
+              console.log(`正在删除缓存 ID: ${cache.id}, Key: ${cache.key}`);
+              await github.rest.actions.deleteActionsCacheById({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                cache_id: cache.id,
+              });
+            }
+            console.log("清理完成！");

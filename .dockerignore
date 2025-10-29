@@ -1,0 +1,54 @@
+# Git 版本控制文件
+.git
+.gitignore
+.github
+
+# Node.js 依赖目录 (关键加速项，必须忽略)
+# 我们在容器内安装依赖，绝不应复制本地的 node_modules
+node_modules
+
+# Next.js 构建产物目录 (在容器内生成)
+.next
+out
+
+# 测试文件
+__tests__
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+coverage
+.nyc_output
+
+# IDE 和操作系统特有的文件
+.vscode
+.idea
+*.log
+.DS_Store
+Thumbs.db
+
+# 忽略本地环境变量文件
+.env
+.env*.local
+.env.production
+.env.development
+
+# 文档文件
+README.md
+CHANGELOG.md
+LICENSE
+docs
+*.md
+
+# 忽略 IPTV 文件夹，因为它与应用运行无关
+iptv
+shipinywan
+
+# 开发脚本和配置
+.eslintrc*
+.prettierrc*
+jest.config*
+
+
+# 源码映射文件
+**/*.map

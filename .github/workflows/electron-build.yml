@@ -1,0 +1,109 @@
+name: Build and Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write  # 允许创建 Release 和上传文件
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build for Windows
+        if: matrix.os == 'windows-latest'
+        run: pnpm electron:build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build for macOS
+        if: matrix.os == 'macos-latest'
+        run: pnpm electron:build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm electron:build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiffCITY-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.zip
+            release/*.blockmap
+            release/*.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-artifacts/**/*
+          # 更新发布说明
+          body: |
+            ## 🎉 SiffCITY Enhanced ${{ github.ref_name }}
+            
+            这是一个开箱即用的、跨平台的全功能影视聚合播放平台。
+            
+            ### ✨ 核心亮点
+            - 💬 **社交聊天系统** - 完整的实时聊天功能。
+            - 🎨 **自定义主题** - 后台管理，高度个性化。
+            - 🎥 **多内容生态** - 集成YouTube、网盘搜索、短剧、IPTV直播等。
+            - 🤖 **AI智能推荐** - 基于GPT模型的个性化内容推荐。
+            - 📊 **弹幕与统计** - 多源弹幕集成与深度播放统计。
+            
+            ### ⚠️ 免责声明
+            - 本软件仅供学习交流使用。
+            - 所有资源来自互联网公开聚合。
+            - 请遵守当地法律法规，支持正版。
+            
+            ---
+            
+            Made with ❤️ by the SiffCITY Team
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

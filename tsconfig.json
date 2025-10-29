@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    // 基础配置
+    "target": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "~/*": ["./public/*"]
+    },
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+
+    // --- 融合点 ---
+    // 1. 采用更现代、更推荐的模块系统
+    "module": "esnext",
+    "moduleResolution": "bundler",
+
+    // 2. 为ES5目标提供的更强的兼容性保障
+    "downlevelIteration": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  
+  // 3. 更具体的排除规则
+  "exclude": ["node_modules", "**/*1.tsx"]
+}

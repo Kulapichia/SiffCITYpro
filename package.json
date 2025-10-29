@@ -1,0 +1,208 @@
+{
+  "name": "moontv",
+  "version": "5.5.8",
+  "private": true,
+  "description": "开箱即用的、跨平台的全功能影视聚合播放平台",
+  "main": "electron/main.js",
+  "keywords": [
+    "danmaku",
+    "danmu",
+    "video-player",
+    "bilibili",
+    "electron",
+    "nextjs",
+    "desktop-app"
+  ],
+  "scripts": {
+    "dev": "pnpm gen:manifest && next dev -H 0.0.0.0",
+    "dev:complex": "pnpm gen:manifest && node dev-server.js",
+    "dev:electron": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:ws": "node standalone-websocket.js",
+    "test:ws": "node test-websocket-connection.js",
+    "debug:api": "node debug-api.js",
+    "build": "pnpm gen:manifest && next build",
+    "build:debug": "pnpm gen:manifest && DEBUG=next:* next build",
+    "start": "NODE_ENV=production node production-final.js",
+    "prod:final": "NODE_ENV=production node production-final.js",
+    "lint": "next lint",
+    "lint:fix": "eslint src --fix && pnpm format",
+    "lint:strict": "eslint --max-warnings=0 src",
+    "typecheck": "tsc --noEmit --incremental false",
+    "test:watch": "jest --watch",
+    "test": "jest",
+    "format": "prettier -w .",
+    "format:check": "prettier -c .",
+    "gen:manifest": "node scripts/generate-manifest.js",
+    "postbuild": "echo 'Build completed - sitemap generation disabled'",
+    "prepare": "husky install",
+    "electron": "electron .",
+    "electron:build": "pnpm build && electron-builder",
+    "electron:build:win": "pnpm build && electron-builder --win --x64",
+    "electron:build:mac": "pnpm build && electron-builder --mac",
+    "electron:build:linux": "pnpm build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
+    "@types/crypto-js": "^4.2.2",
+    "@types/ws": "^8.18.1",
+    "@upstash/redis": "^1.35.5",
+    "@vidstack/react": "^1.12.13",
+    "artplayer": "^5.3.0",
+    "artplayer-plugin-danmuku": "^5.2.0",
+    "bs58": "^6.0.0",
+    "cheerio": "^1.1.2",
+    "clsx": "^2.0.0",
+    "crypto-js": "^4.2.0",
+    "framer-motion": "^12.18.1",
+    "he": "^1.2.0",
+    "hls.js": "^1.6.13",
+    "idb": "^8.0.0",
+    "lucide-react": "^0.460.0",
+    "media-icons": "^1.1.5",
+    "next": "^14.2.30",
+    "next-themes": "^0.4.6",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-icons": "^5.4.0",
+    "react-image-crop": "^11.0.10",
+    "react-window": "^2.2.0",
+    "react-window-infinite-loader": "^1.0.10",
+    "redis": "^5.8.3",
+    "swiper": "^11.2.8",
+    "sweetalert2": "^11.11.0",
+    "tailwind-merge": "^2.6.0",
+    "undici": "^6.19.2",
+    "vidstack": "^0.6.15",
+    "ws": "^8.18.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^16.3.0",
+    "@commitlint/config-conventional": "^16.2.4",
+    "@svgr/webpack": "^8.1.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^15.0.7",
+    "@types/bs58": "^5.0.0",
+    "@types/cheerio": "^1.0.0",
+    "@types/he": "^1.2.3",
+    "@types/node": "24.0.3",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^19.1.6",
+    "@types/react-window": "^2.0.0",
+    "@types/react-window-infinite-loader": "^1.0.9",
+    "@types/testing-library__jest-dom": "^5.14.9",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.30",
+    "eslint-config-prettier": "^8.10.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "husky": "^7.0.4",
+    "jest": "^27.5.1",
+    "lint-staged": "^12.5.0",
+    "next-router-mock": "^0.9.0",
+    "postcss": "^8.5.1",
+    "prettier": "^2.8.8",
+    "prettier-plugin-tailwindcss": "^0.5.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.1",
+    "webpack-obfuscator": "^3.5.1"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{json,css,scss,md,webmanifest}": [
+      "prettier -w"
+    ]
+  },
+  "packageManager": "pnpm@10.14.0",
+  "build": {
+    "appId": "com.siffcity.app",
+    "productName": "SiffCITY",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/**/*",
+      "public/**/*",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/@next/swc-darwin-*/**/*",
+      "!node_modules/@next/swc-linux-*/**/*",
+      "!node_modules/@next/swc-win32-arm64-*/**/*",
+      "!node_modules/@next/swc-win32-ia32-*/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/next/**/*",
+      ".next/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/favicon.ico",
+      "sign": null,
+      "signingHashAlgorithms": []
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "public/logo.png",
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/logo.png",
+      "category": "AudioVideo",
+      "maintainer": "SiffCITY Team",
+      "description": "开箱即用的、跨平台的全功能影视聚合播放平台"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
