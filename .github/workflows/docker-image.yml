@@ -2,7 +2,7 @@
 name: Build & Push Docker Image to Docker Hub
 
 on:
-  # 触发器一：手动触发 (用于生产构建)
+  # 触发器一：手动触发 (用于需要特定参数的生产构建或调试)
   workflow_dispatch:
     inputs:
       tag:
@@ -16,27 +16,30 @@ on:
         default: false
         type: boolean
 
-  # 触发器二：推送到分支或标签 (用于生产构建)
+  # 触发器二：推送到分支或标签 (核心自动化触发器)
   push:
-    branches: [ main, master ] # 对应 dev 标签的构建
-    tags: [ 'v*' ]            # 对应 latest 和版本标签的构建
+    branches: [ main, master ] # 当代码合并到主分支时，触发 'dev' 标签的构建
+    tags: [ 'v*' ]            # 当推送 'v' 开头的标签时 (如 v1.0.0)，触发 'latest' 和版本标签的构建
     paths-ignore:
-      - '**.md'
+      - '**.md' # 如果只修改了 Markdown 文件，则不触发
 
-  # 触发器三：拉取请求 (用于预览构建)
+  # 触发器三：拉取请求 (用于代码合并前的自动化预览)
   pull_request:
     branches: [ main, master ]
     paths-ignore:
       - '**.md'
 
+# 环境变量，在整个工作流中可用
 env:
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO_NAME }}
   REGISTRY: docker.io
 
+# 并发控制，确保同一分支的 workflows 不会同时运行，新的会取消旧的
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 为工作流运行设置权限
 permissions:
   contents: read
   packages: write
@@ -48,7 +51,7 @@ jobs:
   # ====================================================================
   build-and-push-preview:
     name: 🖼️ Build & Push Preview Image for PR
-    # 仅在 pull_request 事件时运行此任务
+    # 条件：仅在事件类型为 'pull_request' 时运行此任务
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     
@@ -59,7 +62,7 @@ jobs:
           sudo apt-get clean
           df -h
 
-      # fetch-depth 必须是 2 才能比较版本
+      # 检出代码，fetch-depth: 2 是为了能比较 HEAD 和 HEAD~1 的差异
       - name: 📥 Checkout source code
         uses: actions/checkout@v4
         with:
@@ -112,7 +115,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          # 预览构建总是需要推送，以便部署到预览环境
+          # 预览构建总是需要推送，以便部署到预览环境进行测试
           push: true
           tags: ${{ steps.meta_preview.outputs.tags }}
           labels: ${{ steps.meta_preview.outputs.labels }}
@@ -130,7 +133,7 @@ jobs:
   # ====================================================================
   build-and-push-production:
     name: 🚀 Build & Push Multi-Platform Image to Docker Hub
-    # 仅在非 pull_request 事件时运行此任务 (即 push 和 workflow_dispatch)
+    # 条件：仅在事件类型不是 'pull_request' 时运行 (即 push 和 workflow_dispatch)
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     
@@ -141,7 +144,6 @@ jobs:
           sudo apt-get clean
           df -h
 
-      # fetch-depth 必须是 2 才能比较版本
       - name: 📥 Checkout source code
         uses: actions/checkout@v4
         with:
@@ -159,6 +161,7 @@ jobs:
       - name: 📜 Generate version and changelog
         run: node scripts/convert-changelog.js
 
+      # 检查 package.json 中的版本号是否发生变化，用于自动打版本标签
       - name: 🔍 Check if version changed in package.json
         id: version_check
         run: |
@@ -217,18 +220,17 @@ jobs:
           echo "====== Builder setup completed successfully ======"
 
       - name: 🔐 Login to Docker Hub
-        # 在生产构建中，我们只在非PR事件中推送，这里是双重保险
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-      # 【新增】再次设置小写的镜像名称 (每个 job 都是独立环境)
+      # 【新增】再次设置小写的镜像名称 (每个 job 都是独立环境，需要重新设置)
       - name: 📝 Set lowercase image name
         run: echo "IMAGE_NAME_LC=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      # 在原有的标签规则基础上，增加一条基于 package.json 的规则
+      # 智能提取 Docker 标签的核心步骤，根据不同触发条件生成不同标签
       - name: 🏷️ Extract intelligent Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -236,36 +238,39 @@ jobs:
           # 【修改】使用新的小写环境变量
           images: ${{ env.IMAGE_NAME_LC }}
           tags: |
-            # 规则一 (dev): 推送到默认分支时打 'dev' 标签
-            # 这用于 CI 检查，确保代码总是可构建和推送的。
+            # 规则一 (dev): 当推送到仓库的默认分支 (main/master) 时，生成 'dev' 标签。
+            # 这是最频繁的构建，代表了最新的开发进度。
             type=raw,value=dev,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
-            # 规则二 (git tag): 推送 "v" 开头 Git 标签时，生成 'latest' 和版本号
+            # 规则二 (git tag): 当推送 "v" 开头的 Git 标签时 (如 v1.2.3)，生成 'latest' 和具体的版本号标签。
+            # 这代表一次正式的发布。
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             
-            # 规则三 (package.json): 如果 package.json 版本变化，也打上版本号标签
+            # 规则三 (package.json): 如果检测到 package.json 的版本号在本次提交中发生了变化，
+            # 自动使用新的版本号作为标签。这是一个很好的补充策略，确保版本更新不会被遗漏。
             type=raw,value=${{ steps.version_check.outputs.current_version }},enable=${{ steps.version_check.outputs.version_changed == 'true' }}
 
-            # 规则四 (手动): 手动触发
+            # 规则四 (手动): 当通过 'workflow_dispatch' 手动触发时，使用输入框中提供的标签，默认为 'latest'。
             type=raw,value=${{ github.event.inputs.tag || 'latest' }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
-            # 规则五 (调试): SHA 标签
+            # 规则五 (调试): 为每一次构建生成一个基于 commit SHA 的短哈希标签，方便精确追溯。
             type=sha,prefix=sha-,format=short
 
-      # 核心构建与推送
+      # 核心构建与推送步骤
       - name: 🚀 Build and push multi-platform image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          # 生产构建时，根据触发条件决定是否推送
+          # 仅在非 pull_request 事件时才真正推送到 Docker Hub
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=multiarch-${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=multiarch-${{ github.workflow }}
+          # 如果手动触发时勾选了 force_rebuild，则不使用缓存
           no-cache: ${{ github.event.inputs.force_rebuild == 'true' }}
           provenance: false
           sbom: false
@@ -275,13 +280,13 @@ jobs:
             SHARP_IGNORE_GLOBAL_LIBVIPS=1
 
   # ====================================================================
-  # Job 3: 清理任务
+  # Job 3: 清理旧的 Workflow Runs 任务
   # ====================================================================
   cleanup:
     runs-on: ubuntu-latest
     # 需要等待两个构建任务都完成后再执行清理
     needs: [build-and-push-preview, build-and-push-production]
-    # 无论成功失败都执行
+    # 无论前面的任务成功还是失败，都执行此清理任务
     if: always()
     steps:
       - name: 🧹 Cleanup workflow runs
