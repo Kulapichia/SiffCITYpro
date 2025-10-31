@@ -22,7 +22,10 @@ type Action =
   | 'batch_delete_invalid'
   | 'batch_import'
   | 'edit'
-  | 'import_defaults';
+  | 'import_defaults'
+  | 'update_adult'
+  | 'batch_mark_adult'
+  | 'batch_unmark_adult';
 
 interface BaseBody {
   action?: Action;
@@ -83,11 +86,12 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'add': {
-        const { key, name, api, detail } = body as {
+        const { key, name, api, detail, is_adult } = body as {
           key?: string;
           name?: string;
           api?: string;
           detail?: string;
+          is_adult?: boolean;
         };
         if (!key || !name || !api) {
           return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -102,6 +106,7 @@ export async function POST(request: NextRequest) {
           detail,
           from: 'custom',
           disabled: false,
+          is_adult: is_adult || false,
         });
         break;
       }
@@ -387,6 +392,45 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           message: `导入完成！成功添加 ${addedCount} 个源，跳过 ${skippedCount} 个（重复或格式错误）。`
         });
+      }
+
+      case 'update_adult': {
+        const { key, is_adult } = body as { key?: string; is_adult?: boolean };
+        if (!key) {
+          return NextResponse.json({ error: '缺少 key 参数' }, { status: 400 });
+        }
+        const entry = adminConfig.SourceConfig.find((s) => s.key === key);
+        if (!entry) {
+          return NextResponse.json({ error: '源不存在' }, { status: 404 });
+        }
+        entry.is_adult = is_adult;
+        break;
+      }
+      case 'batch_mark_adult': {
+        const { keys } = body as { keys?: string[] };
+        if (!Array.isArray(keys) || keys.length === 0) {
+          return NextResponse.json({ error: '缺少 keys 参数或为空' }, { status: 400 });
+        }
+        keys.forEach(key => {
+          const entry = adminConfig.SourceConfig.find((s) => s.key === key);
+          if (entry) {
+            entry.is_adult = true;
+          }
+        });
+        break;
+      }
+      case 'batch_unmark_adult': {
+        const { keys } = body as { keys?: string[] };
+        if (!Array.isArray(keys) || keys.length === 0) {
+          return NextResponse.json({ error: '缺少 keys 参数或为空' }, { status: 400 });
+        }
+        keys.forEach(key => {
+          const entry = adminConfig.SourceConfig.find((s) => s.key === key);
+          if (entry) {
+            entry.is_adult = false;
+          }
+        });
+        break;
       }
       default:
         return NextResponse.json({ error: '未知操作' }, { status: 400 });
