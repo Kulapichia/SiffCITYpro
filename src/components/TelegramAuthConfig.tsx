@@ -9,9 +9,6 @@ interface TelegramAuthConfigProps {
     botToken: string;
     botUsername: string;
     autoRegister: boolean;
-    buttonSize: 'large' | 'medium' | 'small';
-    showAvatar: boolean;
-    requestWriteAccess: boolean;
   };
   onSave: (config: TelegramAuthConfigProps['config']) => Promise<void>;
 }
