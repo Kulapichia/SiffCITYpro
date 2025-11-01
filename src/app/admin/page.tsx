@@ -2862,6 +2862,28 @@ const VideoSourceConfig = ({
       });
   };
 
+  // 通用 API 请求
+  const callSourceApi = async (body: Record<string, any>) => {
+    try {
+      const resp = await fetch('/api/admin/source', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body }),
+      });
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `操作失败: ${resp.status}`);
+      }
+
+      // 成功后刷新配置
+      await refreshConfig();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : '操作失败', showAlert);
+      throw err; // 向上抛出方便调用处判断
+    }
+  };
+
   const handleToggleAdult = async (key: string, is_adult: boolean) => {
     await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
   };
@@ -7701,9 +7723,6 @@ function AdminPageClient() {
                     botToken: '',
                     botUsername: '',
                     autoRegister: true,
-                    buttonSize: 'large',
-                    showAvatar: true,
-                    requestWriteAccess: false,
                     defaultRole: 'user',
                   }
                 }
