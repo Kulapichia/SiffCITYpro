@@ -385,6 +385,7 @@ interface UserConfigProps {
 const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachineCodeUsers }: UserConfigProps) => {
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
+  const [selectedShowAdultContent, setSelectedShowAdultContent] = useState(false);
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
   const [showAddUserGroupForm, setShowAddUserGroupForm] = useState(false);
@@ -401,6 +402,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
   const [newUserGroup, setNewUserGroup] = useState({
     name: '',
     enabledApis: [] as string[],
+    showAdultContent: false,
   });
   const [editingUserGroup, setEditingUserGroup] = useState<{
     name: string;
@@ -655,6 +657,39 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
     });
   };
 
+  const handleToggleAdult = async (key: string, is_adult: boolean) => {
+    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
+  };
+
+  const handleBatchMarkAdult = async (is_adult: boolean) => {
+    if (selectedSources.size === 0) {
+      showAlert({ type: 'warning', title: '请先选择视频源' });
+      return;
+    }
+    const keys = Array.from(selectedSources);
+    const action = is_adult ? 'batch_mark_adult' : 'batch_unmark_adult';
+    const actionName = is_adult ? '批量标记成人' : '批量取消标记';
+
+    setConfirmModal({
+      isOpen: true,
+      title: '确认操作',
+      message: `确定要为选中的 ${keys.length} 个视频源 ${is_adult ? '标记为成人资源' : '取消成人资源标记'} 吗？`,
+      onConfirm: async () => {
+        try {
+          await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
+          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频源`, timer: 2000 });
+          setSelectedSources(new Set());
+        } catch (err) {
+          showAlert({ type: 'error', title: `${actionName}失败`, message: err instanceof Error ? err.message : '操作失败' });
+        }
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      },
+      onCancel: () => {
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      }
+    });
+  };
+  
   // 处理用户选择
   const handleSelectUser = useCallback((username: string, checked: boolean) => {
     setSelectedUsers(prev => {
@@ -4496,6 +4531,7 @@ const SiteConfigComponent = ({
   const [siteSettings, setSiteSettings] = useState<SiteConfig>({
     SiteName: '',
     Announcement: '',
+    ShowAdultContent: false,
     SearchDownstreamMaxPage: 1,
     SiteInterfaceCacheTime: 7200,
     DoubanProxyType: 'cmliussss-cdn-tencent',
@@ -7660,7 +7696,7 @@ function AdminPageClient() {
             >
               <TelegramAuthConfig
                 config={
-                  config?.TelegramAuthConfig || {
+                  config?.SiteConfig.TelegramAuth || {
                     enabled: false,
                     botToken: '',
                     botUsername: '',
