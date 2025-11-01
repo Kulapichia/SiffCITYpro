@@ -147,4 +147,3 @@ export const magicLinkTokens = new Map<string, TelegramTokenData>();
 export function cleanExpiredTokens() {
   // 不再需要手动清理，Redis TTL 会自动处理
 }
-
