@@ -207,7 +207,7 @@ export async function GET(request: Request) {
 
     // 获取管理员配置
     const config = await db.getAdminConfig();
-    const telegramConfig = config?.TelegramAuthConfig;
+    const telegramConfig = config?.SiteConfig.TelegramAuth;
 
     if (!telegramConfig?.enabled) {
       return new NextResponse(
