@@ -36,7 +36,7 @@ interface ConfigFileStruct {
 }
 
 // 在模块加载时根据环境决定配置来源
-let cachedConfig: AdminConfig;
+let cachedConfig: AdminConfig | null;
 
 
 // 从配置文件补充管理员配置
@@ -382,7 +382,7 @@ export async function getConfig(): Promise<AdminConfig> {
   
   // 无论是从数据库读取的还是新初始化的，都进行一次 refine 和 selfCheck
   adminConfig = refineConfig(adminConfig);
-  adminConfig = configSelfCheck(adminConfig);
+  adminConfig = await configSelfCheck(adminConfig);
   
   cachedConfig = adminConfig;
   // 每次获取配置后都保存一次，确保 refineConfig 的结果被持久化
