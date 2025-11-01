@@ -14,7 +14,6 @@ import {
   User,
   UserPlus,
 } from 'lucide-react';
-import { Eye, EyeOff } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
