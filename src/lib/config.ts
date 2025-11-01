@@ -213,6 +213,7 @@ async function getInitConfig(configFile: string, subConfig: {
       DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
+      ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
       FluidSearch:
         process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       RequireDeviceCode:
@@ -394,7 +395,7 @@ export function clearConfigCache(): void {
   cachedConfig = null as any;
 }
 
-export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
+export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminConfig> {
   // 确保必要的属性存在和初始化
   if (!adminConfig.UserConfig) {
     adminConfig.UserConfig = { AllowRegister: true, Users: [] };
@@ -482,6 +483,36 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
       enabledRegions: ['US', 'CN', 'JP', 'KR', 'GB', 'DE', 'FR'], // 默认启用的地区
       enabledCategories: ['Film & Animation', 'Music', 'Gaming', 'News & Politics', 'Entertainment'] // 默认启用的分类
     };
+  }
+
+  // 🔥 关键修复：每次都从数据库获取最新的用户列表
+  try {
+    const dbUsers = await db.getAllUsers();
+    const ownerUser = process.env.USERNAME;
+
+    // 创建用户列表：保留数据库中存在的用户的配置信息
+    const updatedUsers = dbUsers.map(username => {
+      // 查找现有配置中是否有这个用户
+      const existingUserConfig = adminConfig.UserConfig.Users.find(u => u.username === username);
+
+      if (existingUserConfig) {
+        // 保留现有配置
+        return existingUserConfig;
+      } else {
+        // 新用户，创建默认配置
+        return {
+          username,
+          role: username === ownerUser ? ('owner' as const) : ('user' as const),
+          banned: false,
+        };
+      }
+    });
+
+    // 更新用户列表
+    adminConfig.UserConfig.Users = updatedUsers;
+  } catch (e) {
+    console.error('获取最新用户列表失败:', e);
+    // 失败时继续使用现有配置
   }
 
   // 站长变更自检
