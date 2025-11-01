@@ -51,7 +51,55 @@ import { VersionPanel } from './VersionPanel';
 import VideoCard from './VideoCard';
 import { useToast } from './Toast';
 import { speedTestAllSources } from './SourceAvailabilityChecker';
+const MIN_PLAY_TIME_SECONDS = 120; // 最小播放时间，单位：秒
+const CONTINUE_WATCHING_LIMIT = 12; // 继续观看列表显示数量
 
+/**
+ * 计算单个播放记录的进度百分比
+ * @param record - 播放记录对象
+ * @returns 进度百分比 (0-100)
+ */
+const getProgressForRecord = (record: PlayRecord): number => {
+  if (record.total_time === 0) return 0;
+  return (record.play_time / record.total_time) * 100;
+};
+
+/**
+ * 集中处理、筛选和排序播放记录的辅助函数
+ * @param records - 从数据库获取的原始播放记录
+ * @param enableFilter - 是否启用进度筛选
+ * @param minProgress - 最小进度
+ * @param maxProgress - 最大进度
+ * @returns 处理后的播放记录数组
+ */
+const processPlayRecords = (
+  records: Record<string, PlayRecord>,
+  enableFilter: boolean,
+  minProgress: number,
+  maxProgress: number
+): (PlayRecord & { key: string })[] => {
+  const recordsArray = Object.entries(records).map(([key, record]) => ({
+    ...record,
+    key,
+  }));
+
+  const validPlayRecords = recordsArray.filter(record => {
+    // 过滤条件1：播放时间必须超过阈值
+    if (record.play_time < MIN_PLAY_TIME_SECONDS) return false;
+
+    // 过滤条件2：如果未启用进度筛选，则直接返回 true
+    if (!enableFilter) return true;
+
+    // 过滤条件3：根据用户自定义的进度范围进行筛选
+    const progress = getProgressForRecord(record);
+    return progress >= minProgress && progress <= maxProgress;
+  });
+
+  // 按最后播放时间降序排列，并截取指定数量
+  return validPlayRecords
+    .sort((a, b) => b.save_time - a.save_time)
+    .slice(0, CONTINUE_WATCHING_LIMIT);
+};
 interface AuthInfo {
   username?: string;
   role?: 'owner' | 'admin' | 'user';
@@ -483,82 +531,50 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
     }
   }, [authInfo, storageType]);
 
-  // 加载播放记录（优化版）
+  // 加载播放记录（优化版，已重构）
   useEffect(() => {
     if (typeof window !== 'undefined' && authInfo?.username && storageType !== 'localstorage') {
-      const loadPlayRecords = async () => {
+      
+      const loadAndProcessRecords = async () => {
         try {
           const records = await getAllPlayRecords();
-          const recordsArray = Object.entries(records).map(([key, record]) => ({
-            ...record,
-            key,
-          }));
-
-          // 筛选真正需要继续观看的记录
-          const validPlayRecords = recordsArray.filter(record => {
-            const progress = getProgress(record);
-
-            // 播放时间必须超过2分钟
-            if (record.play_time < 120) return false;
-
-            // 如果禁用了进度筛选，则显示所有播放时间超过2分钟的记录
-            if (!enableContinueWatchingFilter) return true;
-
-            // 根据用户自定义的进度范围筛选
-            return progress >= continueWatchingMinProgress && progress <= continueWatchingMaxProgress;
-          });
-
-          // 按最后播放时间降序排列
-          const sortedRecords = validPlayRecords.sort((a, b) => b.save_time - a.save_time);
-          setPlayRecords(sortedRecords.slice(0, 12)); // 只取最近的12个
+          const processedRecords = processPlayRecords(
+            records,
+            enableContinueWatchingFilter,
+            continueWatchingMinProgress,
+            continueWatchingMaxProgress
+          );
+          setPlayRecords(processedRecords);
         } catch (error) {
           console.error('加载播放记录失败:', error);
         }
       };
 
-      loadPlayRecords();
+      // 初始加载
+      loadAndProcessRecords();
 
-      // 监听播放记录更新事件（修复删除记录后页面不立即更新的问题）
+      // 监听播放记录更新事件（例如，删除记录后触发）
       const handlePlayRecordsUpdate = () => {
-        console.log('UserMenu: 播放记录更新，重新加载继续观看列表');
-        loadPlayRecords();
+        console.log('UserMenu: 监听到 playRecordsUpdated 事件，重新加载...');
+        loadAndProcessRecords();
       };
-
-      // 监听播放记录更新事件
       window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
 
-      // 🔥 新增：监听watching-updates事件，与ContinueWatching组件保持一致
+      // 监听新剧集更新事件，强制刷新缓存并重新加载
       const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
-        console.log('UserMenu: 收到watching-updates事件');
-
-        // 当检测到新集数更新时，强制刷新播放记录缓存确保数据同步
         const updates = getDetailedWatchingUpdates();
         if (updates && updates.hasUpdates && updates.updatedCount > 0) {
-          console.log('UserMenu: 检测到新集数更新，强制刷新播放记录缓存');
+          console.log('UserMenu: 监听到新剧集更新，强制刷新缓存并重新加载...');
           forceRefreshPlayRecordsCache();
-
-          // 短暂延迟后重新获取播放记录，确保缓存已刷新
-          setTimeout(async () => {
-            const freshRecords = await getAllPlayRecords();
-            const recordsArray = Object.entries(freshRecords).map(([key, record]) => ({
-              ...record,
-              key,
-            }));
-            const validPlayRecords = recordsArray.filter(record => {
-              const progress = getProgress(record);
-              if (record.play_time < 120) return false;
-              if (!enableContinueWatchingFilter) return true;
-              return progress >= continueWatchingMinProgress && progress <= continueWatchingMaxProgress;
-            });
-            const sortedRecords = validPlayRecords.sort((a, b) => b.save_time - a.save_time);
-            setPlayRecords(sortedRecords.slice(0, 12));
-          }, 100);
+          // 短暂延迟以确保缓存刷新完成
+          setTimeout(loadAndProcessRecords, 150); 
         }
       });
 
+      // 组件卸载时清理监听器
       return () => {
         window.removeEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
-        unsubscribeWatchingUpdates(); // 🔥 清理watching-updates订阅
+        unsubscribeWatchingUpdates();
       };
     }
   }, [authInfo, storageType, enableContinueWatchingFilter, continueWatchingMinProgress, continueWatchingMaxProgress]);
@@ -747,12 +763,6 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
   const parseKey = (key: string) => {
     const [source, id] = key.split('+');
     return { source, id };
-  };
-
-  // 计算播放进度百分比
-  const getProgress = (record: PlayRecord) => {
-    if (record.total_time === 0) return 0;
-    return (record.play_time / record.total_time) * 100;
   };
 
   // 检查播放记录是否有新集数更新
@@ -2748,7 +2758,7 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
               const newEpisodesCount = getNewEpisodesCount(record);
               return (
                 <div key={record.key} className='relative group/card'>
-                  <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                  <div className='relative group-hover/card:z-[5] transition-all duration-300'>
                     <VideoCard
                       id={id}
                     title={record.title}
@@ -2756,7 +2766,7 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
                     year={record.year}
                     source={source}
                     source_name={record.source_name}
-                    progress={getProgress(record)}
+                    progress={getProgressForRecord(record)}
                     episodes={record.total_episodes}
                     currentEpisode={record.index}
                     query={record.search_title}
@@ -2767,22 +2777,22 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
                   </div>
                   {/* 新集数徽章 */}
                   {newEpisodesCount > 0 && (
-                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                       +{newEpisodesCount}集
                     </div>
                   )}
                   {/* 进度指示器 */}
-                  {getProgress(record) > 0 && (
+                  {getProgressForRecord(record) > 0 && (
                     <div className='absolute bottom-2 left-2 right-2 bg-black/50 rounded px-2 py-1'>
                       <div className='flex items-center gap-1'>
                         <div className='flex-1 bg-gray-600 rounded-full h-1'>
                           <div
                             className='bg-blue-500 h-1 rounded-full transition-all'
-                            style={{ width: `${Math.min(getProgress(record), 100)}%` }}
+                            style={{ width: `${Math.min(getProgressForRecord(record), 100)}%` }}
                           />
                         </div>
                         <span className='text-xs text-white font-medium'>
-                          {Math.round(getProgress(record))}%
+                          {Math.round(getProgressForRecord(record))}%
                         </span>
                       </div>
                     </div>
