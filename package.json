@@ -1,6 +1,6 @@
 {
   "name": "moontv",
-  "version": "5.6.0",
+  "version": "5.6.1",
   "private": true,
   "description": "开箱即用的、跨平台的全功能影视聚合播放平台",
   "main": "electron/main.js",
