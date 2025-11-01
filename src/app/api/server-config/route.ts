@@ -19,14 +19,6 @@ export async function GET(request: NextRequest) {
     LinuxDoOAuth: {
       enabled: config.SiteConfig.LinuxDoOAuth?.enabled || false,
     },
-    TelegramAuth: {
-      enabled: config.SiteConfig.TelegramAuth?.enabled || false,
-      botName: config.SiteConfig.TelegramAuth?.botName || '',
-      botUsername: (config.SiteConfig.TelegramAuth as any)?.botUsername || '',
-      buttonSize: (config.SiteConfig.TelegramAuth as any)?.buttonSize || 'large',
-      showAvatar: (config.SiteConfig.TelegramAuth as any)?.showAvatar ?? true,
-      requestWriteAccess: (config.SiteConfig.TelegramAuth as any)?.requestWriteAccess ?? false,
-    },
   };
   // 添加 Telegram 登录配置（仅公开必要信息）
   if (config.TelegramAuthConfig?.enabled) {
@@ -34,9 +26,6 @@ export async function GET(request: NextRequest) {
     result.TelegramAuthConfig = {
       enabled: true,
       botUsername: config.TelegramAuthConfig.botUsername,
-      buttonSize: config.TelegramAuthConfig.buttonSize || 'large',
-      showAvatar: config.TelegramAuthConfig.showAvatar ?? true,
-      requestWriteAccess: config.TelegramAuthConfig.requestWriteAccess ?? false,
       // 注意：不返回 botToken，保护敏感信息
     };
   } else {
