@@ -7,6 +7,17 @@ import { searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
 import { yellowWords } from '@/lib/yellow';
 
+// 将所有风险词汇扁平化为一个数组，以便于搜索
+const allYellowWords = [
+  ...yellowWords.criticalRisk,
+  ...yellowWords.highRisk,
+  ...yellowWords.mediumHighRisk,
+  ...yellowWords.mediumRisk,
+  ...yellowWords.lowRisk,
+  ...yellowWords.evasionPatterns,
+  ...Object.values(yellowWords.international).flat(),
+];
+
 export const runtime = 'nodejs';
 
 /**
@@ -108,7 +119,7 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. 检查分类名称是否包含敏感关键词
-        if (yellowWords.some((word: string) => typeName.includes(word))) {
+        if (allYellowWords.some((word: string) => typeName.includes(word))) {
           return false;
         }
 
