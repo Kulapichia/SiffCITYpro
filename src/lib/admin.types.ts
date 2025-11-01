@@ -28,7 +28,7 @@ export interface OAuthConfig {
 export interface TelegramConfig {
   enabled: boolean; // Telegram 登录开关
   autoRegister: boolean; // 自动注册开关
-  botName: string; // Bot 用户名
+  botUsername: string; // 修正字段名为 botUsername
   botToken: string; // Bot Token
   defaultRole: 'user' | 'admin'; // 自动注册默认角色
 }
