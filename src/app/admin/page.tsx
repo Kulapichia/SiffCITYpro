@@ -4539,7 +4539,7 @@ const SiteConfigComponent = ({
     TelegramAuth: {
       enabled: false,
       autoRegister: false,
-      botName: '',
+      botUsername: '',
       botToken: '',
       defaultRole: 'user',
     },
