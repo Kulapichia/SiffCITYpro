@@ -14,6 +14,7 @@ import {
   User,
   UserPlus,
 } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
@@ -89,6 +90,9 @@ function LoginPageClient() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [oauthEnabled, setOauthEnabled] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [bgImageUrl, setBgImageUrl] = useState('');
   // 新增 Telegram 状态
   const [telegramAuthEnabled, setTelegramAuthEnabled] = useState(false);
   const [telegramBotName, setTelegramBotName] = useState('');
@@ -138,6 +142,14 @@ function LoginPageClient() {
         setRememberMe(true); // Check remember me if username is found
       }
     }
+    // 获取Bing每日壁纸
+    fetch('/api/bing-wallpaper')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.url) {
+          setBgImageUrl(data.url);
+        }
+      });
     // 获取服务器配置
     fetch('/api/server-config')
       .then((res) => res.json())
