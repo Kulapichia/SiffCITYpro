@@ -285,9 +285,10 @@ export async function GET(request: NextRequest) {
     let showAdultContent = config.SiteConfig.ShowAdultContent;
 
     if (currentUser) {
+      const user = config.UserConfig.Users.find(u => u.username === currentUser.username);
       // 用户级别优先
-      if (currentUser.showAdultContent !== undefined) {
-        showAdultContent = currentUser.showAdultContent;
+      if (user && user.showAdultContent !== undefined) {
+        showAdultContent = user.showAdultContent;
       }
       // 如果用户没有设置，检查用户组设置
       else {
