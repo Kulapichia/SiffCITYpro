@@ -283,7 +283,7 @@ async function getInitConfig(configFile: string, subConfig: {
       TelegramAuth: {
         enabled: false,
         autoRegister: false,
-        botName: '',
+        botUsername: '',
         botToken: '',
         defaultRole: 'user',
       },
@@ -445,7 +445,7 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
     adminConfig.SiteConfig.TelegramAuth = {
       enabled: false,
       autoRegister: false,
-      botName: '',
+      botUsername: '',
       botToken: '',
       defaultRole: 'user',
     };
