@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     // 获取管理员配置
     const config = await db.getAdminConfig();
-    const telegramConfig = config?.TelegramAuthConfig;
+    const telegramConfig = config?.SiteConfig.TelegramAuth;
 
     if (!telegramConfig?.enabled || !telegramConfig.botToken) {
       console.log('[Webhook] Telegram not configured');
