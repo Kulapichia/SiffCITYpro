@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       deepLink: deepLink,
-      botUsername: botUsername,
+      botName: botUsername,
     });
   } catch (error) {
     console.error('Magic link send error:', error);
