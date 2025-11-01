@@ -487,7 +487,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
         await refreshConfig();
 
         if (action === 'add') {
-          setNewUserGroup({ name: '', enabledApis: [] });
+          setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
           setShowAddUserGroupForm(false);
         } else if (action === 'edit') {
           setEditingUserGroup(null);
@@ -657,39 +657,6 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
     });
   };
 
-  const handleToggleAdult = async (key: string, is_adult: boolean) => {
-    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
-  };
-
-  const handleBatchMarkAdult = async (is_adult: boolean) => {
-    if (selectedSources.size === 0) {
-      showAlert({ type: 'warning', title: '请先选择视频源' });
-      return;
-    }
-    const keys = Array.from(selectedSources);
-    const action = is_adult ? 'batch_mark_adult' : 'batch_unmark_adult';
-    const actionName = is_adult ? '批量标记成人' : '批量取消标记';
-
-    setConfirmModal({
-      isOpen: true,
-      title: '确认操作',
-      message: `确定要为选中的 ${keys.length} 个视频源 ${is_adult ? '标记为成人资源' : '取消成人资源标记'} 吗？`,
-      onConfirm: async () => {
-        try {
-          await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
-          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频源`, timer: 2000 });
-          setSelectedSources(new Set());
-        } catch (err) {
-          showAlert({ type: 'error', title: `${actionName}失败`, message: err instanceof Error ? err.message : '操作失败' });
-        }
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
-      },
-      onCancel: () => {
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
-      }
-    });
-  };
-  
   // 处理用户选择
   const handleSelectUser = useCallback((username: string, checked: boolean) => {
     setSelectedUsers(prev => {
@@ -1808,7 +1775,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
       {showAddUserGroupForm && createPortal(
         <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowAddUserGroupForm(false);
-          setNewUserGroup({ name: '', enabledApis: [] });
+          setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
         }}>
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto' onClick={(e) => e.stopPropagation()}>
             <div className='p-6'>
@@ -1819,7 +1786,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                 <button
                   onClick={() => {
                     setShowAddUserGroupForm(false);
-                    setNewUserGroup({ name: '', enabledApis: [] });
+                    setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
                   }}
                   className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
                 >
@@ -2893,6 +2860,39 @@ const VideoSourceConfig = ({
       .catch(() => {
         console.error('操作失败', 'sort', order);
       });
+  };
+
+  const handleToggleAdult = async (key: string, is_adult: boolean) => {
+    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
+  };
+
+  const handleBatchMarkAdult = async (is_adult: boolean) => {
+    if (selectedSources.size === 0) {
+      showAlert({ type: 'warning', title: '请先选择视频源' });
+      return;
+    }
+    const keys = Array.from(selectedSources);
+    const action = is_adult ? 'batch_mark_adult' : 'batch_unmark_adult';
+    const actionName = is_adult ? '批量标记成人' : '批量取消标记';
+
+    setConfirmModal({
+      isOpen: true,
+      title: '确认操作',
+      message: `确定要为选中的 ${keys.length} 个视频源 ${is_adult ? '标记为成人资源' : '取消成人资源标记'} 吗？`,
+      onConfirm: async () => {
+        try {
+          await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
+          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频源`, timer: 2000 });
+          setSelectedSources(new Set());
+        } catch (err) {
+          showAlert({ type: 'error', title: `${actionName}失败`, message: err instanceof Error ? err.message : '操作失败' });
+        }
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      },
+      onCancel: () => {
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      }
+    });
   };
 
   // 有效性检测函数
@@ -7704,6 +7704,7 @@ function AdminPageClient() {
                     buttonSize: 'large',
                     showAvatar: true,
                     requestWriteAccess: false,
+                    defaultRole: 'user',
                   }
                 }
                 onSave={async (newConfig) => {
@@ -7713,7 +7714,10 @@ function AdminPageClient() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       ...config,
-                      TelegramAuthConfig: newConfig,
+                      SiteConfig: { // 修正保存路径
+                        ...config.SiteConfig,
+                        TelegramAuth: newConfig,
+                      },
                     }),
                   });
                   await fetchConfig();
