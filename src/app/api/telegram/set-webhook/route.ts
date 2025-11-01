@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     // 获取管理员配置
     const config = await db.getAdminConfig();
-    const telegramConfig = config?.TelegramAuthConfig;
+    const telegramConfig = config?.SiteConfig.TelegramAuth;
 
     if (!telegramConfig?.enabled || !telegramConfig.botToken) {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const config = await db.getAdminConfig();
-    const telegramConfig = config?.TelegramAuthConfig;
+    const telegramConfig = config?.SiteConfig.TelegramAuth;
 
     if (!telegramConfig?.enabled || !telegramConfig.botToken) {
       return NextResponse.json(
