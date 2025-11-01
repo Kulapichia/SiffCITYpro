@@ -84,14 +84,11 @@ function LoginPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState<string>('');
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [oauthEnabled, setOauthEnabled] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [bgImageUrl, setBgImageUrl] = useState('');
 
   // Telegram Magic Link 状态
@@ -173,7 +170,7 @@ function LoginPageClient() {
           console.log('[Login] Telegram Magic Link is enabled!');
           setTelegramEnabled(true);
         } else {
-          cconsole.log('[Login] Telegram Magic Link is NOT enabled');
+          console.log('[Login] Telegram Magic Link is NOT enabled');
         }
       })
       .catch(() => {
