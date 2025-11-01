@@ -232,7 +232,7 @@ export default function CacheManager() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">
-                {CACHE_TYPES.length}
+                {Object.keys(CACHE_TYPES).length}
               </div>
               <div className="text-blue-100">缓存类型</div>
             </div>
