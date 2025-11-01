@@ -9,6 +9,9 @@ interface TelegramAuthConfigProps {
     botToken: string;
     botUsername: string;
     autoRegister: boolean;
+    buttonSize: 'large' | 'medium' | 'small';
+    showAvatar: boolean;
+    requestWriteAccess: boolean;
   };
   onSave: (config: TelegramAuthConfigProps['config']) => Promise<void>;
 }
@@ -185,6 +188,7 @@ export function TelegramAuthConfig({ config, onSave }: TelegramAuthConfigProps) 
         </div>
       </div>
 
+
       {/* 消息提示 */}
       {message && (
         <div
@@ -217,4 +221,3 @@ export function TelegramAuthConfig({ config, onSave }: TelegramAuthConfigProps) 
     </div>
   );
 }
-
