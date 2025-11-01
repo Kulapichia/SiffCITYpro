@@ -2706,34 +2706,12 @@ const VideoSourceConfig = ({
   useEffect(() => {
     setSelectedSources(new Set());
   }, [filterStatus, filterValidity]);
-  
-  // 通用 API 请求
-  const callLiveSourceApi = async (body: Record<string, any>) => {
-    try {
-      const resp = await fetch('/api/admin/source', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body }),
-      });
-
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data.error || `操作失败: ${resp.status}`);
-      }
-
-      // 成功后刷新配置
-      await refreshConfig();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : '操作失败', showAlert);
-      throw err; // 向上抛出方便调用处判断
-    }
-  };
 
   const handleToggleEnable = (key: string) => {
     const target = sources.find((s) => s.key === key);
     if (!target) return;
     const action = target.disabled ? 'enable' : 'disable';
-    withLoading(`toggleLiveSource_${key}`, () => callLiveSourceApi({ action, key })).catch(() => {
+    withLoading(`toggleSource_${key}`, () => callSourceApi({ action, key })).catch(() => {
       console.error('操作失败', action, key);
     });
   };
@@ -5894,6 +5872,7 @@ const LiveSourceConfig = ({
   };
 
   const handleToggleEnable = (key: string) => {
+    const target = liveSources.find((s) => s.key === key);
     if (!target) return;
     const action = target.disabled ? 'enable' : 'disable';
     withLoading(`toggleLiveSource_${key}`, () => callLiveSourceApi({ action, key })).catch(() => {
