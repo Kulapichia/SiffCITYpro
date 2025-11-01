@@ -306,6 +306,7 @@ function LoginPageClient() {
 
       if (res.ok && data.deepLink) {
         setTelegramDeepLink(data.deepLink);
+        setTelegramBotName(data.botName || ''); // 使用 botName
         // 自动打开 Telegram
         window.open(data.deepLink, '_blank');
       } else {
