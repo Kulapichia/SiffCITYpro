@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Send,
   Shield,
   Sparkles,
   User,
@@ -88,9 +89,13 @@ function LoginPageClient() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [oauthEnabled, setOauthEnabled] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
-  // 新增 Telegram 状态
-  const [telegramAuthEnabled, setTelegramAuthEnabled] = useState(false);
-  const [telegramBotName, setTelegramBotName] = useState('');
+  const [bgImageUrl, setBgImageUrl] = useState('');
+
+  // Telegram Magic Link 状态
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramDeepLink, setTelegramDeepLink] = useState('');
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [telegramUsername, setTelegramUsername] = useState('');
   // 机器码相关状态
   const [machineCode, setMachineCode] = useState<string>('');
   const [deviceInfo, setDeviceInfo] = useState<string>('');
@@ -120,7 +125,7 @@ function LoginPageClient() {
 
   // 在客户端挂载后设置配置
   useEffect(() => {
-    // Load remembered username
+    // "记住我" 功能：读取本地存储的用户名和密码
     if (typeof window !== 'undefined') {
       const rememberedUsername = localStorage.getItem('rememberedUsername');
       const rememberedPassword = localStorage.getItem('rememberedPassword');
@@ -129,9 +134,17 @@ function LoginPageClient() {
         if (rememberedPassword) {
           setPassword(rememberedPassword);
         }
-        setRememberMe(true); // Check remember me if username is found
+        setRememberMe(true); // 如果有记住的用户名，自动勾选“记住我”
       }
     }
+    // 获取Bing每日壁纸
+    fetch('/api/bing-wallpaper')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.url) {
+          setBgImageUrl(data.url);
+        }
+      });
     // 获取服务器配置
     fetch('/api/server-config')
       .then((res) => res.json())
@@ -152,15 +165,20 @@ function LoginPageClient() {
         }
 
         setOauthEnabled(data.LinuxDoOAuth?.enabled || false);
-        setTelegramAuthEnabled(data.TelegramAuth?.enabled || false);
-        setTelegramBotName(data.TelegramAuth?.botName || '');
+
+        // 检查后端实际返回的 `TelegramAuth` 属性
+        if (data.TelegramAuth?.enabled) {
+          console.log('[Login] Telegram Magic Link is enabled!');
+          setTelegramEnabled(true);
+        } else {
+          console.log('[Login] Telegram Magic Link is NOT enabled');
+        }
       })
       .catch(() => {
         setRegistrationEnabled(false);
         setShouldAskUsername(false);
         setOauthEnabled(false);
-        setTelegramAuthEnabled(false);
-        setTelegramBotName('');
+
       });
 
     // 检查 URL 参数中的成功消息和 OAuth 错误
@@ -256,37 +274,44 @@ function LoginPageClient() {
     window.location.href = '/api/oauth/authorize';
   };
 
-  // 新增：Telegram 登录按钮组件
-  const TelegramLoginButton = ({ botName }: { botName: string }) => {
-    useEffect(() => {
-      // 创建并注入 Telegram 的官方 widget 脚本
-      const script = document.createElement('script');
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.async = true;
-      script.setAttribute('data-telegram-login', botName);
-      script.setAttribute('data-size', 'large'); // 按钮大小: small, medium, large
+  // 生成 Telegram 登录链接
+  const handleTelegramLogin = async () => {
+    console.log('[Frontend] Telegram login clicked');
+    setError(null);
 
-      // 这会告诉 Telegram 登录成功后，将浏览器重定向到我们的后端 API
-      const callbackUrl = new URL(
-        '/api/oauth/telegram/callback',
-        window.location.origin,
-      ).toString();
-      script.setAttribute('data-auth-url', callbackUrl);
-      script.setAttribute('data-request-access', 'write'); // 请求写入权限
+    // 验证 Telegram 用户名
+    if (!telegramUsername || telegramUsername.trim() === '') {
+      setError('请输入您的 Telegram 用户名');
+      return;
+    }
 
-      // 将脚本添加到容器中
-      const container = document.getElementById('telegram-login-container');
-      if (container) {
-        // 清理旧脚本，防止重复渲染
-        while (container.firstChild) {
-          container.removeChild(container.firstChild);
-        }
-        container.appendChild(script);
+    setTelegramLoading(true);
+
+    try {
+      console.log('[Frontend] Generating deep link for user:', telegramUsername);
+      const res = await fetch('/api/telegram/send-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramUsername: telegramUsername.trim() }),
+      });
+
+      const data = await res.json();
+      console.log('[Frontend] API response:', { ok: res.ok, status: res.status, data });
+
+      if (res.ok && data.deepLink) {
+        setTelegramDeepLink(data.deepLink);
+
+        // 自动打开 Telegram
+        window.open(data.deepLink, '_blank');
+      } else {
+        setError(data.error || '生成链接失败，请重试');
       }
-    }, [botName]);
-
-    // 这是 Telegram widget 脚本将要挂载的 DOM 节点
-    return <div id='telegram-login-container'></div>;
+    } catch (error) {
+      console.error('[Frontend] Error:', error);
+      setError('网络错误，请稍后重试');
+    } finally {
+      setTelegramLoading(false);
+    }
   };
 
   return (
@@ -550,7 +575,7 @@ function LoginPageClient() {
             </button>
 
             {/* 其他登录方式 */}
-            {(oauthEnabled || telegramAuthEnabled) && (
+            {oauthEnabled && (
               <>
                 <div className='flex items-center'>
                   <div className='flex-1 border-t border-gray-200 dark:border-gray-700'></div>
@@ -585,15 +610,68 @@ function LoginPageClient() {
                   </button>
                 )}
 
-                {/* Telegram 登录按钮 */}
-                {telegramAuthEnabled && telegramBotName && (
-                  <div className='flex justify-center'>
-                    <TelegramLoginButton
-                      botName={telegramBotName.replace(/^@/, '')}
+              </>
+            )}
+
+            {/* Telegram Magic Link 登录 */}
+            {telegramEnabled && (
+              <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700'>
+                <p className='text-center text-gray-600 dark:text-gray-400 text-sm mb-4'>
+                  或使用 Telegram 登录
+                </p>
+
+                {/* Telegram 用户名输入 */}
+                <div className='mb-4'>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                    Telegram 用户名
+                  </label>
+                  <div className='relative'>
+                    <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+                      <Send className='h-5 w-5 text-gray-400' />
+                    </div>
+                    <input
+                      type='text'
+                      value={telegramUsername}
+                      onChange={(e) => setTelegramUsername(e.target.value)}
+                      placeholder='输入您的 Telegram 用户名'
+                      className='block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all'
+                      disabled={telegramLoading}
                     />
                   </div>
+                  <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+                    💡 输入您的 Telegram 用户名（不含 @）
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleTelegramLogin}
+                  disabled={telegramLoading || !telegramUsername.trim()}
+                  className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden'
+                >
+                  <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+                  <Send className='h-5 w-5' />
+                  {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
+                </button>
+
+                {telegramDeepLink && (
+                  <div className='mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50'>
+                    <p className='text-sm text-blue-800 dark:text-blue-200 mb-2'>
+                      📱 已在新标签页打开 Telegram
+                    </p>
+                    <p className='text-xs text-blue-600 dark:text-blue-300'>
+                      如果没有自动打开，请点击{' '}
+                      <a
+                        href={telegramDeepLink}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='underline font-semibold'
+                      >
+                        这里
+                      </a>
+                    </p>
+                  </div>
                 )}
-              </>
+              </div>
             )}
 
             {/* 注册链接 - 仅在非 localStorage 模式下显示 */}

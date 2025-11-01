@@ -29,6 +29,7 @@ import {
   EpisodeSkipConfig,
   SkipSegment,
 } from '@/lib/db.client';
+import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal';
 import { getDoubanDetails } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -6272,6 +6273,8 @@ function PlayPageClient() {
 
   return (
     <PageLayout activePath='/play'>
+      {/* Telegram 新用户欢迎弹窗 */}
+      <TelegramWelcomeModal />
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
         {/* 第一行：影片标题 */}
         <div className='py-1'>

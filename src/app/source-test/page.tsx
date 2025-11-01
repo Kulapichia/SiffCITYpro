@@ -4,7 +4,7 @@ import { ArrowLeftIcon, MagnifyingGlassIcon, ShieldExclamationIcon } from '@hero
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { getAuthInfoFromBrowserCookie } from '@/lib/auth'; // 引入项目A的认证工具
+// import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import SourceTestModule from '@/components/SourceTestModule';
 
 export default function SourceTestPage() {
@@ -13,12 +13,34 @@ export default function SourceTestPage() {
 
   useEffect(() => {
 
-    const auth = getAuthInfoFromBrowserCookie();
-    if (auth && (auth.role === 'admin' || auth.role === 'owner')) {
-      setAccessStatus('authorized');
-    } else {
-      setAccessStatus('unauthorized');
-    }
+    let cancelled = false;
+
+    const verifyAccess = async () => {
+      try {
+        const response = await fetch('/api/admin/role', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('forbidden');
+        }
+
+        if (!cancelled) {
+          setAccessStatus('authorized');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAccessStatus('unauthorized');
+        }
+      }
+    };
+
+    verifyAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (accessStatus === 'checking') {

@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType,
       DoubanImageProxy,
       DisableYellowFilter,
+      ShowAdultContent,
       FluidSearch,
       EnableVirtualScroll,
       EnableRegistration,
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType: string;
       DoubanImageProxy: string;
       DisableYellowFilter: boolean;
+      ShowAdultContent: boolean;
       FluidSearch: boolean;
       EnableVirtualScroll: boolean;
       EnableRegistration: boolean;
@@ -166,6 +168,7 @@ export async function POST(request: NextRequest) {
       DoubanImageProxyType,
       DoubanImageProxy,
       DisableYellowFilter,
+      ShowAdultContent,
       FluidSearch,
       EnableVirtualScroll,
       EnableRegistration,

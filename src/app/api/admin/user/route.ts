@@ -307,7 +307,10 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const { enabledApis } = body as { enabledApis?: string[] };
+        const { enabledApis, showAdultContent } = body as {
+          enabledApis?: string[];
+          showAdultContent?: boolean;
+        };
 
         // 权限检查：站长可配置所有人的采集源，管理员可配置普通用户和自己的采集源
         if (
@@ -328,15 +331,19 @@ export async function POST(request: NextRequest) {
           // 如果为空数组或未提供，则删除该字段，表示无限制
           delete targetEntry.enabledApis;
         }
-
+        // 更新用户的成人内容显示权限
+        if (showAdultContent !== undefined) {
+          targetEntry.showAdultContent = showAdultContent;
+        }
         break;
       }
       case 'userGroup': {
         // 用户组管理操作
-        const { groupAction, groupName, enabledApis } = body as {
+        const { groupAction, groupName, enabledApis, showAdultContent } = body as {
           groupAction: 'add' | 'edit' | 'delete';
           groupName: string;
           enabledApis?: string[];
+          showAdultContent?: boolean;
         };
 
         if (!adminConfig.UserConfig.Tags) {
@@ -352,6 +359,7 @@ export async function POST(request: NextRequest) {
             adminConfig.UserConfig.Tags.push({
               name: groupName,
               enabledApis: enabledApis || [],
+              showAdultContent: showAdultContent || false,
             });
             break;
           }
@@ -361,6 +369,9 @@ export async function POST(request: NextRequest) {
               return NextResponse.json({ error: '用户组不存在' }, { status: 404 });
             }
             adminConfig.UserConfig.Tags[groupIndex].enabledApis = enabledApis || [];
+            if (showAdultContent !== undefined) {
+              adminConfig.UserConfig.Tags[groupIndex].showAdultContent = showAdultContent;
+            }
             break;
           }
           case 'delete': {
