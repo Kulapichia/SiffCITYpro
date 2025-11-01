@@ -84,6 +84,7 @@ function LoginPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [bingWallpaper, setBingWallpaper] = useState<string>('');
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -125,7 +126,7 @@ function LoginPageClient() {
 
   // 在客户端挂载后设置配置
   useEffect(() => {
-    // Load remembered username
+    // "记住我" 功能：读取本地存储的用户名和密码
     if (typeof window !== 'undefined') {
       const rememberedUsername = localStorage.getItem('rememberedUsername');
       const rememberedPassword = localStorage.getItem('rememberedPassword');
@@ -134,7 +135,7 @@ function LoginPageClient() {
         if (rememberedPassword) {
           setPassword(rememberedPassword);
         }
-        setRememberMe(true); // Check remember me if username is found
+        setRememberMe(true); // 如果有记住的用户名，自动勾选“记住我”
       }
     }
     // 获取Bing每日壁纸
@@ -166,6 +167,7 @@ function LoginPageClient() {
 
         setOauthEnabled(data.LinuxDoOAuth?.enabled || false);
 
+        // 只检查正确的 TelegramAuthConfig
         if (data.TelegramAuthConfig?.enabled) {
           console.log('[Login] Telegram Magic Link is enabled!');
           setTelegramEnabled(true);
@@ -299,7 +301,7 @@ function LoginPageClient() {
 
       if (res.ok && data.deepLink) {
         setTelegramDeepLink(data.deepLink);
-        setTelegramBotName(data.botName || ''); // 使用 botName
+
         // 自动打开 Telegram
         window.open(data.deepLink, '_blank');
       } else {
