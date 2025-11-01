@@ -93,9 +93,7 @@ function LoginPageClient() {
   const [rememberMe, setRememberMe] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [bgImageUrl, setBgImageUrl] = useState('');
-  // 新增 Telegram 状态
-  const [telegramAuthEnabled, setTelegramAuthEnabled] = useState(false);
-  const [telegramBotName, setTelegramBotName] = useState('');
+
   // Telegram Magic Link 状态
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramDeepLink, setTelegramDeepLink] = useState('');
@@ -170,21 +168,19 @@ function LoginPageClient() {
         }
 
         setOauthEnabled(data.LinuxDoOAuth?.enabled || false);
-        setTelegramAuthEnabled(data.TelegramAuth?.enabled || false);
-        setTelegramBotName(data.TelegramAuth?.botName || '');
+
         if (data.TelegramAuthConfig?.enabled) {
-          console.log('[Login] Telegram is enabled!');
+          console.log('[Login] Telegram Magic Link is enabled!');
           setTelegramEnabled(true);
         } else {
-          console.log('[Login] Telegram is NOT enabled');
+          cconsole.log('[Login] Telegram Magic Link is NOT enabled');
         }
       })
       .catch(() => {
         setRegistrationEnabled(false);
         setShouldAskUsername(false);
         setOauthEnabled(false);
-        setTelegramAuthEnabled(false);
-        setTelegramBotName('');
+
       });
 
     // 检查 URL 参数中的成功消息和 OAuth 错误
@@ -318,39 +314,6 @@ function LoginPageClient() {
     } finally {
       setTelegramLoading(false);
     }
-  };
-
-  // 新增：Telegram 登录按钮组件
-  const TelegramLoginButton = ({ botName }: { botName: string }) => {
-    useEffect(() => {
-      // 创建并注入 Telegram 的官方 widget 脚本
-      const script = document.createElement('script');
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.async = true;
-      script.setAttribute('data-telegram-login', botName);
-      script.setAttribute('data-size', 'large'); // 按钮大小: small, medium, large
-
-      // 这会告诉 Telegram 登录成功后，将浏览器重定向到我们的后端 API
-      const callbackUrl = new URL(
-        '/api/oauth/telegram/callback',
-        window.location.origin,
-      ).toString();
-      script.setAttribute('data-auth-url', callbackUrl);
-      script.setAttribute('data-request-access', 'write'); // 请求写入权限
-
-      // 将脚本添加到容器中
-      const container = document.getElementById('telegram-login-container');
-      if (container) {
-        // 清理旧脚本，防止重复渲染
-        while (container.firstChild) {
-          container.removeChild(container.firstChild);
-        }
-        container.appendChild(script);
-      }
-    }, [botName]);
-
-    // 这是 Telegram widget 脚本将要挂载的 DOM 节点
-    return <div id='telegram-login-container'></div>;
   };
 
   return (
@@ -614,7 +577,7 @@ function LoginPageClient() {
             </button>
 
             {/* 其他登录方式 */}
-            {(oauthEnabled || telegramAuthEnabled) && (
+            {oauthEnabled && (
               <>
                 <div className='flex items-center'>
                   <div className='flex-1 border-t border-gray-200 dark:border-gray-700'></div>
@@ -649,14 +612,6 @@ function LoginPageClient() {
                   </button>
                 )}
 
-                {/* Telegram 登录按钮 */}
-                {telegramAuthEnabled && telegramBotName && (
-                  <div className='flex justify-center'>
-                    <TelegramLoginButton
-                      botName={telegramBotName.replace(/^@/, '')}
-                    />
-                  </div>
-                )}
               </>
             )}
 
