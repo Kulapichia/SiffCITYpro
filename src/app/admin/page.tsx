@@ -2708,7 +2708,7 @@ const VideoSourceConfig = ({
   }, [filterStatus, filterValidity]);
   
   // 通用 API 请求
-  const callSourceApi = async (body: Record<string, any>) => {
+  const callLiveSourceApi = async (body: Record<string, any>) => {
     try {
       const resp = await fetch('/api/admin/source', {
         method: 'POST',
@@ -2733,7 +2733,7 @@ const VideoSourceConfig = ({
     const target = sources.find((s) => s.key === key);
     if (!target) return;
     const action = target.disabled ? 'enable' : 'disable';
-    withLoading(`toggleSource_${key}`, () => callSourceApi({ action, key })).catch(() => {
+    withLoading(`toggleLiveSource_${key}`, () => callLiveSourceApi({ action, key })).catch(() => {
       console.error('操作失败', action, key);
     });
   };
@@ -5894,7 +5894,6 @@ const LiveSourceConfig = ({
   };
 
   const handleToggleEnable = (key: string) => {
-    const target = liveSources.find((s) => s.key === key);
     if (!target) return;
     const action = target.disabled ? 'enable' : 'disable';
     withLoading(`toggleLiveSource_${key}`, () => callLiveSourceApi({ action, key })).catch(() => {
