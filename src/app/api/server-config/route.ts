@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
     },
   };
   // 添加 Telegram 登录配置（仅公开必要信息）
-  if (config.TelegramAuthConfig?.enabled) {
+  if (config.SiteConfig.TelegramAuth?.enabled) {
     console.log('Telegram config is enabled, adding to result');
-    result.TelegramAuthConfig = {
+    result.TelegramAuth = {
       enabled: true,
-      botUsername: config.TelegramAuthConfig.botUsername,
+      botUsername: config.SiteConfig.TelegramAuth.botUsername,
       // 注意：不返回 botToken，保护敏感信息
     };
   } else {
