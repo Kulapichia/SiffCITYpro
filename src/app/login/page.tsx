@@ -166,8 +166,8 @@ function LoginPageClient() {
 
         setOauthEnabled(data.LinuxDoOAuth?.enabled || false);
 
-        // 只检查正确的 TelegramAuthConfig
-        if (data.TelegramAuthConfig?.enabled) {
+        // 检查后端实际返回的 `TelegramAuth` 属性
+        if (data.TelegramAuth?.enabled) {
           console.log('[Login] Telegram Magic Link is enabled!');
           setTelegramEnabled(true);
         } else {
