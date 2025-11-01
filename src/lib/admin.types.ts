@@ -43,6 +43,7 @@ export interface SiteConfig {
   DoubanImageProxyType: string;
   DoubanImageProxy: string;
   DisableYellowFilter: boolean;
+  ShowAdultContent: boolean; // 是否显示成人内容，默认 false
   FluidSearch: boolean;
   // TMDB配置
   TMDBApiKey?: string;
@@ -125,6 +126,7 @@ export interface AdminConfig {
     Tags?: {
       name: string;
       enabledApis: string[];
+      showAdultContent?: boolean; // 用户组级别的成人内容显示控制
     }[];
   };
   SourceConfig: {
@@ -135,6 +137,7 @@ export interface AdminConfig {
     from: 'config' | 'custom';
     disabled?: boolean;
     lastCheck?: SourceLastCheck;
+    is_adult?: boolean;
   }[];
   CustomCategories: {
     name?: string;
@@ -206,6 +209,7 @@ export type User = {
   linuxdoUsername?: string; // LinuxDo 用户名
   telegramId?: number; // 新增 Telegram 用户 ID
   telegramUsername?: string; // 新增 Telegram 用户名
+  showAdultContent?: boolean; // 用户级别的成人内容显示控制
 };
 
 export interface LinuxDoUserInfo {
