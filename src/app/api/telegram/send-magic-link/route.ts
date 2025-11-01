@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     // 获取管理员配置
     const config = await db.getAdminConfig();
-    const telegramConfig = config?.TelegramAuthConfig;
+    const telegramConfig = config?.SiteConfig.TelegramAuth;
     console.log('[Magic Link] Config loaded, enabled:', telegramConfig?.enabled);
 
     if (!telegramConfig?.enabled) {
