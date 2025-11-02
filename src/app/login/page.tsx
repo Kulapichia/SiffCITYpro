@@ -343,7 +343,8 @@ function LoginPageClient() {
             dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)] 
             p-10 border border-white/50 dark:border-zinc-700/50 
             animate-fade-in hover:shadow-[0_25px_100px_rgba(0,0,0,0.4)] 
-            transition-shadow duration-500'
+            transition-shadow duration-500 
+            overflow-y-auto max-h-[90vh] md:max-h-[85vh]'
         >
           {/* 装饰性光效 */}
           <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse' />
