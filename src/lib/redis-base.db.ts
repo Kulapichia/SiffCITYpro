@@ -200,12 +200,18 @@ export abstract class BaseRedisStorage implements IStorage {
   ): Promise<Record<string, PlayRecord>> {
     const pattern = `u:${userName}:pr:*`;
     const keys: string[] = [];
-    let cursor = '0';
+    let cursor: string | number = 0; // 兼容 string 和 number 类型的 cursor
     do {
+      // 兼容 redis V4 和 upstash/redis 的 scan 返回值
       const reply = await this.client.scan(cursor as any, { MATCH: pattern, COUNT: 100 });
-      cursor = reply.cursor as any;
-      keys.push(...reply.keys);
-    } while (cursor !== '0');
+      if (Array.isArray(reply)) { // upstash/redis
+        cursor = reply[0] as string;
+        keys.push(...reply[1]);
+      } else { // redis V4
+        cursor = reply.cursor;
+        keys.push(...reply.keys);
+      }
+    } while (cursor !== 0 && cursor !== '0');
     if (keys.length === 0) return {};
     const values = await this.withRetry(() => this.client.mGet(keys));
     const result: Record<string, PlayRecord> = {};
