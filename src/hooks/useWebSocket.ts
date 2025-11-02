@@ -41,17 +41,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // 获取WebSocket URL
   const getWebSocketUrl = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host; // 使用 host 包含 hostname 和 port
     const authInfo = getAuthInfoFromBrowserCookie();
-    
-    // 从 Cookie 获取认证信息并作为查询参数
     const authParam = authInfo
       ? `&auth=${encodeURIComponent(JSON.stringify(authInfo))}`
       : '';
-      
-    // 始终连接到与网页相同的 host 和 port，并带上 auth 参数
-    return `${protocol}//${host}/ws?_=${Date.now()}${authParam}`;
+
+    // 判断是否为开发环境
+    if (process.env.NODE_ENV === 'development') {
+      // 开发环境下，连接到独立的WebSocket服务器（默认在3001端口）
+      const wsPort = 3001;
+      return `ws://localhost:${wsPort}/ws?_=${Date.now()}${authParam}`;
+    } else {
+      // 生产环境下，连接到与网页相同的host和port
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      return `${protocol}//${host}/ws?_=${Date.now()}${authParam}`;
+    }
   };
 
 
