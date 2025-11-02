@@ -164,24 +164,70 @@ function setupWebSocketServer(server) {
     if (!message.data) message.data = {};
     message.data.senderId = ws.userId;
     
-    const serializedMessage = JSON.stringify(message);
+    // const serializedMessage = JSON.stringify(message);
 
     switch (message.type) {
       case 'ping':
-        ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+        ws.send(JSON.stringify({
+          type: 'pong',
+          timestamp: Date.now()
+        }));
         break;
 
-      case 'message': // 私聊消息
-      case 'typing':  // 输入状态
+      // user_connect 逻辑已在 handleUpgrade 中处理，此处无需重复
+
+      case 'message':
+        const serializedMessage = JSON.stringify(message);
+        // 转发消息给对话参与者
+        if (message.data.participants && Array.isArray(message.data.participants)) {
+          message.data.participants.forEach(participantId => {
+            // 不发送给自己
+            if (participantId !== ws.userId && connectedUsers.has(participantId)) {
+              const participantWs = connectedUsers.get(participantId);
+              if (participantWs && participantWs.readyState === WebSocket.OPEN) {
+                participantWs.send(serializedMessage);
+              }
+            }
+          });
+        }
+        // 兼容旧版本的receiverId方式
+        else if (message.data.receiverId && connectedUsers.has(message.data.receiverId)) {
+          const receiverWs = connectedUsers.get(message.data.receiverId);
+          if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+            receiverWs.send(serializedMessage);
+          }
+        }
+        break;
+
+      case 'typing':
+        // 转发打字状态给目标用户
         if (message.data.receiverId && connectedUsers.has(message.data.receiverId)) {
-          connectedUsers.get(message.data.receiverId).send(serializedMessage);
+          const receiverWs = connectedUsers.get(message.data.receiverId);
+          if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+            receiverWs.send(JSON.stringify(message));
+          }
         }
         break;
 
       case 'friend_request':
+        // 转发好友申请给目标用户
+        const targetUser = message.data.to_user;
+        if (targetUser && connectedUsers.has(targetUser)) {
+          const targetWs = connectedUsers.get(targetUser);
+          if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+            targetWs.send(JSON.stringify(message));
+          }
+        }
+        break;
+
       case 'friend_accepted':
-        if (message.data.targetUserId && connectedUsers.has(message.data.targetUserId)) {
-          connectedUsers.get(message.data.targetUserId).send(serializedMessage);
+        // 转发好友接受消息给申请发起人
+        const fromUser = message.data.from_user;
+        if (fromUser && connectedUsers.has(fromUser)) {
+          const fromUserWs = connectedUsers.get(fromUser);
+          if (fromUserWs && fromUserWs.readyState === WebSocket.OPEN) {
+            fromUserWs.send(JSON.stringify(message));
+          }
         }
         break;
     }
