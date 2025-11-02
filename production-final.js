@@ -45,6 +45,11 @@ app.prepare().then(() => {
   // 这个服务器实例会根据请求类型（HTTP或WebSocket Upgrade）将请求分发给不同的处理器。
   const server = createServer(async (req, res) => {
     try {
+      // 关键修复：检查是否是WebSocket升级请求，如果是，则不交由Next.js处理
+      if (req.headers.upgrade && req.headers.upgrade.toLowerCase() === 'websocket') {
+        // 让 'upgrade' 事件处理器接管
+        return;
+      }
       // 所有非WebSocket的HTTP请求都由Next.js的处理器接管。
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
