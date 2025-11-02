@@ -852,8 +852,6 @@ function HomeClient() {
           )}
         </div>
 
-        // <div className='max-w-[95%] mx-auto'>
-
         {/* [滚动恢复整合] 如果正在恢复状态，则显示加载中，避免闪烁 */}
         {isRestoring ? (
           <div className='flex justify-center py-20'>
@@ -880,7 +878,6 @@ function HomeClient() {
             )}
           </div>
         )}
-        </div>
       </div>
       {announcement && showAnnouncement && (
         <div
