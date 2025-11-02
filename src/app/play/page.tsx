@@ -4661,7 +4661,23 @@ function PlayPageClient() {
               handleNextEpisode();
             },
           },
-
+          // 【新增】发送弹幕按钮UI体验
+          {
+            name: 'send-danmaku',
+            position: 'left',
+            index: 14,
+            html: '<span style="font-size: 14px; font-weight: bold; padding: 0 5px;">发弹幕</span>',
+            tooltip: '发送弹幕',
+            click: function () {
+              const plugin = getDanmakuPlugin();
+              // Artplayer-plugin-danmuku 插件提供了 emitter.show() 方法来显示并聚焦输入框
+              if (plugin && plugin.emitter && typeof plugin.emitter.show === 'function') {
+                plugin.emitter.show();
+              } else {
+                showPlayerNotice('弹幕功能加载中...');
+              }
+            },
+          },
           // 新增：弹幕设置按钮
           {
             name: 'danmaku-settings',
