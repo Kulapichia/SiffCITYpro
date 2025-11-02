@@ -14,7 +14,7 @@
     "desktop-app"
   ],
   "scripts": {
-    "dev": "pnpm gen:manifest && next dev -H 0.0.0.0",
+    "dev": "pnpm gen:manifest && node server.js",
     "dev:complex": "pnpm gen:manifest && node dev-server.js",
     "dev:electron": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
     "dev:ws": "node standalone-websocket.js",
