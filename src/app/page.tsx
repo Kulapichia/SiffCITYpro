@@ -852,33 +852,34 @@ function HomeClient() {
           )}
         </div>
 
-        <div className='max-w-[95%] mx-auto'>
-          {/* [滚动恢复整合] 如果正在恢复状态，则显示加载中，避免闪烁 */}
-          {isRestoring ? (
-            <div className='flex justify-center py-20'>
-              <Loader2 className='animate-spin text-gray-400' size={48} />
-            </div>
-          ) : (
-            <div key={activeTab} className='animate-fadeIn'>
-              {activeTab === 'home' ? (
-                <HomeView
-                  hotMovies={hotMovies}
-                  hotTvShows={hotTvShows}
-                  hotVarietyShows={hotVarietyShows}
-                  hotShortDramas={hotShortDramas}
-                  bangumiCalendarData={bangumiCalendarData}
-                  loadingStates={loadingStates}
-                  errorStates={errorStates}
-                  onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
-                />
-              ) : (
-                <FavoritesView
-                  items={favoriteItems}
-                  onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
-                />
-              )}
-            </div>
-          )}
+        // <div className='max-w-[95%] mx-auto'>
+
+        {/* [滚动恢复整合] 如果正在恢复状态，则显示加载中，避免闪烁 */}
+        {isRestoring ? (
+          <div className='flex justify-center py-20'>
+            <Loader2 className='animate-spin text-gray-400' size={48} />
+          </div>
+        ) : (
+          <div key={activeTab} className='animate-fadeIn'>
+            {activeTab === 'home' ? (
+              <HomeView
+                hotMovies={hotMovies}
+                hotTvShows={hotTvShows}
+                hotVarietyShows={hotVarietyShows}
+                hotShortDramas={hotShortDramas}
+                bangumiCalendarData={bangumiCalendarData}
+                loadingStates={loadingStates}
+                errorStates={errorStates}
+                onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+              />
+            ) : (
+              <FavoritesView
+                items={favoriteItems}
+                onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+              />
+            )}
+          </div>
+        )}
         </div>
       </div>
       {announcement && showAnnouncement && (
