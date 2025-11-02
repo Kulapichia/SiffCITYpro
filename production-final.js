@@ -54,7 +54,15 @@ app.prepare().then(() => {
   });
 
   // 修正3: 将 WebSocket 服务附加到这个统一的 HTTP 服务器上
-  setupWebSocketServer(server);
+  server.on('upgrade', (req, socket, head) => {
+    const { pathname } = parse(req.url, true);
+    // 只处理 /ws 路径的 WebSocket 请求
+    if (pathname === '/ws') {
+      setupWebSocketServer(req, socket, head);
+    } else {
+      socket.destroy();
+    }
+  });
 
   // 启动统一的服务器，只监听一个端口
   server.listen(port, (err) => {
