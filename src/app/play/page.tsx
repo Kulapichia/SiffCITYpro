@@ -4993,7 +4993,7 @@ function PlayPageClient() {
                   try {
                     // 生成当前视频唯一的ID用于弹幕存储
                     const videoId = `${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-                    const response = await fetch('/api/danmu', {
+                    const response = await fetch('/api/danmu-external', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
