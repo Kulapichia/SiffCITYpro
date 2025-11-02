@@ -48,16 +48,19 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     // 判断是否为开发环境
     if (process.env.NODE_ENV === 'development') {
-      // 开发环境下，连接到独立的WebSocket服务器（默认在3001端口）
+      // 开发环境下，连接到独立的WebSocket服务器（端口3001）
       const wsPort = 3001;
+      // 路径应为/ws，与standalone-websocket.js的监听路径无关
       return `ws://localhost:${wsPort}/ws?_=${Date.now()}${authParam}`;
     } else {
-      // 生产环境下，连接到与网页相同的host和port
+      // 生产环境下，连接到与网页相同的host，但通过/ws-api路径代理
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
-      return `${protocol}//${host}/ws?_=${Date.now()}${authParam}`;
+      // 使用/ws-api路径，它将被Nginx代理到独立的WebSocket服务
+      return `${protocol}//${host}/ws-api?_=${Date.now()}${authParam}`;
     }
   };
+
 
 
   // 连接WebSocket
