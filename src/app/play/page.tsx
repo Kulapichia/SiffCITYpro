@@ -5046,50 +5046,6 @@ function PlayPageClient() {
                 },
 
                 // 🎯 激进优化配置 - 保持功能完整性
-                emitter: true, // 启用弹幕发送
-                maxLength: 50,
-                lockTime: 1, // 🎯 进一步减少锁定时间，提升进度跳转响应
-                theme: 'dark' as const,
-                width: 300,
-                placeholder: '发个弹幕呗~', // 发送框提示文字
-                beforeEmit: async (danmu: any) => {
-                  try {
-                    // 生成当前视频唯一的ID用于弹幕存储
-                    const videoId = `${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-                    const response = await fetch('/api/danmu', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        videoId,
-                        text: danmu.text,
-                        color: danmu.color || '#FFFFFF',
-                        mode: danmu.mode || 0,
-                        time: artPlayerRef.current?.currentTime || 0
-                      }),
-                    });
-
-                    if (!response.ok) {
-                      const errorData = await response.json();
-                      throw new Error(errorData.error || '发送弹幕失败');
-                    }
-                    
-                    if (artPlayerRef.current?.notice) {
-                      artPlayerRef.current.notice.show = '✅ 弹幕发送成功！';
-                    }
-
-                    // 返回弹幕对象让插件自动处理，并稍微延迟一点时间避免重叠
-                    return {
-                      ...danmu,
-                      time: (artPlayerRef.current?.currentTime || 0) + 0.5,
-                    };
-                  } catch (error) {
-                    console.error('发送弹幕失败:', error);
-                    if (artPlayerRef.current?.notice) {
-                      artPlayerRef.current.notice.show = '❌ 发送弹幕失败：' + (error as any).message;
-                    }
-                    throw error; // 抛出错误以阻止弹幕在本地显示
-                  }
-                },
                 antiOverlap: devicePerformance === 'high', // 只有高性能设备开启防重叠，避免重叠计算
                 synchronousPlayback: true, // ✅ 必须保持true！确保弹幕与视频播放速度同步
                 heatmap: false, // 关闭热力图，减少DOM计算开销
