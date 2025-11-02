@@ -41,9 +41,11 @@ const app = next({
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  // 修正2: 创建一个统一的 HTTP 服务器来处理所有请求
+  // 修正2: 创建一个统一的 HTTP 服务器来处理所有请求。
+  // 这个服务器实例会根据请求类型（HTTP或WebSocket Upgrade）将请求分发给不同的处理器。
   const server = createServer(async (req, res) => {
     try {
+      // 所有非WebSocket的HTTP请求都由Next.js的处理器接管。
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
@@ -53,16 +55,11 @@ app.prepare().then(() => {
     }
   });
 
-  // 修正3: 将 WebSocket 服务附加到这个统一的 HTTP 服务器上
-  server.on('upgrade', (req, socket, head) => {
-    const { pathname } = parse(req.url, true);
-    // 只处理 /ws 路径的 WebSocket 请求
-    if (pathname === '/ws') {
-      setupWebSocketServer(req, socket, head);
-    } else {
-      socket.destroy();
-    }
-  });
+  // 修正3: 将 WebSocket 服务附加到这个统一的 HTTP 服务器上。
+  // 调用 setupWebSocketServer 并将 `server` 实例传递给它。
+  // `setupWebSocketServer` 函数内部会为这个 `server` 实例添加 'upgrade' 事件监听器。
+  // 当一个WebSocket握手请求到达时，Node.js的http.Server会自动将其路由到这个监听器，而不是上面处理HTTP请求的回调。
+  setupWebSocketServer(server);
 
   // 启动统一的服务器，只监听一个端口
   server.listen(port, (err) => {
