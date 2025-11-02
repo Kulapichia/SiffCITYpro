@@ -12,7 +12,8 @@ services:
     networks:
       - moontv-network
     depends_on:
-      - shihiütv-core # 确保先启动应用再启动代理
+      - shihiütv-core # 确保先启动应用
+      - shihiütv-ws   # 新增：同时依赖WebSocket服务
     # 如果您需要从外部直接访问Nginx（例如用于调试或非隧道部署），
     # 请取消注释并将流量导入此端口。
     # ports:
@@ -37,6 +38,26 @@ services:
       - moontv-kvrocks
     # 注意：这里的端口是容器内部端口，不需要暴露给宿主机，
     # 因为所有流量都应该通过 shihiütv-proxy 代理。
+
+  # 新增：专门用于运行WebSocket的服务
+  shihiütv-ws:
+    image: hnctth/shihiütv:latest # 使用与核心服务相同的镜像
+    container_name: shihiütv-ws
+    restart: unless-stopped
+    # 关键：覆盖默认启动命令，转而执行独立的WebSocket服务器脚本
+    command: node standalone-websocket.js
+    environment:
+      # 继承核心服务的环境变量，确保环境一致性
+      - USERNAME=root
+      - PASSWORD=xxxxxxxxx
+      - NEXT_PUBLIC_STORAGE_TYPE=kvrocks
+      - KVROCKS_URL=redis://moontv-kvrocks:6666
+      # 定义WebSocket服务端口，供内部使用
+      - WS_PORT=3001
+    networks:
+      - moontv-network
+    depends_on:
+      - moontv-kvrocks
 
   # 3. Kvrocks数据库服务
   moontv-kvrocks:
