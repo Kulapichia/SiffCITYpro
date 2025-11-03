@@ -4661,23 +4661,7 @@ function PlayPageClient() {
               handleNextEpisode();
             },
           },
-          // 【新增】发送弹幕按钮UI体验
-          {
-            name: 'send-danmaku',
-            position: 'left',
-            index: 14,
-            html: '<span style="font-size: 14px; font-weight: bold; padding: 0 5px;">发弹幕</span>',
-            tooltip: '发送弹幕',
-            click: function () {
-              const plugin = getDanmakuPlugin();
-              // Artplayer-plugin-danmuku 插件提供了 emitter.show() 方法来显示并聚焦输入框
-              if (plugin && plugin.emitter && typeof plugin.emitter.show === 'function') {
-                plugin.emitter.show();
-              } else {
-                showPlayerNotice('弹幕功能加载中...');
-              }
-            },
-          },
+
           // 新增：弹幕设置按钮
           {
             name: 'danmaku-settings',
@@ -4712,11 +4696,45 @@ function PlayPageClient() {
                 </div>
               </div>
             `,
-            tooltip: '弹幕设置',
+            tooltip: '点击发送 / 悬停设置', // 更新 tooltip 提示
             // @ts-ignore: style is supported by Artplayer controls
             style: {
               color: danmakuEnabled ? '#00aeec' : '#fff',
             },
+            // 修正：新增 click 事件处理函数，用于发送弹幕
+            click: function () {
+              const plugin = getDanmakuPlugin();
+              
+              // 检查弹幕是否已开启且可见
+              if (plugin && !plugin.isHide) {
+                // 如果弹幕可见，则点击行为是“发送弹幕”
+                // 调用插件自带的输入框
+                if (plugin.emitter && typeof plugin.emitter.show === 'function') {
+                  plugin.emitter.show();
+                } else {
+                  // 如果插件输入框不可用，提供一个备用方案，就像项目B那样
+                  showInputDialog('请输入弹幕内容:').then(text => {
+                    if (text && text.trim()) {
+                      plugin.emit({
+                        text: text.trim(),
+                        color: '#fff',
+                        border: false,
+                      });
+                      showPlayerNotice('弹幕发送成功!');
+                    }
+                  });
+                }
+              } else if (plugin) {
+                // 如果弹幕已加载但被隐藏了，则点击行为是“显示弹幕”
+                plugin.show();
+                // 可以在显示后给用户一个提示
+                showPlayerNotice('弹幕已开启，再次点击可发送', 2000);
+              } else {
+                // 如果弹幕功能根本没加载
+                showPlayerNotice('请先从菜单加载弹幕', 2000);
+              }
+            },
+            // mounted 函数保持不变，以维持原有的悬停菜单功能
             mounted: function (element: HTMLElement) {
               const wrapper = element.querySelector(
                 '.art-danmaku-settings-wrapper'
