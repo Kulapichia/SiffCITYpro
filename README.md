@@ -364,9 +364,9 @@ networks:
         add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Requested-With' always;
         
         # --- 【关键修改】为WebSocket聊天功能添加专用路由 ---
-        # 所有 /ws 开头的请求都转发到 3001 端口
-        location /ws {
-            proxy_pass http://127.0.0.1:3001; # <--- WebSocket服务的端口
+        # 所有 /ws 开头的请求都转发到 3134 端口
+        location /ws-api {
+            proxy_pass http://127.0.0.1:3134; # <--- WebSocket服务的端口
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
