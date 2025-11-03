@@ -12,9 +12,10 @@ const hostname = 'localhost';
 const port = process.env.PORT || 3000;
 const wsPort = 3001; // 定义独立的WebSocket端口
 
-// 启动独立的 WebSocket 服务器
-const { createStandaloneWebSocketServer } = require('./standalone-websocket');
-createStandaloneWebSocketServer(wsPort);
+// 修正：移除此处的 WebSocket 服务器启动逻辑。
+// WebSocket 服务器的启动应由顶层启动脚本 (如 simple-dev.js 或 production-final.js) 统一管理，以避免端口冲突。
+// const { createStandaloneWebSocketServer } = require('./standalone-websocket');
+// createStandaloneWebSocketServer(wsPort);
 
 // 当使用Next.js时，需要预准备应用程序
 const app = next({ dev, hostname, port });
