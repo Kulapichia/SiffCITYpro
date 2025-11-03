@@ -4706,6 +4706,8 @@ function PlayPageClient() {
                   <div class="art-danmaku-menu-item" data-action="toggle-merge" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">弹幕合并: ${danmakuMergeEnabled ? '已开启' : '已关闭'}</div>
                   <div class="art-danmaku-menu-item" data-action="merge-window" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">合并窗口(秒)</div>
                   <div class="art-danmaku-menu-item" data-action="apply-filter" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">应用当前过滤规则</div>
+                  <div class="art-danmaku-menu-item" data-action="send" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #ff5722;">发送弹幕</div>
+                  <div class="art-danmaku-menu-item" data-action="settings" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">弹幕设置</div>
                 </div>
               </div>
             `,
@@ -4740,7 +4742,7 @@ function PlayPageClient() {
                 showPlayerNotice('弹幕已显示，再次点击可发送', 2000);
               } else {
                 // 如果弹幕功能根本没加载
-                showPlayerNotice('请先从设置(⚙️)菜单加载弹幕', 2000);
+                showPlayerNotice('请先从弹幕菜单加载弹幕', 2000);
               }
             },
             mounted: function (element: HTMLElement) {
@@ -4783,7 +4785,18 @@ function PlayPageClient() {
                 if (hideTimeout) clearTimeout(hideTimeout);
                 menu.style.display = 'none';
 
+                const plugin = getDanmakuPlugin();
+
                 switch (action) {
+                  case 'send':
+                    if (plugin && !plugin.isHide) {
+                      if (plugin.emitter && typeof plugin.emitter.show === 'function') {
+                        plugin.emitter.show();
+                      }
+                    } else {
+                      showPlayerNotice('请先开启并加载弹幕', 2000);
+                    }
+                    break;
                   case 'load':
                     if (!danmakuEnabled) setDanmakuEnabled(true);
                     setDanmakuPanelOpen(true);
@@ -4793,7 +4806,6 @@ function PlayPageClient() {
                     const offset = offsetMap[action];
                     const newOffset = danmakuOffset + offset;
                     setDanmakuOffset(newOffset);
-                    const plugin = getDanmakuPlugin();
                     if (plugin) {
                       plugin.config.offset = newOffset;
                       if (typeof plugin.update === 'function') plugin.update();
@@ -4846,6 +4858,16 @@ function PlayPageClient() {
                         setTimeout(() => { window.location.reload(); }, 500);
                       } else { showPlayerNotice(`合并窗口已设为 ${n} 秒`, 1500); }
                     } catch (e) { showPlayerNotice('设置失败', 1500); }
+                    break;
+                  }
+                  case 'settings': {
+                    // 触发 artplayer-plugin-danmuku 自带的设置面板
+                    const danmakuConfigButton = artRef.current?.querySelector('.artplayer-plugin-danmuku .apd-config');
+                    if (danmakuConfigButton instanceof HTMLElement) {
+                      danmakuConfigButton.click();
+                    } else {
+                      showPlayerNotice('无法打开弹幕设置', 2000);
+                    }
                     break;
                   }
                 }
