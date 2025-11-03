@@ -7,10 +7,11 @@ export const runtime = 'nodejs';
 // 从全局对象获取WebSocket实例相关方法
 function sendMessageToUsers(userIds: string[], message: WebSocketMessage): boolean {
   try {
-    if ((global as any).wss) {
-      // 假设websocket.js中导出了sendMessageToUsers方法并附加到了wss对象上
-      return require('../../../../../websocket').sendMessageToUsers(userIds, message);
+    // 修正: 直接从 global 对象获取函数
+    if (typeof (global as any).sendMessageToUsers === 'function') {
+      return (global as any).sendMessageToUsers(userIds, message);
     }
+    console.warn('sendMessageToUsers function not found on global object.');
     return false;
   } catch (error) {
     console.error('发送WebSocket消息失败:', error);
