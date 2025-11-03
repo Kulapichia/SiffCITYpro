@@ -4651,7 +4651,6 @@ function PlayPageClient() {
           {
             name: 'external-danmaku-toggle',
             position: 'right',
-            index: 19, // 确保与下一个按钮相邻
             html: `
                 <svg width="24" height="24" viewBox="0 0 24 24" style="position: relative;">
                     <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" fill="${externalDanmuEnabled ? '#22c55e' : 'currentColor'}"></path>
@@ -4679,7 +4678,6 @@ function PlayPageClient() {
           {
             name: 'danmaku-settings',
             position: 'right',
-            index: 20, // 确保与上一个按钮相邻
             html: `
               <div class="art-danmaku-settings-wrapper" style="position: relative;">
                 <span style="font-size: 16px; font-weight: bold;">弹</span>
@@ -4779,6 +4777,7 @@ function PlayPageClient() {
               });
 
               menu.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 阻止事件冒泡到父按钮
                 const target = e.target as HTMLElement;
                 if (!target.classList.contains('art-danmaku-menu-item')) return;
                 const action = target.getAttribute('data-action');
