@@ -1,7 +1,7 @@
 // src/components/chat/MessageBubble.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatMessage } from '../../lib/types';
 
 interface MessageBubbleProps {
@@ -21,6 +21,13 @@ export const MessageBubble = React.memo(function MessageBubble({
   getDisplayName,
   formatMessageTime,
 }: MessageBubbleProps) {
+  // 修复: 增加 state 来处理客户端时间格式化, 避免 hydration error
+  const [clientFormattedTime, setClientFormattedTime] = useState('');
+
+  useEffect(() => {
+    // 仅在客户端挂载后设置时间, 确保服务端和客户端初始渲染一致
+    setClientFormattedTime(formatMessageTime(message.timestamp));
+  }, [message.timestamp, formatMessageTime]);
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${showName ? 'mt-4' : 'mt-1'}`}>
       <div className={`flex items-end space-x-3 max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -96,7 +103,8 @@ export const MessageBubble = React.memo(function MessageBubble({
           {/* 时间戳 */}
           <div className={`mt-1 px-1 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
             <span className="text-xs text-gray-400 dark:text-gray-500">
-              {formatMessageTime(message.timestamp)}
+              {/* 修复: 使用在客户端格式化的时间 */}
+              {clientFormattedTime}
             </span>
           </div>
         </div>
