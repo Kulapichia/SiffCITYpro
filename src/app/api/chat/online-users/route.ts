@@ -6,10 +6,11 @@ export const runtime = 'nodejs';
 // 从全局对象获取WebSocket实例相关方法
 function getOnlineUsers(): string[] {
   try {
-    if ((global as any).wss) {
-      // 假设websocket.js中导出了getOnlineUsers方法并附加到了wss对象上
-      return require('../../../../../websocket').getOnlineUsers();
+    // 修正: 直接从 global 对象获取函数，这与 production-final.js 中的设置保持一致
+    if (typeof (global as any).getOnlineUsers === 'function') {
+      return (global as any).getOnlineUsers();
     }
+    console.warn('getOnlineUsers function not found on global object.');
     return [];
   } catch (error) {
     console.error('获取在线用户失败:', error);
