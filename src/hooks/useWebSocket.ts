@@ -52,7 +52,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       // 开发环境下，连接到独立的WebSocket服务器（端口3001）
       const wsPort = 3001;
       // 路径应为/ws，与standalone-websocket.js的监听路径无关
-      return `ws://localhost:${wsPort}/ws?_=${Date.now()}`;
+      // [修复] 路径应为/ws-api，与simple-dev.js和nginx配置保持一致
+      return `ws://localhost:${wsPort}/ws-api?_=${Date.now()}`;
     } else {
       // 生产环境下，连接到与网页相同的host，但通过/ws-api路径代理
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
