@@ -1,6 +1,6 @@
 // src/components/chat/SidePanel.tsx
 'use client';
-
+import { useEffect, useState } from 'react';
 import { MessageCircle, Search, Users, X, UserPlus } from 'lucide-react';
 import { Conversation, Friend, FriendRequest } from '../../lib/types';
 import { User } from '@/lib/admin.types';
