@@ -34,19 +34,22 @@ export async function POST(request: NextRequest) {
     const adminConfig = await getConfig();
 
     // 检查用户是否有AI推荐功能权限（传入已获取的配置避免重复调用）
-    const hasPermission = await hasSpecialFeaturePermission(username, 'ai-recommend', adminConfig);
-    if (!hasPermission) {
-      return NextResponse.json({
-        error: '您无权使用AI推荐功能，请联系管理员开通权限'
-      }, {
-        status: 403,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Expires': '0',
-          'Pragma': 'no-cache',
-          'Surrogate-Control': 'no-store'
-        }
-      });
+    // 增加 owner 角色旁路，允许所有者无条件使用此功能
+    if (authInfo.role !== 'owner') {
+      const hasPermission = await hasSpecialFeaturePermission(username, 'ai-recommend', adminConfig);
+      if (!hasPermission) {
+        return NextResponse.json({
+          error: '您无权使用AI推荐功能，请联系管理员开通权限'
+        }, {
+          status: 403,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Expires': '0',
+            'Pragma': 'no-cache',
+            'Surrogate-Control': 'no-store'
+          }
+        });
+      }
     }
     const aiConfig = adminConfig.AIRecommendConfig;
 
