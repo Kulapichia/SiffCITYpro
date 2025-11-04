@@ -131,7 +131,7 @@ export function ChatArea({
 
   return (
     <div className={`
-      ${isMobile ? 'w-full flex' : 'flex-1 mt-8'}
+      ${isMobile ? 'w-full flex' : 'flex-1'}
       flex-col h-full
     `}>
       {selectedConversation ? (
