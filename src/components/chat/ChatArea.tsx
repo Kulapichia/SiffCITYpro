@@ -308,11 +308,9 @@ export function ChatArea({
           </div>
         </>
       ) : (
-        !isMobile && (
-          <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-            选择一个对话开始聊天
-          </div>
-        )
+        <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+          选择一个对话开始聊天
+        </div>
       )}
     </div>
   );
