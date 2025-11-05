@@ -62,7 +62,19 @@ export async function GET(request: NextRequest) {
         configForFrontend.SiteConfig.IntelligentFilter.options.baidu.secretKey = "********";
       }
       // 可以继续添加其他需要屏蔽的密钥
-
+      // 获取所有用户的机器码信息
+      const machineCodeUsers = await db.getMachineCodeUsers();
+      
+      // 将机器码信息合并到用户信息中
+      if (configForFrontend.UserConfig && configForFrontend.UserConfig.Users) {
+        configForFrontend.UserConfig.Users.forEach((user: any) => {
+          if (machineCodeUsers[user.username]) {
+            user.machineCode = machineCodeUsers[user.username].machineCode;
+          } else {
+            user.machineCode = null; // 使用 null 表示未绑定
+          }
+        });
+      }
       const result: AdminConfigResult = {
         Role: userRole as 'admin' | 'owner',
         Config: configForFrontend,
