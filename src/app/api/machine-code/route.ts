@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
           error: '您已绑定5台设备，已达到数量上限。请联系管理员解绑不用的设备。',
         }, { status: 409 }); // 409 Conflict
       }
+    }
 
     // 绑定新机器码或更新已有的
     await db.setUserMachineCode(authInfo.username, machineCode, deviceInfo);
