@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
       if (configForFrontend.UserConfig && configForFrontend.UserConfig.Users) {
         configForFrontend.UserConfig.Users.forEach((user: any) => {
           if (machineCodeUsers[user.username]) {
-            user.machineCode = machineCodeUsers[user.username].machineCode;
+            user.devices = machineCodeUsers[user.username].devices;
           } else {
-            user.machineCode = null; // 使用 null 表示未绑定
+            user.devices = []; // 使用空数组表示未绑定
           }
         });
       }
