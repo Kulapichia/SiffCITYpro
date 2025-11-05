@@ -818,11 +818,11 @@ export class DbManager {
   }
 
   // ---------- 机器码管理 ----------
-  async getUserMachineCode(userName: string): Promise<string | null> {
-    if (typeof (this.storage as any).getUserMachineCode === 'function') {
-      return (this.storage as any).getUserMachineCode(userName);
+  async getUserMachineCodes(userName: string): Promise<any[]> {
+    if (typeof (this.storage as any).getUserMachineCodes === 'function') {
+      return (this.storage as any).getUserMachineCodes(userName);
     }
-    return null;
+    return [];
   }
 
   async setUserMachineCode(userName: string, machineCode: string, deviceInfo?: string): Promise<void> {
@@ -831,13 +831,13 @@ export class DbManager {
     }
   }
 
-  async deleteUserMachineCode(userName: string): Promise<void> {
+  async deleteUserMachineCode(userName: string, machineCode?: string): Promise<void> {
     if (typeof (this.storage as any).deleteUserMachineCode === 'function') {
-      await (this.storage as any).deleteUserMachineCode(userName);
+      await (this.storage as any).deleteUserMachineCode(userName, machineCode);
     }
   }
 
-  async getMachineCodeUsers(): Promise<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>> {
+  async getMachineCodeUsers(): Promise<Record<string, { devices: any[] }>> {
     if (typeof (this.storage as any).getMachineCodeUsers === 'function') {
       return (this.storage as any).getMachineCodeUsers();
     }
