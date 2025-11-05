@@ -210,7 +210,7 @@ export type User = {
   telegramId?: number; // 新增 Telegram 用户 ID
   telegramUsername?: string; // 新增 Telegram 用户名
   showAdultContent?: boolean; // 用户级别的成人内容显示控制
-  machineCode?: string | null; // 新增：用于后台显示用户绑定的机器码
+  devices?: any[]; // 新增：用于后台显示用户绑定的设备列表
 };
 
 export interface LinuxDoUserInfo {
