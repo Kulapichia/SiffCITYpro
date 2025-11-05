@@ -250,7 +250,7 @@ export class UpstashRedisStorage implements IStorage {
     keysToDelete.push(`user_login_stats:${userName}`);
     // 删除头像和机器码
     keysToDelete.push(this.avatarKey(userName));
-    keysToDelete.push(this.machineCodeKey(userName));
+    keysToDelete.push(this.machineCodesKey(userName));
     // [优化] 使用 SCAN 收集用户所有数据
     const patterns = [
       `u:${userName}:pr:*`,
