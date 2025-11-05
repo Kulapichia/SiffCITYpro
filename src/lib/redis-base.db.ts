@@ -335,7 +335,7 @@ export abstract class BaseRedisStorage implements IStorage {
     keysToDelete.push(this.userStatsKey(userName));
     // 删除头像和机器码
     keysToDelete.push(this.avatarKey(userName));
-    keysToDelete.push(this.machineCodeKey(userName));
+    keysToDelete.push(this.machineCodesKey(userName));
     
     const patterns = [
       `u:${userName}:pr:*`,
