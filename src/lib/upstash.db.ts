@@ -1063,23 +1063,24 @@ export class UpstashRedisStorage implements IStorage {
   }
 
   // ---------- 机器码管理 ----------
-  private machineCodeKey(userName: string) {
-    return `u:${userName}:machine_code`;
+  private machineCodesKey(userName: string) {
+    return `u:${userName}:machine_codes`;
   }
 
-  private machineCodeListKey() {
-    return 'system:machine_codes';
+  private machineCodeToUserKey() {
+    return 'system:machine_code_owner';
   }
 
-  async getUserMachineCode(userName: string): Promise<string | null> {
-    const val = await withRetry(() => this.client.get(this.machineCodeKey(userName)));
-    if (!val) return null;
+  async getUserMachineCodes(userName: string): Promise<any[]> {
+    const val = await withRetry(() =>
+      this.client.smembers(this.machineCodesKey(userName))
+    );
+    if (!val || val.length === 0) return [];
     try {
-      const data = typeof val === 'string' ? JSON.parse(val) : val;
-      return data.machineCode || null;
+      return val.map(item => JSON.parse(item as string));
     } catch (error) {
-      console.error('解析用户机器码失败:', error);
-      return null;
+      console.error('解析用户设备列表失败:', error);
+      return [];
     }
   }
 
@@ -1089,35 +1090,54 @@ export class UpstashRedisStorage implements IStorage {
       deviceInfo: deviceInfo || '',
       bindTime: Date.now()
     };
-    await withRetry(() => this.client.set(this.machineCodeKey(userName), JSON.stringify(data)));
-    await withRetry(() => this.client.hset(this.machineCodeListKey(), { [machineCode]: userName }));
+    await withRetry(() =>
+      this.client.sadd(this.machineCodesKey(userName), JSON.stringify(data))
+    );
+    await withRetry(() =>
+      this.client.hset(this.machineCodeToUserKey(), { [machineCode]: userName })
+    );
   }
 
-  async deleteUserMachineCode(userName: string): Promise<void> {
-    const userMachineCode = await this.getUserMachineCode(userName);
-    await withRetry(() => this.client.del(this.machineCodeKey(userName)));
-    if (userMachineCode) {
-      await withRetry(() => this.client.hdel(this.machineCodeListKey(), userMachineCode));
+  async deleteUserMachineCode(userName: string, machineCode?: string): Promise<void> {
+    const userDevicesKey = this.machineCodesKey(userName);
+    if (machineCode) {
+      // 删除单个设备
+      const devices = await this.getUserMachineCodes(userName);
+      const deviceToRemove = devices.find(d => d.machineCode === machineCode);
+      if (deviceToRemove) {
+        await withRetry(() =>
+          this.client.srem(userDevicesKey, JSON.stringify(deviceToRemove))
+        );
+        await withRetry(() =>
+          this.client.hdel(this.machineCodeToUserKey(), machineCode)
+        );
+      }
+    } else {
+      // 删除所有设备
+      const devices = await this.getUserMachineCodes(userName);
+      if (devices.length > 0) {
+        const codesToRemove = devices.map(d => d.machineCode);
+        await withRetry(() =>
+          this.client.hdel(this.machineCodeToUserKey(), ...codesToRemove)
+        );
+      }
+      await withRetry(() => this.client.del(userDevicesKey));
     }
   }
 
-  async getMachineCodeUsers(): Promise<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>> {
-    const result: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }> = {};
-    const pattern = 'u:*:machine_code';
+  async getMachineCodeUsers(): Promise<Record<string, { devices: any[] }>> {
+    const result: Record<string, { devices: any[] }> = {};
+    const pattern = 'u:*:machine_codes';
     let cursor = '0';
     do {
       const [nextCursor, keys] = await withRetry(() => this.client.scan(cursor, { match: pattern, count: 100 }));
       cursor = nextCursor;
       for (const key of keys) {
-        const userName = key.replace('u:', '').replace(':machine_code', '');
-        const val = await withRetry(() => this.client.get(key));
-        if (val) {
-          try {
-            const data = typeof val === 'string' ? JSON.parse(val) : val;
-            result[userName] = data;
-          } catch (error) {
-            console.error('解析机器码用户数据失败:', error, 'key:', key);
-          }
+        const userNameMatch = key.match(/^u:(.+?):machine_codes$/);
+        if (userNameMatch) {
+          const userName = userNameMatch[1];
+          const devices = await this.getUserMachineCodes(userName);
+          result[userName] = { devices };
         }
       }
     } while (cursor !== '0');
@@ -1125,8 +1145,8 @@ export class UpstashRedisStorage implements IStorage {
   }
 
   async isMachineCodeBound(machineCode: string): Promise<string | null> {
-    const val = await withRetry(() => this.client.hget(this.machineCodeListKey(), machineCode));
-    return val ? ensureString(val) : null;
+    const val = await withRetry(() => this.client.hget(this.machineCodeToUserKey(), machineCode));
+    return val ? ensureString(val as string) : null;
   }
 
   // ---------- 聊天功能 ----------
