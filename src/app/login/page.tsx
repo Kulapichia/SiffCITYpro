@@ -211,6 +211,8 @@ function LoginPageClient() {
 
       if (deviceCodeEnabled && (requireMachineCode || bindMachineCode) && machineCode) {
         requestData.machineCode = machineCode;
+        requestData.bindDevice = bindMachineCode; // 增加 bindDevice 标志
+        requestData.deviceInfo = deviceInfo; // 增加 deviceInfo
       }
 
       const res = await fetch('/api/login', {
@@ -229,17 +231,6 @@ function LoginPageClient() {
         } else {
           localStorage.removeItem('rememberedUsername');
           localStorage.removeItem('rememberedPassword');
-        }
-        if (deviceCodeEnabled && bindMachineCode && machineCode && shouldAskUsername) {
-          try {
-            await fetch('/api/machine-code', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ machineCode, deviceInfo }),
-            });
-          } catch (bindError) {
-            console.error('绑定机器码失败:', bindError);
-          }
         }
 
         try {
