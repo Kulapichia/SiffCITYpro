@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 数据库 / redis 模式——校验用户名并尝试连接数据库
-    const { username, password, machineCode } = await req.json();
+    const { username, password, machineCode, bindDevice, deviceInfo } = await req.json();
 
     if (!username || typeof username !== 'string') {
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
@@ -226,21 +226,41 @@ export async function POST(req: NextRequest) {
             machineCodeMismatch: true
           }, { status: 403 });
         }
-      } else if (machineCode) {
-        // 用户未绑定机器码，但提供了机器码，检查是否被其他用户绑定
+      } else if (config.SiteConfig.RequireDeviceCode) {
+        // 全局开启了设备码验证，但用户未绑定
+        if (!bindDevice || !machineCode) {
+          return NextResponse.json({
+            error: '管理员已开启设备验证，请勾选“绑定此设备”后登录',
+            requireMachineCode: true // 前端可以根据此标记提示用户
+          }, { status: 403 });
+        }
+        // 检查新设备码是否已被他人绑定
         const codeOwner = await db.isMachineCodeBound(machineCode);
         if (codeOwner && codeOwner !== username) {
           return NextResponse.json({
-            error: `该机器码已被用户 ${codeOwner} 绑定`,
+            error: `该设备已被用户 ${codeOwner} 绑定`,
+            machineCodeTaken: true
+          }, { status: 409 });
+        }
+      } else if (machineCode) {
+        // 全局未开启强制验证，但用户主动提交了机器码（可能是为了绑定）
+        const codeOwner = await db.isMachineCodeBound(machineCode);
+        if (codeOwner && codeOwner !== username) {
+          return NextResponse.json({
+            error: `该设备已被用户 ${codeOwner} 绑定`,
             machineCodeTaken: true
           }, { status: 409 });
         }
       }
       
+      // 如果用户选择绑定设备，则执行绑定操作
+      if (bindDevice && machineCode) {
+        await db.setUserMachineCode(username, machineCode, deviceInfo);
+      }
       // 验证成功，设置认证cookie
       const response = NextResponse.json({
         ok: true,
-        machineCodeBound: !!boundMachineCode,
+        machineCodeBound: !!boundMachineCode || (bindDevice && !!machineCode), // 更新绑定状态
         username: username
       });
       const cookieValue = await generateAuthCookie(
