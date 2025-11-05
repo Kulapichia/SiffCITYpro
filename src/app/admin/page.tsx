@@ -291,7 +291,7 @@ const MachineCodeCell = ({ user, canManage, onRefresh, showAlert }: MachineCodeC
             <button
               onClick={() => handleUnbind(device.machineCode)}
               disabled={unbinding === device.machineCode}
-              className={`${buttonStyles.roundedDangerSmall} ${unbinding === device.machineCode ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`${buttonStyles.dangerSmall} ${unbinding === device.machineCode ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="解绑此设备"
             >
               {unbinding === device.machineCode ? '...' : '解绑'}
@@ -308,11 +308,11 @@ interface UserConfigProps {
   config: AdminConfig | null;
   role: 'owner' | 'admin' | null;
   refreshConfig: () => Promise<void>;
-  machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
-  fetchMachineCodeUsers: () => Promise<void>;
+  // machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
+  // fetchMachineCodeUsers: () => Promise<void>;
 }
 
-const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachineCodeUsers }: UserConfigProps) => {
+const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
   const [selectedShowAdultContent, setSelectedShowAdultContent] = useState(false);
@@ -7659,7 +7659,7 @@ function AdminPageClient() {
                 config={config}
                 role={role}
                 refreshConfig={fetchConfig}
-                fetchMachineCodeUsers={fetchConfig} // 直接复用 fetchConfig 即可
+                // fetchMachineCodeUsers={fetchConfig} // 直接复用 fetchConfig 即可
               />
             </CollapsibleTab>
 
