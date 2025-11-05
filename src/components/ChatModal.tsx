@@ -25,7 +25,7 @@ export const ChatModal = React.memo(function ChatModal({
   onClose,
   onMessageCountChange,
   onChatCountReset,
-  onFriendRequestCountReset
+  onFriendRequestCountReset,
   // 新增：解构传入的props
   isConnected,
   sendMessage: sendWebSocketMessage,
