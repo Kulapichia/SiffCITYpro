@@ -209,22 +209,36 @@ export async function POST(req: NextRequest) {
       }
       
       // 检查机器码绑定
-      const boundMachineCode = await db.getUserMachineCode(username);
+      const boundMachineCodes = await db.getUserMachineCodes(username);
 
-      if (boundMachineCode) {
+      if (boundMachineCodes && boundMachineCodes.length > 0) {
         // 用户已绑定机器码，需要验证
         if (!machineCode) {
           return NextResponse.json({
-            error: '该账户已绑定设备，请提供机器码',
+            error: '该账户已绑定设备，请提供设备码',
             requireMachineCode: true
           }, { status: 403 });
         }
 
-        if (machineCode.toUpperCase() !== boundMachineCode.toUpperCase()) {
-          return NextResponse.json({
-            error: '机器码不匹配，此账户只能在绑定的设备上使用',
-            machineCodeMismatch: true
-          }, { status: 403 });
+        const isMachineBound = boundMachineCodes.some(
+          (code) => (code as any).machineCode.toUpperCase() === machineCode.toUpperCase()
+        );
+
+        if (!isMachineBound) {
+          // 如果是新设备，且用户选择绑定，检查是否已达上限
+          if (bindDevice) {
+            if (boundMachineCodes.length >= 5) {
+              return NextResponse.json({
+                error: '绑定设备数量已达上限（5台），请在其他设备解绑后再试',
+                machineCodeMismatch: true
+              }, { status: 403 });
+            }
+          } else {
+            return NextResponse.json({
+              error: '设备码不匹配，此设备未绑定。如需绑定，请勾选“绑定此设备”',
+              machineCodeMismatch: true
+            }, { status: 403 });
+          }
         }
       } else if (config.SiteConfig.RequireDeviceCode) {
         // 全局开启了设备码验证，但用户未绑定
@@ -234,16 +248,10 @@ export async function POST(req: NextRequest) {
             requireMachineCode: true // 前端可以根据此标记提示用户
           }, { status: 403 });
         }
-        // 检查新设备码是否已被他人绑定
-        const codeOwner = await db.isMachineCodeBound(machineCode);
-        if (codeOwner && codeOwner !== username) {
-          return NextResponse.json({
-            error: `该设备已被用户 ${codeOwner} 绑定`,
-            machineCodeTaken: true
-          }, { status: 409 });
-        }
-      } else if (machineCode) {
-        // 全局未开启强制验证，但用户主动提交了机器码（可能是为了绑定）
+      }
+      
+      // 检查新设备码是否已被他人绑定
+      if (machineCode) {
         const codeOwner = await db.isMachineCodeBound(machineCode);
         if (codeOwner && codeOwner !== username) {
           return NextResponse.json({
@@ -252,15 +260,24 @@ export async function POST(req: NextRequest) {
           }, { status: 409 });
         }
       }
-      
+
       // 如果用户选择绑定设备，则执行绑定操作
       if (bindDevice && machineCode) {
-        await db.setUserMachineCode(username, machineCode, deviceInfo);
+        const currentCodes = await db.getUserMachineCodes(username);
+        if (currentCodes.length < 5) {
+          await db.setUserMachineCode(username, machineCode, deviceInfo);
+        } else {
+          // 再次检查以防万一
+          return NextResponse.json({
+            error: '绑定设备数量已达上限（5台）',
+            machineCodeMismatch: true
+          }, { status: 403 });
+        }
       }
       // 验证成功，设置认证cookie
       const response = NextResponse.json({
         ok: true,
-        machineCodeBound: !!boundMachineCode || (bindDevice && !!machineCode), // 更新绑定状态
+        machineCodeBound: !!(boundMachineCodes && boundMachineCodes.length > 0),
         username: username
       });
       const cookieValue = await generateAuthCookie(
