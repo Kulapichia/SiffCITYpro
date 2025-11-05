@@ -32,7 +32,8 @@ export function ThemeToggle() {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-
+  // 在这里统一管理WebSocket连接
+  const { isConnected, sendMessage } = useWebSocket({ enabled: isChatModalOpen });
   // 直接使用ChatModal传来的消息计数
   const handleMessageCountFromModal = useCallback((totalCount: number) => {
     setMessageCount(totalCount);
@@ -138,13 +139,16 @@ export function ThemeToggle() {
       </div>
 
       {/* 聊天模态框 - 在登录页面不渲染 */}
-      {!isLoginPage && (
+      {!isLoginPage && isChatModalOpen && (
         <ChatModal
           isOpen={isChatModalOpen}
           onClose={() => setIsChatModalOpen(false)}
           onMessageCountChange={handleMessageCountFromModal}
           onChatCountReset={handleChatCountReset}
           onFriendRequestCountReset={handleFriendRequestCountReset}
+          // 将WebSocket状态和函数通过props传递给ChatModal
+          isConnected={isConnected}
+          sendMessage={sendMessage}
         />
       )}
     </>
