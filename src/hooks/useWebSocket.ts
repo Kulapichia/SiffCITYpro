@@ -46,7 +46,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // const authParam = authInfo
     //   ? `&auth=${encodeURIComponent(JSON.stringify(authInfo))}`
     //   : '';
-
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
     // 判断是否为开发环境
     if (process.env.NODE_ENV === 'development') {
       // 开发环境下，连接到独立的WebSocket服务器（端口3001）
@@ -56,8 +57,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       return `ws://localhost:${wsPort}/ws-api?_=${Date.now()}`;
     } else {
       // 生产环境下，连接到与网页相同的host，但通过/ws-api路径代理
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
+      // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // const host = window.location.host;
       // 使用/ws-api路径，它将被Nginx代理到独立的WebSocket服务
       return `${protocol}//${host}/ws-api?_=${Date.now()}`;
     }
