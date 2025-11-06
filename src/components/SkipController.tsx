@@ -43,28 +43,22 @@ export default function SkipController({
 
   // 新增状态：批量设置模式 - 支持分:秒格式
   // 🔑 初始化时直接从 localStorage 读取用户设置，避免重新挂载时重置为默认值
-  const [batchSettings, setBatchSettings] = useState({
-    openingStart: '0:00', // 片头开始时间（分:秒格式）
-    openingEnd: '1:30', // 片头结束时间（分:秒格式，90秒=1分30秒）
-    endingMode: 'remaining', // 片尾模式：'remaining'(剩余时间) 或 'absolute'(绝对时间)
-    endingStart: '2:00', // 片尾开始时间（剩余时间模式：还剩多少时间开始倒计时；绝对时间模式：从视频开始多长时间）
-    endingEnd: '', // 片尾结束时间（可选，空表示直接跳转下一集）
-    autoSkip: false, // 默认值，将在useEffect中更新
-    autoNextEpisode: false, // 默认值，将在useEffect中更新
-  });
-
-  useEffect(() => {
+  const [batchSettings, setBatchSettings] = useState(() => {
     const savedEnableAutoSkip = typeof window !== 'undefined' ? localStorage.getItem('enableAutoSkip') : null;
     const savedEnableAutoNextEpisode = typeof window !== 'undefined' ? localStorage.getItem('enableAutoNextEpisode') : null;
-    const userAutoSkip = savedEnableAutoSkip !== null ? JSON.parse(savedEnableAutoSkip) : false;
-    const userAutoNextEpisode = savedEnableAutoNextEpisode !== null ? JSON.parse(savedEnableAutoNextEpisode) : false;
+    const userAutoSkip = savedEnableAutoSkip !== null ? JSON.parse(savedEnableAutoSkip) : true;
+    const userAutoNextEpisode = savedEnableAutoNextEpisode !== null ? JSON.parse(savedEnableAutoNextEpisode) : true;
 
-    setBatchSettings(prev => ({
-      ...prev,
-      autoSkip: userAutoSkip,
-      autoNextEpisode: userAutoNextEpisode,
-    }));
-  }, []);
+    return {
+      openingStart: '0:00',   // 片头开始时间（分:秒格式）
+      openingEnd: '1:30',     // 片头结束时间（分:秒格式，90秒=1分30秒）
+      endingMode: 'remaining', // 片尾模式：'remaining'(剩余时间) 或 'absolute'(绝对时间)
+      endingStart: '2:00',    // 片尾开始时间（剩余时间模式：还剩多少时间开始倒计时；绝对时间模式：从视频开始多长时间）
+      endingEnd: '',          // 片尾结束时间（可选，空表示直接跳转下一集）
+      autoSkip: userAutoSkip,         // 🔑 从 localStorage 读取
+      autoNextEpisode: userAutoNextEpisode,  // 🔑 从 localStorage 读取
+    };
+  });
 
   // 🔑 从 localStorage 读取用户全局设置，并监听变化
   useEffect(() => {

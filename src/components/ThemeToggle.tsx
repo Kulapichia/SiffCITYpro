@@ -6,9 +6,25 @@ import { Moon, Sun, MessageCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useCallback } from 'react';
-import { ChatModal } from './ChatModal';
+// import { ChatModal } from './ChatModal';
+import dynamic from 'next/dynamic';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { WebSocketMessage } from '../lib/types';
+
+// 使用 dynamic import 并禁用 SSR 来加载 ChatModal
+const ChatModal = dynamic(
+  () => import('./ChatModal').then((mod) => mod.ChatModal),
+  {
+    ssr: false, // 关键：禁用服务端渲染
+    loading: () => (
+      // 添加一个加载状态，提升用户体验
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+        <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    ),
+  }
+);
+
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
@@ -16,7 +32,8 @@ export function ThemeToggle() {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-
+  // 在这里统一管理WebSocket连接
+  const { isConnected, sendMessage } = useWebSocket({ enabled: isChatModalOpen });
   // 直接使用ChatModal传来的消息计数
   const handleMessageCountFromModal = useCallback((totalCount: number) => {
     setMessageCount(totalCount);
@@ -122,13 +139,16 @@ export function ThemeToggle() {
       </div>
 
       {/* 聊天模态框 - 在登录页面不渲染 */}
-      {!isLoginPage && (
+      {!isLoginPage && isChatModalOpen && (
         <ChatModal
           isOpen={isChatModalOpen}
           onClose={() => setIsChatModalOpen(false)}
           onMessageCountChange={handleMessageCountFromModal}
           onChatCountReset={handleChatCountReset}
           onFriendRequestCountReset={handleFriendRequestCountReset}
+          // 将WebSocket状态和函数通过props传递给ChatModal
+          isConnected={isConnected}
+          sendMessage={sendMessage}
         />
       )}
     </>

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Filter } from 'lucide-react'; // 引入Filter图标
 import { useEffect, useState } from 'react';
 import { getShortDramaCategories, ShortDramaCategory } from '@/lib/shortdrama.client';
 
@@ -62,10 +63,17 @@ const ShortDramaSelector = ({
 
   // 组件主体渲染逻辑
   return (
-    <div>
+    <div className="mb-6">
       {/* 标题和总数显示区域 */}
       <div className="flex items-center space-x-2.5 mb-4">
-        <div className="flex-1"></div> {/* 占位符，保持与page.tsx布局一致的可能性 */}
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+          <Filter className="h-4 w-4 text-white" />
+        </div>
+        <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+          分类筛选
+        </span>
+        <div className="flex-1"></div>
+        {/* 保留totalCategories的使用 */}
         {totalCategories && totalCategories > 0 && (
           <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium">
             {totalCategories} 个分类
@@ -73,7 +81,7 @@ const ShortDramaSelector = ({
         )}
       </div>
 
-      {/* 分类按钮列表 */}
+      {/* 分类按钮列表*/}
       <div className="flex flex-wrap gap-2.5">
         {categories.map((category, index) => {
           const isActive = selectedCategory === category.type_id.toString();

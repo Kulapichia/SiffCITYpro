@@ -44,12 +44,14 @@ import {
 import AIRecommendModal from '@/components/AIRecommendModal';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
+import HeroBanner from '@/components/HeroBanner'; // 引入HeroBanner组件
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
 import ShortDramaCard from '@/components/ShortDramaCard';
 import { useSite } from '@/components/SiteProvider';
 import SkeletonCard from '@/components/SkeletonCard';
+import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal'; // 引入Telegram欢迎弹窗
 import VideoCard from '@/components/VideoCard';
 
 // Type definition for favorite items
@@ -201,6 +203,28 @@ const HomeView = ({
 }) => {
   return (
     <>
+      {/* Hero Banner 轮播 */}
+      {!loadingStates.movies && !loadingStates.tvShows && (hotMovies.length > 0 || hotTvShows.length > 0) && (
+        <section className='mb-8'>
+          <HeroBanner
+            items={[...hotMovies.slice(0, 5), ...hotTvShows.slice(0, 3)]
+              .map((item) => ({
+                id: item.id,
+                title: item.title,
+                poster: item.poster,
+                description: item.plot_summary,
+                year: item.year,
+                rate: item.rate,
+                douban_id: Number(item.id),
+                type: hotMovies.includes(item) ? 'movie' : 'tv',
+              }))}
+            autoPlayInterval={5000}
+            showControls={true}
+            showIndicators={true}
+          />
+        </section>
+      )}
+
       {/* 继续观看 */}
       <ContinueWatching />
 
@@ -484,6 +508,7 @@ function HomeClient() {
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showAIRecommendModal, setShowAIRecommendModal] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(true); // 默认显示，检查后再决定
+  const [aiCheckTriggered, setAiCheckTriggered] = useState(false); // 新增状态
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
 
   // [滚动恢复整合] 创建 Ref 保存所有需要缓存的数据
@@ -538,11 +563,17 @@ function HomeClient() {
     }
   }, [announcement]);
 
-  // 检查AI功能是否启用
+  // 延迟检查AI功能状态，避免阻塞页面初始渲染
   useEffect(() => {
+    if (aiCheckTriggered || typeof window === 'undefined') return;
+
+    let idleCallbackId: number | undefined;
+    let timeoutId: number | undefined;
+    let cancelled = false;
+
     const checkAIStatus = async () => {
+      if (cancelled) return;
       try {
-        // 发送一个测试请求来检查AI功能状态
         const response = await fetch('/api/ai-recommend', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -550,15 +581,49 @@ function HomeClient() {
             messages: [{ role: 'user', content: 'test' }],
           }),
         });
-        // 如果是403错误，说明功能未启用
-        setAiEnabled(response.status !== 403);
+        if (!cancelled) {
+          setAiEnabled(response.status !== 403);
+        }
       } catch (error) {
-        // 发生错误时默认显示按钮
-        setAiEnabled(true);
+        if (!cancelled) {
+          setAiEnabled(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setAiCheckTriggered(true);
+        }
       }
     };
-    checkAIStatus();
-  }, []);
+
+    const win = window as typeof window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (typeof win.requestIdleCallback === 'function') {
+      idleCallbackId = win.requestIdleCallback(() => {
+        checkAIStatus().catch(() => {
+          // 错误已在内部处理
+        });
+      }, { timeout: 1500 });
+    } else {
+      timeoutId = window.setTimeout(() => {
+        checkAIStatus().catch(() => {
+          // 错误已在内部处理
+        });
+      }, 800);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleCallbackId !== undefined && typeof win.cancelIdleCallback === 'function') {
+        win.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [aiCheckTriggered]);
 
   // 主数据获取 effect
   useEffect(() => {
@@ -724,45 +789,40 @@ function HomeClient() {
 
   return (
     <PageLayout>
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 欢迎横幅 - 在所有 tab 显示 */}
-        <div className='mb-6 mt-0 md:mt-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-[2px] shadow-lg animate-[slideDown_0.5s_ease-out]'>
-          <div className='relative bg-white dark:bg-gray-900 rounded-2xl p-5 sm:p-6'>
-            {/* 装饰性背景 */}
-            <div className='absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl'></div>
-            <div className='absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-400/10 to-purple-400/10 rounded-full blur-2xl'></div>
-            <div className='relative z-10'>
-              <div className='flex items-start justify-between gap-4'>
-                <div className='flex-1 min-w-0'>
-                  <h2 className='text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1.5 flex items-center gap-2 flex-wrap'>
-                    <span>
-                      {(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return '早上好';
-                        if (hour < 18) return '下午好';
-                        return '晚上好';
-                      })()}
-                      {username && '，'}
+      <div className='-mt-6 md:mt-0'>
+        {/* 欢迎横幅 - 现代化精简设计 */}
+        <div className='mb-6 relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-sm shadow-xl border border-white/20'>
+          <div className='relative p-4 sm:p-5'>
+            {/* 动态渐变背景 */}
+            <div className='absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/5'></div>
+
+            <div className='relative z-10 flex items-center justify-between gap-4'>
+              <div className='flex-1 min-w-0'>
+                <h2 className='text-lg sm:text-xl font-bold text-white mb-1 flex items-center gap-2 flex-wrap'>
+                  <span>
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '早上好';
+                      if (hour < 18) return '下午好';
+                      return '晚上好';
+                    })()}
+                    {username && '，'}
+                  </span>
+                  {username && (
+                    <span className='text-yellow-300 font-semibold'>
+                      {username}
                     </span>
-                    {username && (
-                      <span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'>
-                        {username}
-                      </span>
-                    )}
-                    <span className='inline-block animate-wave origin-bottom-right'>
-                      👋
-                    </span>
-                  </h2>
-                  <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400'>
-                    发现更多精彩影视内容 ✨
-                  </p>
-                </div>
-                {/* 装饰图标 - 只在大屏幕显示 */}
-                <div className='hidden lg:block flex-shrink-0'>
-                  <div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg animate-pulse'>
-                    <Film className='w-8 h-8 text-white' />
-                  </div>
-                </div>
+                  )}
+                  <span className='inline-block animate-wave origin-bottom-right'>👋</span>
+                </h2>
+                <p className='text-sm text-white/90'>
+                  发现更多精彩影视内容 ✨
+                </p>
+              </div>
+
+              {/* 装饰图标 - 更小更精致 */}
+              <div className='hidden md:flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20'>
+                <Film className='w-6 h-6 text-white' />
               </div>
             </div>
           </div>
@@ -792,34 +852,32 @@ function HomeClient() {
           )}
         </div>
 
-        <div className='max-w-[95%] mx-auto'>
-          {/* [滚动恢复整合] 如果正在恢复状态，则显示加载中，避免闪烁 */}
-          {isRestoring ? (
-            <div className='flex justify-center py-20'>
-              <Loader2 className='animate-spin text-gray-400' size={48} />
-            </div>
-          ) : (
-            <div key={activeTab} className='animate-fadeIn'>
-              {activeTab === 'home' ? (
-                <HomeView
-                  hotMovies={hotMovies}
-                  hotTvShows={hotTvShows}
-                  hotVarietyShows={hotVarietyShows}
-                  hotShortDramas={hotShortDramas}
-                  bangumiCalendarData={bangumiCalendarData}
-                  loadingStates={loadingStates}
-                  errorStates={errorStates}
-                  onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
-                />
-              ) : (
-                <FavoritesView
-                  items={favoriteItems}
-                  onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
-                />
-              )}
-            </div>
-          )}
-        </div>
+        {/* [滚动恢复整合] 如果正在恢复状态，则显示加载中，避免闪烁 */}
+        {isRestoring ? (
+          <div className='flex justify-center py-20'>
+            <Loader2 className='animate-spin text-gray-400' size={48} />
+          </div>
+        ) : (
+          <div key={activeTab} className='animate-fadeIn'>
+            {activeTab === 'home' ? (
+              <HomeView
+                hotMovies={hotMovies}
+                hotTvShows={hotTvShows}
+                hotVarietyShows={hotVarietyShows}
+                hotShortDramas={hotShortDramas}
+                bangumiCalendarData={bangumiCalendarData}
+                loadingStates={loadingStates}
+                errorStates={errorStates}
+                onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+              />
+            ) : (
+              <FavoritesView
+                items={favoriteItems}
+                onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+              />
+            )}
+          </div>
+        )}
       </div>
       {announcement && showAnnouncement && (
         <div
@@ -967,10 +1025,11 @@ function HomeClient() {
         isOpen={showAIRecommendModal}
         onClose={() => setShowAIRecommendModal(false)}
       />
+      {/* Telegram 欢迎弹窗 */}
+      <TelegramWelcomeModal />
     </PageLayout>
   );
 }
-
 export default function Home() {
   return (
     <Suspense>

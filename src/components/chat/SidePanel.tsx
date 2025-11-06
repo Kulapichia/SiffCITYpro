@@ -1,6 +1,6 @@
 // src/components/chat/SidePanel.tsx
 'use client';
-
+import { useEffect, useState } from 'react';
 import { MessageCircle, Search, Users, X, UserPlus } from 'lucide-react';
 import { Conversation, Friend, FriendRequest } from '../../lib/types';
 import { User } from '@/lib/admin.types';
@@ -69,7 +69,7 @@ export function SidePanel({
 
   return (
     <div className={`
-      ${isMobile ? 'w-full flex' : 'w-1/3 mt-8'}
+      ${isMobile ? 'w-full flex' : 'w-1/3'}
       border-r border-gray-200 dark:border-gray-700 flex-col h-full
     `}>
       {/* 头部 */}
@@ -241,10 +241,7 @@ export function SidePanel({
                         {/* 最后消息时间 */}
                         {conv.last_message?.timestamp && (
                           <div className="text-xs text-gray-400 dark:text-gray-500 ml-2 flex-shrink-0">
-                            {new Date(conv.last_message.timestamp).toLocaleTimeString('zh-CN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            <ClientTime timestamp={conv.last_message.timestamp} />
                           </div>
                         )}
                       </div>
@@ -379,3 +376,18 @@ export function SidePanel({
     </div>
   );
 }
+// 新增：用于客户端时间格式化的辅助组件，避免水合错误
+const ClientTime = ({ timestamp }: { timestamp: number }) => {
+  const [formattedTime, setFormattedTime] = useState('');
+
+  useEffect(() => {
+    setFormattedTime(
+      new Date(timestamp).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }, [timestamp]);
+
+  return <>{formattedTime}</>;
+};

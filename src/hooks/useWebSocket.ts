@@ -41,18 +41,29 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // 获取WebSocket URL
   const getWebSocketUrl = () => {
+    // 修正：移除authParam，认证信息通过浏览器自动携带的cookie进行处理
+    // const authInfo = getAuthInfoFromBrowserCookie();
+    // const authParam = authInfo
+    //   ? `&auth=${encodeURIComponent(JSON.stringify(authInfo))}`
+    //   : '';
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host; // 使用 host 包含 hostname 和 port
-    const authInfo = getAuthInfoFromBrowserCookie();
-    
-    // 从 Cookie 获取认证信息并作为查询参数
-    const authParam = authInfo
-      ? `&auth=${encodeURIComponent(JSON.stringify(authInfo))}`
-      : '';
-      
-    // 始终连接到与网页相同的 host 和 port，并带上 auth 参数
-    return `${protocol}//${host}/ws?_=${Date.now()}${authParam}`;
+    const host = window.location.host;
+    // 判断是否为开发环境
+    if (process.env.NODE_ENV === 'development') {
+      // 开发环境下，连接到独立的WebSocket服务器（端口3001）
+      const wsPort = 3001;
+      // 路径应为/ws，与standalone-websocket.js的监听路径无关
+      // [修复] 路径应为/ws-api，与simple-dev.js和nginx配置保持一致
+      return `ws://localhost:${wsPort}/ws-api?_=${Date.now()}`;
+    } else {
+      // 生产环境下，连接到与网页相同的host，但通过/ws-api路径代理
+      // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // const host = window.location.host;
+      // 使用/ws-api路径，它将被Nginx代理到独立的WebSocket服务
+      return `${protocol}//${host}/ws-api?_=${Date.now()}`;
+    }
   };
+
 
 
   // 连接WebSocket

@@ -14,6 +14,9 @@ interface ChatModalProps {
   onMessageCountChange?: (count: number) => void;
   onChatCountReset?: (resetCount: number) => void;
   onFriendRequestCountReset?: (resetCount: number) => void;
+  // 新增：从父组件接收WebSocket状态和函数
+  isConnected: boolean;
+  sendMessage: (message: WebSocketMessage) => boolean;
 }
 
 // 使用 React.memo 包装，避免在 props 未改变时因父组件重渲染而重渲染
@@ -22,8 +25,16 @@ export const ChatModal = React.memo(function ChatModal({
   onClose,
   onMessageCountChange,
   onChatCountReset,
-  onFriendRequestCountReset
+  onFriendRequestCountReset,
+  // 新增：解构传入的props
+  isConnected,
+  sendMessage: sendWebSocketMessage,
 }: ChatModalProps) {
+  // [根本性修复] 添加客户端渲染门，解决水合错误
+  // const [isClient, setIsClient] = useState(false);
+  // useEffect(() => {
+    // setIsClient(true);
+  // }, []);
   const [activeTab, setActiveTab] = useState<'chat' | 'friends'>('chat');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -266,10 +277,10 @@ export const ChatModal = React.memo(function ChatModal({
     }
   }, [selectedConversation, preloadUserAvatars, isOpen]);
 
-  // WebSocket 连接 - 始终保持连接以接收实时消息
-  const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
+  // WebSocket 连接 - 从props接收，不再在此处创建
+  useWebSocket({
     onMessage: handleWebSocketMessage,
-    enabled: true,
+    enabled: isOpen, // 仅在模态框打开时监听消息
   });
 
   const loadConversations = useCallback(async () => {
@@ -637,7 +648,10 @@ export const ChatModal = React.memo(function ChatModal({
   };
 
   if (!isOpen) return null;
-
+  // [根本性修复] 在客户端挂载前，不渲染任何内容，避免服务端与客户端的HTML不匹配
+  // if (!isClient) {
+    // return null;
+  // }
   return (
     <div
       className={`z-[2147483647] ${isMobile

@@ -103,6 +103,18 @@
     animation-name: slide-in-from-right;
   }
 
+  /* 源浏览器动画 */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* *** 为 ShortDramaSelector 和其他组件提供优雅的进入动画 *** */
   @keyframes fadeInUp {
     from {

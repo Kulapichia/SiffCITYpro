@@ -1,11 +1,21 @@
+// 使用 `simple-dev.js` 作为新的开发环境启动脚本
+// 此文件中的集成模式将被废弃
+
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { createWebSocketServer } = require('./websocket');
+// 不再引入 createWebSocketServer
+// const { createWebSocketServer } = require('./websocket');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = process.env.PORT || 3000;
+const wsPort = 3001; // 定义独立的WebSocket端口
+
+// 修正：移除此处的 WebSocket 服务器启动逻辑。
+// WebSocket 服务器的启动应由顶层启动脚本 (如 simple-dev.js 或 production-final.js) 统一管理，以避免端口冲突。
+// const { createStandaloneWebSocketServer } = require('./standalone-websocket');
+// createStandaloneWebSocketServer(wsPort);
 
 // 当使用Next.js时，需要预准备应用程序
 const app = next({ dev, hostname, port });
@@ -24,47 +34,12 @@ app.prepare().then(() => {
     }
   });
 
-  // 初始化 WebSocket 服务器
-  const wss = createWebSocketServer(server);
-
-  // 将 WebSocket 服务器实例及相关方法存储到全局对象中，供 API 路由使用
-  global.wss = wss;
-
-  // 使用一个标志确保每个连接只被处理一次
-  const upgradedSockets = new WeakSet();
-
-  // 直接处理 WebSocket 升级请求
-  server.on('upgrade', (request, socket, head) => {
-    // 如果这个 socket 已经被处理过，就忽略它
-    if (upgradedSockets.has(socket)) {
-      return;
-    }
-
-    const pathname = parse(request.url).pathname;
-
-    if (pathname === '/ws') {
-      console.log('处理 WebSocket 升级请求:', pathname);
-      try {
-        // 标记这个 socket 已经被处理
-        upgradedSockets.add(socket);
-
-        wss.handleUpgrade(request, socket, head, (ws) => {
-          wss.emit('connection', ws, request);
-        });
-      } catch (error) {
-        console.error('WebSocket 升级处理错误:', error);
-        socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
-        socket.destroy();
-      }
-    } else {
-      console.log('非 WebSocket 升级请求:', pathname);
-      // Next.js 会自己处理这些请求，无需销毁 socket
-    }
-  });
+  // 不再集成 WebSocket 服务器
 
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`> Ready on http://${hostname}:${port}`);
-    console.log(`> WebSocket server ready on ws://${hostname}:${port}/ws`);
+    // 提示独立的 WebSocket 服务器地址
+    console.log(`> WebSocket server ready on ws://${hostname}:${wsPort}`);
   });
 });

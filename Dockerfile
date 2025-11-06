@@ -119,7 +119,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
-# ENV WS_PORT=3001
+ENV WS_PORT=3001
 ENV DOCKER_ENV=true
 
 # 从构建器中复制 standalone 输出

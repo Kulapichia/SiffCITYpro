@@ -176,10 +176,10 @@ export interface IStorage {
   deleteDanmu(videoId: string, danmuId: string): Promise<void>;
 
   // 机器码管理
-  getUserMachineCode(userName: string): Promise<string | null>;
+  getUserMachineCodes(userName: string): Promise<any[]>; // 修改：获取机器码列表
   setUserMachineCode(userName: string, machineCode: string, deviceInfo?: string): Promise<void>;
-  deleteUserMachineCode(userName: string): Promise<void>;
-  getMachineCodeUsers(): Promise<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>>;
+  deleteUserMachineCode(userName: string, machineCode?: string): Promise<void>; // 修改：增加可选参数
+  getMachineCodeUsers(): Promise<Record<string, { devices: any[] }>>; // 修改：获取所有用户的设备列表
   isMachineCodeBound(machineCode: string): Promise<string | null>;
 
   // 聊天功能

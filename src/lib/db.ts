@@ -337,9 +337,28 @@ class MemoryStorage implements IStorage {
   async deleteDanmu(_videoId: string, _danmuId: string): Promise<void> { }
 
   // --- 机器码管理存根 ---
-  async getUserMachineCode(userName: string): Promise<string | null> { return this.data[`machine_code:${userName}`] || null; }
-  async setUserMachineCode(userName: string, machineCode: string, _deviceInfo?: string): Promise<void> { this.data[`machine_code:${userName}`] = machineCode; }
-  async deleteUserMachineCode(userName: string): Promise<void> { delete this.data[`machine_code:${userName}`]; }
+  async getUserMachineCodes(userName: string): Promise<any[]> { return this.data[`machine_codes:${userName}`] || []; }
+  async setUserMachineCode(userName: string, machineCode: string, deviceInfo?: string): Promise<void> { 
+    const key = `machine_codes:${userName}`;
+    if (!this.data[key]) {
+      this.data[key] = [];
+    }
+    const device = { machineCode, deviceInfo: deviceInfo || '', bindTime: Date.now() };
+    // 避免重复添加
+    if (!this.data[key].some((d: any) => d.machineCode === machineCode)) {
+      this.data[key].push(device);
+    }
+  }
+  async deleteUserMachineCode(userName: string, machineCode?: string): Promise<void> { 
+    const key = `machine_codes:${userName}`;
+    if (machineCode) {
+      if (this.data[key]) {
+        this.data[key] = this.data[key].filter((d: any) => d.machineCode !== machineCode);
+      }
+    } else {
+      delete this.data[key];
+    }
+  }
   async getMachineCodeUsers(): Promise<Record<string, any>> { return {}; }
   async isMachineCodeBound(_machineCode: string): Promise<string | null> { return null; }
 
@@ -818,11 +837,11 @@ export class DbManager {
   }
 
   // ---------- 机器码管理 ----------
-  async getUserMachineCode(userName: string): Promise<string | null> {
-    if (typeof (this.storage as any).getUserMachineCode === 'function') {
-      return (this.storage as any).getUserMachineCode(userName);
+  async getUserMachineCodes(userName: string): Promise<any[]> {
+    if (typeof (this.storage as any).getUserMachineCodes === 'function') {
+      return (this.storage as any).getUserMachineCodes(userName);
     }
-    return null;
+    return [];
   }
 
   async setUserMachineCode(userName: string, machineCode: string, deviceInfo?: string): Promise<void> {
@@ -831,13 +850,13 @@ export class DbManager {
     }
   }
 
-  async deleteUserMachineCode(userName: string): Promise<void> {
+  async deleteUserMachineCode(userName: string, machineCode?: string): Promise<void> {
     if (typeof (this.storage as any).deleteUserMachineCode === 'function') {
-      await (this.storage as any).deleteUserMachineCode(userName);
+      await (this.storage as any).deleteUserMachineCode(userName, machineCode);
     }
   }
 
-  async getMachineCodeUsers(): Promise<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>> {
+  async getMachineCodeUsers(): Promise<Record<string, { devices: any[] }>> {
     if (typeof (this.storage as any).getMachineCodeUsers === 'function') {
       return (this.storage as any).getMachineCodeUsers();
     }

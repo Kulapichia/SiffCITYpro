@@ -131,7 +131,7 @@ export function ChatArea({
 
   return (
     <div className={`
-      ${isMobile ? 'w-full flex' : 'flex-1 mt-8'}
+      ${isMobile ? 'w-full flex' : 'flex-1'}
       flex-col h-full
     `}>
       {selectedConversation ? (
@@ -308,11 +308,9 @@ export function ChatArea({
           </div>
         </>
       ) : (
-        !isMobile && (
-          <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-            选择一个对话开始聊天
-          </div>
-        )
+        <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+          选择一个对话开始聊天
+        </div>
       )}
     </div>
   );

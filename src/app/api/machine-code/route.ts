@@ -21,12 +21,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users: machineCodeUsers });
     }
 
-    // 默认行为：获取当前用户的机器码
-    const userMachineCode = await db.getUserMachineCode(authInfo.username);
+    // 默认行为：获取当前用户的机器码列表
+    const userMachineCodes = await db.getUserMachineCodes(authInfo.username);
 
     return NextResponse.json({
-      machineCode: userMachineCode,
-      isBound: !!userMachineCode
+      devices: userMachineCodes, // 返回设备列表
+      isBound: userMachineCodes && userMachineCodes.length > 0
     });
   } catch (error) {
     console.error('获取机器码信息失败:', error);
@@ -69,12 +69,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户是否已绑定其他机器码
-    const existingMachineCode = await db.getUserMachineCode(authInfo.username);
-    if (existingMachineCode && existingMachineCode !== machineCode) {
-      return NextResponse.json({
-        error: '您已绑定其他设备，如需更换请联系管理员',
-        currentMachineCode: existingMachineCode
-      }, { status: 409 }); // 409 Conflict
+    const existingDevices = await db.getUserMachineCodes(authInfo.username);
+    if (existingDevices && existingDevices.length >= 5) {
+      // 检查当前设备是否已在列表中，如果是，则允许（相当于更新设备信息）
+      const isAlreadyBound = existingDevices.some(d => d.machineCode === machineCode);
+      if (!isAlreadyBound) {
+        return NextResponse.json({
+          error: '您已绑定5台设备，已达到数量上限。请联系管理员解绑不用的设备。',
+        }, { status: 409 }); // 409 Conflict
+      }
     }
 
     // 绑定新机器码或更新已有的
@@ -100,8 +103,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 检查是否有绑定的机器码
-    const existingMachineCode = await db.getUserMachineCode(authInfo.username);
-    if (!existingMachineCode) {
+    const existingDevices = await db.getUserMachineCodes(authInfo.username);
+    if (!existingDevices || existingDevices.length === 0) {
       return NextResponse.json({ error: '您还未绑定任何设备码' }, { status: 400 });
     }
 

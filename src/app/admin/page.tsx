@@ -63,7 +63,7 @@ import {
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { exportData, parseImportData } from '@/lib/utils';
 import { DEFAULT_CMS_VIDEO_SOURCES } from '@/lib/default-video-sources';
-import TelegramConfigComponent from '@/components/TelegramConfigComponent';
+import { TelegramAuthConfig } from '@/components/TelegramAuthConfig';
 import AIRecommendConfig from '@/components/AIRecommendConfig';
 import CacheManager from '@/components/CacheManager';
 import DataMigration from '@/components/DataMigration';
@@ -216,159 +216,89 @@ const UserAvatar = ({ username, size = 'sm' }: UserAvatarProps) => {
 
 // 机器码单元格组件
 interface MachineCodeCellProps {
-  username: string;
+  user: { username: string; devices?: any[] }; // 接收整个 user 对象
   canManage: boolean;
-  machineCodeData: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
   onRefresh: () => void;
   showAlert: (config: any) => void;
 }
 
-const MachineCodeCell = ({ username, canManage, machineCodeData, onRefresh, showAlert }: MachineCodeCellProps) => {
-  const [unbinding, setUnbinding] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom'>('bottom');
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const codeRef = useRef<HTMLElement>(null);
+const MachineCodeCell = ({ user, canManage, onRefresh, showAlert }: MachineCodeCellProps) => {
+  const [unbinding, setUnbinding] = useState<string | null>(null); // 存储正在解绑的设备码
 
-  const machineCodeInfo = machineCodeData[username] || null;
-
-  // 智能定位逻辑
-  const handleMouseEnter = useCallback(() => {
-    if (!codeRef.current) return;
-
-    const element = codeRef.current;
-    const rect = element.getBoundingClientRect();
-    const tableContainer = element.closest('[data-table="user-list"]');
-
-    if (tableContainer) {
-      const containerRect = tableContainer.getBoundingClientRect();
-      const elementCenterY = rect.top + rect.height / 2;
-      const containerCenterY = containerRect.top + containerRect.height / 2;
-
-      // 如果元素在容器上半部分，悬浮框向下显示；否则向上显示
-      if (elementCenterY < containerCenterY) {
-        setTooltipPosition('bottom');
-      } else {
-        setTooltipPosition('top');
-      }
-    } else {
-      // 后备方案：根据视口位置决定
-      const viewportHeight = window.innerHeight;
-      if (rect.top < viewportHeight / 2) {
-        setTooltipPosition('bottom');
-      } else {
-        setTooltipPosition('top');
-      }
-    }
-  }, []);
-
-  // 解绑机器码
-  const handleUnbind = async () => {
-    if (!machineCodeInfo || !canManage) return;
-
+  // 解绑单个设备
+  const handleUnbind = async (machineCode: string) => {
+    if (!canManage) return;
+    setUnbinding(machineCode);
     try {
-      setUnbinding(true);
-      const response = await fetch('/api/machine-code', {
+      const response = await fetch('/api/admin/user', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'unbind',
-          targetUser: username,
+          action: 'unbindDevice',
+          targetUsername: user.username,
+          machineCode: machineCode,
         }),
       });
 
       if (response.ok) {
-        showSuccess('机器码解绑成功', showAlert);
+        showSuccess('设备解绑成功', showAlert);
         onRefresh(); // 刷新数据
       } else {
         const error = await response.json();
         showError(`解绑失败: ${error.error || '未知错误'}`, showAlert);
       }
     } catch (error) {
-      console.error('解绑机器码失败:', error);
       showError('解绑失败，请重试', showAlert);
     } finally {
-      setUnbinding(false);
+      setUnbinding(null);
     }
   };
 
   const formatMachineCode = (code: string) => {
-    if (code.length !== 32) return code;
-    return code.match(/.{1,4}/g)?.join('-') || code;
+    if (!code || typeof code !== 'string' || code.length < 12) return code;
+    // 只显示部分，悬浮时显示全部
+    return `${code.substring(0, 4)}-...-${code.substring(code.length - 4)}`;
   };
 
   const formatDate = (timestamp: number) => {
+    if (!timestamp) return '未知时间';
     return new Date(timestamp).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
-
-  if (!machineCodeInfo) {
-    return (
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-500 dark:text-gray-400">未绑定</span>
-      </div>
-    );
+  if (!user.devices || user.devices.length === 0) {
+    return <span className="text-sm text-gray-500 dark:text-gray-400">未绑定</span>;
   }
 
   return (
-    <div className="flex flex-col space-y-1">
-      <div className="flex items-center space-x-2">
-        <div className="group relative" onMouseEnter={handleMouseEnter}>
-          <code
-            ref={codeRef}
-            className="text-xs font-mono text-gray-700 dark:text-gray-300 cursor-help"
-          >
-            {formatMachineCode(machineCodeInfo.machineCode).substring(0, 12)}...
-          </code>
-          {/* 悬停显示完整机器码 - 智能定位 */}
-          <div
-            ref={tooltipRef}
-            className={`absolute left-0 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-50 ${tooltipPosition === 'bottom'
-              ? 'top-full mt-2'
-              : 'bottom-full mb-2'
-              }`}
-          >
-            <div className="font-mono">
-              {formatMachineCode(machineCodeInfo.machineCode)}
-            </div>
-            {machineCodeInfo.deviceInfo && (
-              <div className="mt-1 text-gray-300">
-                {machineCodeInfo.deviceInfo}
-              </div>
-            )}
-            <div className="mt-1 text-gray-400">
-              绑定时间: {formatDate(machineCodeInfo.bindTime)}
-            </div>
-            {/* 箭头 - 根据位置动态调整 */}
-            <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${tooltipPosition === 'bottom'
-              ? 'bottom-full border-b-4 border-b-gray-800'
-              : 'top-full border-t-4 border-t-gray-800'
-              }`}></div>
+    <div className="flex flex-col space-y-2">
+      {user.devices.map((device, index) => (
+        <div key={index} className="flex items-center justify-between group-hover:bg-gray-50 dark:group-hover:bg-gray-700/50 p-1 rounded-md">
+          <div className="flex flex-col">
+            <code
+              className="text-xs font-mono text-gray-700 dark:text-gray-300 cursor-help"
+              title={`完整设备码: ${device.machineCode}\n设备信息: ${device.deviceInfo || '未知'}\n绑定时间: ${formatDate(device.bindTime)}`}
+            >
+              {formatMachineCode(device.machineCode)}
+            </code>
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+              {device.deviceInfo || '未知设备'}
+            </span>
           </div>
+          {canManage && (
+            <button
+              onClick={() => handleUnbind(device.machineCode)}
+              disabled={unbinding === device.machineCode}
+              className={`${buttonStyles.dangerSmall} ${unbinding === device.machineCode ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="解绑此设备"
+            >
+              {unbinding === device.machineCode ? '...' : '解绑'}
+            </button>
+          )}
         </div>
-        {canManage && (
-          <button
-            onClick={handleUnbind}
-            disabled={unbinding}
-            className={`${buttonStyles.roundedDanger} ${unbinding ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title="解绑机器码"
-          >
-            {unbinding ? '解绑中...' : '解绑'}
-          </button>
-        )}
-      </div>
-      <div className="flex items-center space-x-1">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-          已绑定
-        </span>
-      </div>
+      ))}
     </div>
   );
 };
@@ -378,13 +308,14 @@ interface UserConfigProps {
   config: AdminConfig | null;
   role: 'owner' | 'admin' | null;
   refreshConfig: () => Promise<void>;
-  machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
-  fetchMachineCodeUsers: () => Promise<void>;
+  // machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
+  // fetchMachineCodeUsers: () => Promise<void>;
 }
 
-const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachineCodeUsers }: UserConfigProps) => {
+const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
+  const [selectedShowAdultContent, setSelectedShowAdultContent] = useState(false);
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
   const [showAddUserGroupForm, setShowAddUserGroupForm] = useState(false);
@@ -401,6 +332,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
   const [newUserGroup, setNewUserGroup] = useState({
     name: '',
     enabledApis: [] as string[],
+    showAdultContent: false,
   });
   const [editingUserGroup, setEditingUserGroup] = useState<{
     name: string;
@@ -485,7 +417,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
         await refreshConfig();
 
         if (action === 'add') {
-          setNewUserGroup({ name: '', enabledApis: [] });
+          setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
           setShowAddUserGroupForm(false);
         } else if (action === 'edit') {
           setEditingUserGroup(null);
@@ -622,9 +554,11 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
     username: string;
     role: 'user' | 'admin' | 'owner';
     enabledApis?: string[];
+    showAdultContent?: boolean;
   }) => {
     setSelectedUser(user);
     setSelectedApis(user.enabledApis || []);
+    setSelectedShowAdultContent(user.showAdultContent || false);
     setShowConfigureApisModal(true);
   };
 
@@ -742,6 +676,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
             targetUsername: selectedUser.username,
             action: 'updateUserApis',
             enabledApis: selectedApis,
+            showAdultContent: selectedShowAdultContent,
           }),
         });
 
@@ -755,6 +690,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
         setShowConfigureApisModal(false);
         setSelectedUser(null);
         setSelectedApis([]);
+        setSelectedShowAdultContent(false);
       } catch (err) {
         showError(err instanceof Error ? err.message : '操作失败', showAlert);
         throw err;
@@ -1524,10 +1460,9 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap'>
                           <MachineCodeCell
-                            username={user.username}
+                            user={user}
                             canManage={canOperate}
-                            machineCodeData={machineCodeUsers}
-                            onRefresh={fetchMachineCodeUsers}
+                            onRefresh={refreshConfig}
                             showAlert={showAlert}
                           />
                         </td>
@@ -1712,6 +1647,32 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                 </div>
               </div>
 
+              {/* 成人内容控制 */}
+              <div className='mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+                <label className='flex items-center justify-between cursor-pointer'>
+                  <div className='flex-1'>
+                    <div className='flex items-center space-x-2'>
+                      <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
+                        显示成人内容
+                      </span>
+                      <span className='text-lg'>🔞</span>
+                    </div>
+                    <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
+                      允许此用户查看被标记为成人资源的视频源（需要同时启用站点级别和用户组级别的成人内容开关，优先级：用户 &gt; 用户组 &gt; 全局）
+                    </p>
+                  </div>
+                  <div className='relative inline-block ml-4'>
+                    <input
+                      type='checkbox'
+                      checked={selectedShowAdultContent}
+                      onChange={(e) => setSelectedShowAdultContent(e.target.checked)}
+                      className='sr-only peer'
+                    />
+                    <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
+                  </div>
+                </label>
+              </div>
+
               {/* 操作按钮 */}
               <div className='flex justify-end space-x-3'>
                 <button
@@ -1719,6 +1680,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                     setShowConfigureApisModal(false);
                     setSelectedUser(null);
                     setSelectedApis([]);
+                    setSelectedShowAdultContent(false);
                   }}
                   className={`px-6 py-2.5 text-sm font-medium ${buttonStyles.secondary}`}
                 >
@@ -1742,7 +1704,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
       {showAddUserGroupForm && createPortal(
         <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4' onClick={() => {
           setShowAddUserGroupForm(false);
-          setNewUserGroup({ name: '', enabledApis: [] });
+          setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
         }}>
           <div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto' onClick={(e) => e.stopPropagation()}>
             <div className='p-6'>
@@ -1753,7 +1715,7 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                 <button
                   onClick={() => {
                     setShowAddUserGroupForm(false);
-                    setNewUserGroup({ name: '', enabledApis: [] });
+                    setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
                   }}
                   className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
                 >
@@ -1909,12 +1871,43 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                   </div>
                 </div>
 
+                {/* 成人内容控制 */}
+                <div className='p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+                  <label className='flex items-center justify-between cursor-pointer'>
+                    <div className='flex-1'>
+                      <div className='flex items-center space-x-2'>
+                        <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
+                          显示成人内容
+                        </span>
+                        <span className='text-lg'>🔞</span>
+                      </div>
+                      <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
+                        允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
+                      </p>
+                    </div>
+                    <div className='relative inline-block ml-4'>
+                      <input
+                        type='checkbox'
+                        checked={newUserGroup.showAdultContent}
+                        onChange={(e) =>
+                          setNewUserGroup((prev) => ({
+                            ...prev,
+                            showAdultContent: e.target.checked,
+                          }))
+                        }
+                        className='sr-only peer'
+                      />
+                      <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
+                    </div>
+                  </label>
+                </div>
+
                 {/* 操作按钮 */}
                 <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700'>
                   <button
                     onClick={() => {
                       setShowAddUserGroupForm(false);
-                      setNewUserGroup({ name: '', enabledApis: [] });
+                      setNewUserGroup({ name: '', enabledApis: [], showAdultContent: false });
                     }}
                     className={`px-6 py-2.5 text-sm font-medium ${buttonStyles.secondary}`}
                   >
@@ -2642,28 +2635,6 @@ const VideoSourceConfig = ({
   useEffect(() => {
     setSelectedSources(new Set());
   }, [filterStatus, filterValidity]);
-  
-  // 通用 API 请求
-  const callSourceApi = async (body: Record<string, any>) => {
-    try {
-      const resp = await fetch('/api/admin/source', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body }),
-      });
-
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data.error || `操作失败: ${resp.status}`);
-      }
-
-      // 成功后刷新配置
-      await refreshConfig();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : '操作失败', showAlert);
-      throw err; // 向上抛出方便调用处判断
-    }
-  };
 
   const handleToggleEnable = (key: string) => {
     const target = sources.find((s) => s.key === key);
@@ -2796,6 +2767,61 @@ const VideoSourceConfig = ({
       .catch(() => {
         console.error('操作失败', 'sort', order);
       });
+  };
+
+  // 通用 API 请求
+  const callSourceApi = async (body: Record<string, any>) => {
+    try {
+      const resp = await fetch('/api/admin/source', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body }),
+      });
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `操作失败: ${resp.status}`);
+      }
+
+      // 成功后刷新配置
+      await refreshConfig();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : '操作失败', showAlert);
+      throw err; // 向上抛出方便调用处判断
+    }
+  };
+
+  const handleToggleAdult = async (key: string, is_adult: boolean) => {
+    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
+  };
+
+  const handleBatchMarkAdult = async (is_adult: boolean) => {
+    if (selectedSources.size === 0) {
+      showAlert({ type: 'warning', title: '请先选择视频源' });
+      return;
+    }
+    const keys = Array.from(selectedSources);
+    const action = is_adult ? 'batch_mark_adult' : 'batch_unmark_adult';
+    const actionName = is_adult ? '批量标记成人' : '批量取消标记';
+
+    setConfirmModal({
+      isOpen: true,
+      title: '确认操作',
+      message: `确定要为选中的 ${keys.length} 个视频源 ${is_adult ? '标记为成人资源' : '取消成人资源标记'} 吗？`,
+      onConfirm: async () => {
+        try {
+          await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
+          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频源`, timer: 2000 });
+          setSelectedSources(new Set());
+        } catch (err) {
+          showAlert({ type: 'error', title: `${actionName}失败`, message: err instanceof Error ? err.message : '操作失败' });
+        }
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      },
+      onCancel: () => {
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => {} });
+      }
+    });
   };
 
   // 有效性检测函数
@@ -3041,6 +3067,22 @@ const VideoSourceConfig = ({
           >
             {!source.disabled ? '启用中' : '已禁用'}
           </span>
+        </td>
+        <td className='px-6 py-4 whitespace-nowrap text-center'>
+          <button
+            onClick={() => handleToggleAdult(source.key, !source.is_adult)}
+            disabled={isLoading(`toggleAdult_${source.key}`)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${source.is_adult
+              ? 'bg-gradient-to-r from-red-600 to-pink-600 focus:ring-red-500'
+              : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500'
+            } ${isLoading(`toggleAdult_${source.key}`) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={source.is_adult ? '点击取消成人资源标记' : '点击标记为成人资源'}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${source.is_adult ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+          {source.is_adult && (
+            <span className='ml-2 text-xs text-red-600 dark:text-red-400'>🔞</span>
+          )}
         </td>
         <td className='px-6 py-4 whitespace-nowrap max-w-[1rem]'>
           {(() => {
@@ -3493,6 +3535,22 @@ const VideoSourceConfig = ({
           >
             批量删除
           </button>
+          <button
+            onClick={() => handleBatchMarkAdult(true)}
+            disabled={isLoading('batchSource_batch_mark_adult')}
+            className={`px-3 py-1 text-sm ${isLoading('batchSource_batch_mark_adult') ? buttonStyles.disabled : 'bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-lg transition-colors'}`}
+            title='将选中的视频源标记为成人资源'
+          >
+            {isLoading('batchSource_batch_mark_adult') ? '标记中...' : '标记成人'}
+          </button>
+          <button
+            onClick={() => handleBatchMarkAdult(false)}
+            disabled={isLoading('batchSource_batch_unmark_adult')}
+            className={`px-3 py-1 text-sm ${isLoading('batchSource_batch_unmark_adult') ? buttonStyles.disabled : buttonStyles.secondary}`}
+            title='取消选中视频源的成人资源标记'
+          >
+            {isLoading('batchSource_batch_unmark_adult') ? '取消中...' : '取消标记'}
+          </button>
         </div>
       </div>
       
@@ -3629,6 +3687,9 @@ const VideoSourceConfig = ({
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                 状态
+              </th>
+              <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                成人资源
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                 有效性
@@ -4399,6 +4460,7 @@ const SiteConfigComponent = ({
   const [siteSettings, setSiteSettings] = useState<SiteConfig>({
     SiteName: '',
     Announcement: '',
+    ShowAdultContent: false,
     SearchDownstreamMaxPage: 1,
     SiteInterfaceCacheTime: 7200,
     DoubanProxyType: 'cmliussss-cdn-tencent',
@@ -4442,7 +4504,7 @@ const SiteConfigComponent = ({
     TelegramAuth: {
       enabled: false,
       autoRegister: false,
-      botName: '',
+      botUsername: '',
       botToken: '',
       defaultRole: 'user',
     },
@@ -7350,24 +7412,17 @@ function AdminPageClient() {
     dataMigration: false,
     registrationConfig: false,
     oauthConfig: false,
-    telegramConfig: false,
+    telegramAuthConfig: false,
     themeManager: false,
   });
   
   // 机器码管理状态
-  const [machineCodeUsers, setMachineCodeUsers] = useState<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>>({});
+  // const [machineCodeUsers, setMachineCodeUsers] = useState<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>>({});
 
-  // 获取机器码用户列表
+  // 获取机器码用户列表的逻辑已合并到 fetchConfig 中
   const fetchMachineCodeUsers = useCallback(async () => {
-    try {
-      const response = await fetch('/api/machine-code?action=list');
-      if (response.ok) {
-        const data = await response.json();
-        setMachineCodeUsers(data.users || {});
-      }
-    } catch (error) {
-      console.error('获取机器码用户列表失败:', error);
-    }
+    // 这个函数现在只是一个触发器，实际数据在 fetchConfig 中获取并合并
+    await fetchConfig();
   }, []);
   
   // 获取管理员配置
@@ -7548,16 +7603,44 @@ function AdminPageClient() {
             <CollapsibleTab
               title='Telegram 登录配置'
               icon={
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className='text-gray-600 dark:text-gray-400'>
-                  <path d="M15 10l-4 4 6 6 4-16-18 7 4 2 2 6 3-4" />
+                <svg
+                    viewBox='0 0 24 24'
+                    width='20'
+                    height='20'
+                    className='text-blue-500 dark:text-blue-400'
+                    fill='currentColor'
+                  >
+                    <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.82-.27-1.47-.42-1.42-.88.03-.24.37-.48 1.02-.73 4-1.74 6.68-2.88 8.03-3.44 3.82-1.58 4.61-1.85 5.13-1.86.11 0 .37.03.54.17.14.11.18.26.2.37.02.08.03.29.01.45z' />
                 </svg>
               }
-              isExpanded={expandedTabs.telegramConfig}
-              onToggle={() => toggleTab('telegramConfig')}
+              isExpanded={expandedTabs.telegramAuthConfig}
+              onToggle={() => toggleTab('telegramAuthConfig')}
             >
-              <TelegramConfigComponent
-                config={config}
-                refreshConfig={fetchConfig}
+              <TelegramAuthConfig
+                config={
+                  config?.SiteConfig.TelegramAuth || {
+                    enabled: false,
+                    botToken: '',
+                    botUsername: '',
+                    autoRegister: true,
+                    defaultRole: 'user',
+                  }
+                }
+                onSave={async (newConfig) => {
+                  if (!config) return;
+                  await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      ...config,
+                      SiteConfig: { // 修正保存路径
+                        ...config.SiteConfig,
+                        TelegramAuth: newConfig,
+                      },
+                    }),
+                  });
+                  await fetchConfig();
+                }}
               />
             </CollapsibleTab>
           )}
@@ -7576,8 +7659,7 @@ function AdminPageClient() {
                 config={config}
                 role={role}
                 refreshConfig={fetchConfig}
-                machineCodeUsers={machineCodeUsers}
-                fetchMachineCodeUsers={fetchMachineCodeUsers}
+                // fetchMachineCodeUsers={fetchConfig} // 直接复用 fetchConfig 即可
               />
             </CollapsibleTab>
 
@@ -7624,6 +7706,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('liveSource')}
             >
               <LiveSourceConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 源浏览器标签 - 新增 */}
+            <CollapsibleTab
+              title='源浏览器'
+              icon={
+                <FileSearch
+                  size={20}
+                  className='text-gray-600 dark:text-gray-400'
+                />
+              }
+              isExpanded={expandedTabs.sourceBrowser}
+              onToggle={() => toggleTab('sourceBrowser')}
+            >
+              <SourceBrowser />
             </CollapsibleTab>
 
             {/* 源检测标签 - 新增 */}

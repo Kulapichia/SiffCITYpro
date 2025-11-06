@@ -31,7 +31,7 @@ app.prepare().then(() => {
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`🌐 Next.js ready on http://${hostname}:${port}`);
-    console.log(`🔌 WebSocket ready on ws://${hostname}:${wsPort}/ws`);
+    console.log(`🔌 WebSocket ready on ws://${hostname}:${wsPort}/ws-api`);
     console.log('\n✅ 开发环境已启动！按 Ctrl+C 停止服务器');
   });
 

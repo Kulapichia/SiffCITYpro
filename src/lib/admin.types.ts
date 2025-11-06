@@ -28,7 +28,7 @@ export interface OAuthConfig {
 export interface TelegramConfig {
   enabled: boolean; // Telegram 登录开关
   autoRegister: boolean; // 自动注册开关
-  botName: string; // Bot 用户名
+  botUsername: string; // 修正字段名为 botUsername
   botToken: string; // Bot Token
   defaultRole: 'user' | 'admin'; // 自动注册默认角色
 }
@@ -43,6 +43,7 @@ export interface SiteConfig {
   DoubanImageProxyType: string;
   DoubanImageProxy: string;
   DisableYellowFilter: boolean;
+  ShowAdultContent: boolean; // 是否显示成人内容，默认 false
   FluidSearch: boolean;
   // TMDB配置
   TMDBApiKey?: string;
@@ -125,6 +126,7 @@ export interface AdminConfig {
     Tags?: {
       name: string;
       enabledApis: string[];
+      showAdultContent?: boolean; // 用户组级别的成人内容显示控制
     }[];
   };
   SourceConfig: {
@@ -135,6 +137,7 @@ export interface AdminConfig {
     from: 'config' | 'custom';
     disabled?: boolean;
     lastCheck?: SourceLastCheck;
+    is_adult?: boolean;
   }[];
   CustomCategories: {
     name?: string;
@@ -206,6 +209,8 @@ export type User = {
   linuxdoUsername?: string; // LinuxDo 用户名
   telegramId?: number; // 新增 Telegram 用户 ID
   telegramUsername?: string; // 新增 Telegram 用户名
+  showAdultContent?: boolean; // 用户级别的成人内容显示控制
+  devices?: any[]; // 新增：用于后台显示用户绑定的设备列表
 };
 
 export interface LinuxDoUserInfo {

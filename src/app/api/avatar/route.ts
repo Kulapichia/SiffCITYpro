@@ -59,13 +59,10 @@ export async function POST(request: NextRequest) {
 
     const userToUpdate = targetUser || authInfo.username;
 
-    const config = await getConfig();
-    const operator = config.UserConfig.Users.find(u => u.username === authInfo.username);
-    const isOwner = authInfo.username === process.env.USERNAME;
-    const isAdmin = operator?.role === 'admin';
-
     // 只允许更新自己的头像，管理员和站长可以更新任何用户的头像
-    const canUpdate = userToUpdate === authInfo.username || isAdmin || isOwner;
+    const canUpdate = userToUpdate === authInfo.username ||
+      authInfo.role === 'admin' ||
+      authInfo.role === 'owner';
 
     if (!canUpdate) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
@@ -90,14 +87,11 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const targetUser = searchParams.get('user') || authInfo.username;
-    
-    const config = await getConfig();
-    const operator = config.UserConfig.Users.find(u => u.username === authInfo.username);
-    const isOwner = authInfo.username === process.env.USERNAME;
-    const isAdmin = operator?.role === 'admin';
 
     // 只允许删除自己的头像，管理员和站长可以删除任何用户的头像
-    const canDelete = targetUser === authInfo.username || isAdmin || isOwner;
+    const canDelete = targetUser === authInfo.username ||
+      authInfo.role === 'admin' ||
+      authInfo.role === 'owner';
 
     if (!canDelete) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });

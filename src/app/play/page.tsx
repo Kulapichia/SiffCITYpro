@@ -29,6 +29,7 @@ import {
   EpisodeSkipConfig,
   SkipSegment,
 } from '@/lib/db.client';
+import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal';
 import { getDoubanDetails } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -4200,6 +4201,8 @@ function PlayPageClient() {
       // 创建新的播放器实例
       Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
       Artplayer.USE_RAF = true;
+      // 确保网页全屏在 body 元素上，避免布局问题
+      Artplayer.FULLSCREEN_WEB_IN_BODY = true;
       // 重新启用5.3.0内存优化功能，但使用false参数避免清空DOM
       Artplayer.REMOVE_SRC_WHEN_DESTROY = true;
 
@@ -4478,24 +4481,7 @@ function PlayPageClient() {
               return newVal ? '当前开启' : '当前关闭';
             },
           },
-          {
-            name: '外部弹幕',
-            html: '外部弹幕',
-            icon: '<text x="50%" y="50%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">外</text>',
-            tooltip: externalDanmuEnabled ? '外部弹幕已开启' : '外部弹幕已关闭',
-            switch: externalDanmuEnabled,
-            onSwitch: function (item: any) {
-              const nextState = !item.switch;
-              
-              // 🚀 使用优化后的弹幕操作处理函数
-              handleDanmuOperationOptimized(nextState);
-              
-              // 更新tooltip显示
-              item.tooltip = nextState ? '外部弹幕已开启' : '外部弹幕已关闭';
-              
-              return nextState; // 立即返回新状态
-            },
-          },
+
           // 跳过片头片尾设置
           {
             name: '跳过片头片尾',
@@ -4660,11 +4646,38 @@ function PlayPageClient() {
               handleNextEpisode();
             },
           },
-          // 新增：弹幕设置按钮
+
+          // 新增：外部弹幕开关按钮（TV-弹 图标）
+          {
+            name: 'external-danmaku-toggle',
+            position: 'right',
+            html: `
+                <svg width="24" height="24" viewBox="0 0 24 24" style="position: relative;">
+                    <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" fill="${externalDanmuEnabled ? '#22c55e' : 'currentColor'}"></path>
+                    <text x="12" y="14" font-size="8" font-weight="bold" text-anchor="middle" fill="${externalDanmuEnabled ? '#FFFFFF' : '#AAAAAA'}">弹</text>
+                </svg>
+            `,
+            tooltip: externalDanmuEnabled ? '关闭外部弹幕' : '开启外部弹幕',
+            click: function (control: any) {
+              const nextState = !externalDanmuEnabledRef.current;
+              // 使用优化函数处理弹幕开关逻辑
+              handleDanmuOperationOptimized(nextState);
+
+              // 动态更新按钮UI
+              control.tooltip = nextState ? '关闭外部弹幕' : '开启外部弹幕';
+              control.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" style="position: relative;">
+                    <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" fill="${nextState ? '#22c55e' : 'currentColor'}"></path>
+                    <text x="12" y="14" font-size="8" font-weight="bold" text-anchor="middle" fill="${nextState ? '#FFFFFF' : '#AAAAAA'}">弹</text>
+                </svg>
+              `;
+            },
+          },
+
+          // 升级：集成高级设置的“发送弹幕”按钮
           {
             name: 'danmaku-settings',
             position: 'right',
-            index: 20,
             html: `
               <div class="art-danmaku-settings-wrapper" style="position: relative;">
                 <span style="font-size: 16px; font-weight: bold;">弹</span>
@@ -4691,255 +4704,168 @@ function PlayPageClient() {
                   <div class="art-danmaku-menu-item" data-action="toggle-merge" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">弹幕合并: ${danmakuMergeEnabled ? '已开启' : '已关闭'}</div>
                   <div class="art-danmaku-menu-item" data-action="merge-window" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">合并窗口(秒)</div>
                   <div class="art-danmaku-menu-item" data-action="apply-filter" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">应用当前过滤规则</div>
+                  <div class="art-danmaku-menu-item" data-action="send" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #ff5722;">发送弹幕</div>
+                  <div class="art-danmaku-menu-item" data-action="settings" style="padding: 8px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; color: #fff;">弹幕设置</div>
                 </div>
               </div>
             `,
-            tooltip: '弹幕设置',
-            // @ts-ignore: style is supported by Artplayer controls
-            style: {
-              color: danmakuEnabled ? '#00aeec' : '#fff',
+            tooltip: '点击发送 / 悬停设置',
+            // 修正：新增 click 事件处理函数，用于发送弹幕
+            click: function () {
+              const plugin = getDanmakuPlugin();
+              
+              // 检查弹幕是否已开启且可见
+              if (plugin && !plugin.isHide) {
+                // 如果弹幕可见，则点击行为是“发送弹幕”
+                // 调用插件自带的输入框
+                if (plugin.emitter && typeof plugin.emitter.show === 'function') {
+                  plugin.emitter.show();
+                } else {
+                  // 备用方案
+                  showInputDialog('请输入弹幕内容:').then(text => {
+                    if (text && text.trim()) {
+                      plugin.emit({
+                        text: text.trim(),
+                        color: '#fff',
+                        border: false,
+                      });
+                      showPlayerNotice('弹幕发送成功!');
+                    }
+                  });
+                }
+              } else if (plugin) {
+                // 如果弹幕已加载但被隐藏了，则点击行为是“显示弹幕”
+                plugin.show();
+                // 可以在显示后给用户一个提示
+                showPlayerNotice('弹幕已显示，再次点击可发送', 2000);
+              } else {
+                // 如果弹幕功能根本没加载
+                showPlayerNotice('请先从弹幕菜单加载弹幕', 2000);
+              }
             },
             mounted: function (element: HTMLElement) {
-              const wrapper = element.querySelector(
-                '.art-danmaku-settings-wrapper'
-              );
-              const menu = element.querySelector(
-                '.art-danmaku-menu'
-              ) as HTMLElement;
-
+              const wrapper = element.querySelector('.art-danmaku-settings-wrapper');
+              const menu = element.querySelector('.art-danmaku-menu') as HTMLElement;
               if (!wrapper || !menu) return;
 
               let hideTimeout: any = null;
 
-              // 显示菜单
               const showMenu = () => {
-                if (hideTimeout) {
-                  clearTimeout(hideTimeout);
-                  hideTimeout = null;
-                }
-                
-                // 更新菜单文本以反映当前状态（从localStorage读取最新值）
+                if (hideTimeout) clearTimeout(hideTimeout);
                 const mergeItem = menu.querySelector('[data-action="toggle-merge"]');
                 if (mergeItem) {
                   try {
                     const currentMergeState = localStorage.getItem('danmaku_merge_enabled') === 'true';
                     mergeItem.textContent = `弹幕合并: ${currentMergeState ? '已开启' : '已关闭'}`;
-                  } catch (e) {
-                    console.warn('[DanmuTV] 读取合并状态失败', e);
-                  }
+                  } catch (e) { console.warn('读取合并状态失败', e); }
                 }
-                
                 menu.style.display = 'block';
               };
 
-              // 隐藏菜单（延迟执行）
               const hideMenu = () => {
-                hideTimeout = setTimeout(() => {
-                  menu.style.display = 'none';
-                }, 200);
+                hideTimeout = setTimeout(() => { menu.style.display = 'none'; }, 200);
               };
 
-              // 按钮悬停事件
               wrapper.addEventListener('mouseenter', showMenu);
               wrapper.addEventListener('mouseleave', hideMenu);
-
-              // 菜单悬停事件 - 保持显示
               menu.addEventListener('mouseenter', showMenu);
               menu.addEventListener('mouseleave', hideMenu);
 
-              // 菜单项悬停高亮
-              const items = menu.querySelectorAll('.art-danmaku-menu-item');
-              items.forEach((item) => {
-                item.addEventListener('mouseenter', () => {
-                  (item as HTMLElement).style.backgroundColor =
-                    'rgba(255, 255, 255, 0.1)';
-                });
-                item.addEventListener('mouseleave', () => {
-                  (item as HTMLElement).style.backgroundColor = 'transparent';
-                });
+              menu.querySelectorAll('.art-danmaku-menu-item').forEach(item => {
+                item.addEventListener('mouseenter', () => { (item as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; });
+                item.addEventListener('mouseleave', () => { (item as HTMLElement).style.backgroundColor = 'transparent'; });
               });
 
-              // 点击事件处理
               menu.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 阻止事件冒泡到父按钮
                 const target = e.target as HTMLElement;
                 if (!target.classList.contains('art-danmaku-menu-item')) return;
-
                 const action = target.getAttribute('data-action');
-                if (hideTimeout) {
-                  clearTimeout(hideTimeout);
-                }
+                if (hideTimeout) clearTimeout(hideTimeout);
                 menu.style.display = 'none';
 
+                const plugin = getDanmakuPlugin();
+
                 switch (action) {
+                  case 'send':
+                    if (plugin && !plugin.isHide) {
+                      if (plugin.emitter && typeof plugin.emitter.show === 'function') {
+                        plugin.emitter.show();
+                      }
+                    } else {
+                      showPlayerNotice('请先开启并加载弹幕', 2000);
+                    }
+                    break;
                   case 'load':
                     if (!danmakuEnabled) setDanmakuEnabled(true);
                     setDanmakuPanelOpen(true);
                     break;
-
-                  case 'offset-left-1': {
-                    const newOffset = danmakuOffset - 1;
+                  case 'offset-left-1': case 'offset-left-5': case 'offset-right-1': case 'offset-right-5':
+                    const offsetMap: Record<string, number> = {'offset-left-1': -1, 'offset-left-5': -5, 'offset-right-1': 1, 'offset-right-5': 5};
+                    const offset = offsetMap[action];
+                    const newOffset = danmakuOffset + offset;
                     setDanmakuOffset(newOffset);
-                    const plugin = getDanmakuPlugin();
                     if (plugin) {
                       plugin.config.offset = newOffset;
-                      if (typeof plugin.update === 'function') {
-                        plugin.update();
-                      }
+                      if (typeof plugin.update === 'function') plugin.update();
                       showPlayerNotice(`弹幕对轴：${newOffset}秒`, 1500);
                     }
                     break;
-                  }
-
-                  case 'offset-left-5': {
-                    const newOffset = danmakuOffset - 5;
-                    setDanmakuOffset(newOffset);
-                    const plugin = getDanmakuPlugin();
-                    if (plugin) {
-                      plugin.config.offset = newOffset;
-                      if (typeof plugin.update === 'function') {
-                        plugin.update();
-                      }
-                      showPlayerNotice(`弹幕对轴：${newOffset}秒`, 1500);
-                    }
-                    break;
-                  }
-
-                  case 'offset-right-1': {
-                    const newOffset = danmakuOffset + 1;
-                    setDanmakuOffset(newOffset);
-                    const plugin = getDanmakuPlugin();
-                    if (plugin) {
-                      plugin.config.offset = newOffset;
-                      if (typeof plugin.update === 'function') {
-                        plugin.update();
-                      }
-                      showPlayerNotice(`弹幕对轴：${newOffset}秒`, 1500);
-                    }
-                    break;
-                  }
-
-                  case 'offset-right-5': {
-                    const newOffset = danmakuOffset + 5;
-                    setDanmakuOffset(newOffset);
-                    const plugin = getDanmakuPlugin();
-                    if (plugin) {
-                      plugin.config.offset = newOffset;
-                      if (typeof plugin.update === 'function') {
-                        plugin.update();
-                      }
-                      showPlayerNotice(`弹幕对轴：${newOffset}秒`, 1500);
-                    }
-                    break;
-                  }
-
                   case 'keywords': {
-                    const currentKeywords = danmakuKeywords
-                      .split(/[,\n;\s]+/)
-                      .filter(Boolean)
-                      .join(', ');
-                    const promptText = currentKeywords
-                      ? `当前屏蔽关键词：\n${currentKeywords}\n\n请修改关键词（用逗号/空格/分号/换行分隔）：`
-                      : '请输入要屏蔽的关键词（用逗号/空格/分号/换行分隔）：';
-
+                    const currentKeywords = danmakuKeywords.split(/[,\n;\s]+/).filter(Boolean).join(', ');
+                    const promptText = currentKeywords ? `当前屏蔽关键词：\n${currentKeywords}\n\n请修改（用逗号/空格/分号/换行分隔）：` : '请输入要屏蔽的关键词（用逗号/空格/分号/换行分隔）：';
                     const keywords = await showInputDialog(promptText, danmakuKeywords);
-                    if (keywords === null) break; // 用户取消
-                    
-                    // 立即更新状态
+                    if (keywords === null) break;
                     setDanmakuKeywords(keywords);
-                    try {
-                      localStorage.setItem('danmaku_keywords', keywords);
-                    } catch (e) {
-                      console.error('[DanmuTV] 保存关键词失败:', e);
-                    }
-
-                    // 直接使用新值重新加载弹幕(不依赖状态更新)
+                    try { localStorage.setItem('danmaku_keywords', keywords); } catch (e) { console.error('保存关键词失败:', e); }
                     await reloadDanmakuWithFilter(keywords, danmakuLimitPerSec);
-                    
-                    if (!keywords.trim()) {
-                      showPlayerNotice('已清空关键词屏蔽', 1500);
-                    }
+                    if (!keywords.trim()) showPlayerNotice('已清空关键词屏蔽', 1500);
                     break;
                   }
-
                   case 'density': {
-                    const val = await showInputDialog(
-                      '每秒最大弹幕数(0 表示不限)',
-                      String(danmakuLimitPerSec)
-                    );
-                    if (val === null) break; // 用户取消
-                    
+                    const val = await showInputDialog('每秒最大弹幕数(0 表示不限)', String(danmakuLimitPerSec));
+                    if (val === null) break;
                     const n = Math.max(0, Number(val) || 0);
                     setDanmakuLimitPerSec(n);
-                    try {
-                      localStorage.setItem('danmaku_limit_per_sec', String(n));
-                    } catch (e) {
-                      console.error('[DanmuTV] 保存密度限制失败:', e);
-                    }
-                    
-                    // 直接使用新值重新加载弹幕(不依赖状态更新)
+                    try { localStorage.setItem('danmaku_limit_per_sec', String(n)); } catch (e) { console.error('保存密度限制失败:', e); }
                     await reloadDanmakuWithFilter(danmakuKeywords, n);
                     break;
                   }
-
                   case 'apply-filter':
                     await reloadDanmakuWithFilter();
                     break;
-
                   case 'toggle-merge': {
-                    // 从localStorage读取当前状态
                     let currentState = false;
-                    try {
-                      currentState = localStorage.getItem('danmaku_merge_enabled') === 'true';
-                    } catch (e) {
-                      console.warn('[DanmuTV] 读取合并状态失败', e);
-                    }
-                    
+                    try { currentState = localStorage.getItem('danmaku_merge_enabled') === 'true'; } catch (e) { console.warn('读取合并状态失败', e); }
                     const newState = !currentState;
-                    
                     try {
-                      // 保存新状态到localStorage
                       localStorage.setItem('danmaku_merge_enabled', String(newState));
-                      console.log('[danmaku] 弹幕合并状态已切换:', currentState, '->', newState);
-                      
-                      // 刷新页面以应用新状态
-                      showPlayerNotice(`弹幕合并已${newState ? '开启' : '关闭'}，正在刷新页面...`, 1500);
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 500);
-                    } catch (e) {
-                      console.error('[DanmuTV] 保存弹幕合并开关失败:', e);
-                      showPlayerNotice('切换失败', 1500);
-                    }
+                      showPlayerNotice(`弹幕合并已${newState ? '开启' : '关闭'}，正在刷新...`, 1500);
+                      setTimeout(() => { window.location.reload(); }, 500);
+                    } catch (e) { showPlayerNotice('切换失败', 1500); }
                     break;
                   }
-
                   case 'merge-window': {
-                    const val = await showInputDialog(
-                      '合并窗口时长（秒）\n在此时间内的相同弹幕将被合并',
-                      String(danmakuMergeWindow)
-                    );
+                    const val = await showInputDialog('合并窗口时长（秒）', String(danmakuMergeWindow));
                     if (val === null) break;
-                    
                     const n = Math.max(1, Number(val) || 5);
                     try {
                       localStorage.setItem('danmaku_merge_window', String(n));
-                      console.log('[danmaku] 合并窗口已设置为:', n, '秒');
-                      
-                      // 检查合并是否开启
                       const mergeEnabled = localStorage.getItem('danmaku_merge_enabled') === 'true';
                       if (mergeEnabled) {
-                        // 如果合并已开启,刷新页面以应用新窗口
-                        showPlayerNotice(`合并窗口已设置为 ${n} 秒，正在刷新页面...`, 1500);
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 500);
-                      } else {
-                        // 如果合并未开启,仅提示设置成功
-                        showPlayerNotice(`合并窗口已设置为 ${n} 秒`, 1500);
-                      }
-                    } catch (e) {
-                      console.error('[DanmuTV] 保存合并窗口失败:', e);
-                      showPlayerNotice('设置失败', 1500);
+                        showPlayerNotice(`合并窗口已设为 ${n} 秒，正在刷新...`, 1500);
+                        setTimeout(() => { window.location.reload(); }, 500);
+                      } else { showPlayerNotice(`合并窗口已设为 ${n} 秒`, 1500); }
+                    } catch (e) { showPlayerNotice('设置失败', 1500); }
+                    break;
+                  }
+                  case 'settings': {
+                    // 触发 artplayer-plugin-danmuku 自带的设置面板
+                    const danmakuConfigButton = artRef.current?.querySelector('.artplayer-plugin-danmuku .apd-config');
+                    if (danmakuConfigButton instanceof HTMLElement) {
+                      danmakuConfigButton.click();
+                    } else {
+                      showPlayerNotice('无法打开弹幕设置', 2000);
                     }
                     break;
                   }
@@ -4992,7 +4918,7 @@ function PlayPageClient() {
                   try {
                     // 生成当前视频唯一的ID用于弹幕存储
                     const videoId = `${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-                    const response = await fetch('/api/danmu', {
+                    const response = await fetch('/api/danmu-external', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -6272,6 +6198,8 @@ function PlayPageClient() {
 
   return (
     <PageLayout activePath='/play'>
+      {/* Telegram 新用户欢迎弹窗 */}
+      <TelegramWelcomeModal />
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
         {/* 第一行：影片标题 */}
         <div className='py-1'>
