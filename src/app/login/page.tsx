@@ -558,7 +558,15 @@ function LoginPageClient() {
             {/* 登录按钮 */}
             <button
               type='submit'
-              disabled={!password || loading || (shouldAskUsername && !username)}
+              disabled={
+                loading ||
+                !password ||
+                (shouldAskUsername && !username) ||
+                // 关键修复：如果启用了设备码功能，必须等待设备码生成完毕才能操作
+                (shouldAskUsername && deviceCodeEnabled && !machineCodeGenerated) ||
+                // 关键修复：如果后端要求必须绑定设备（比如用户已绑定过或全局开启），则必须勾选绑定复选框
+                (shouldAskUsername && deviceCodeEnabled && requireMachineCode && !bindMachineCode)
+              }
               className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-green-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden'
             >
               <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
