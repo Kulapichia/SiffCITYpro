@@ -31,10 +31,10 @@ export const ChatModal = React.memo(function ChatModal({
   sendMessage: sendWebSocketMessage,
 }: ChatModalProps) {
   // [根本性修复] 添加客户端渲染门，解决水合错误
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // const [isClient, setIsClient] = useState(false);
+  // useEffect(() => {
+    // setIsClient(true);
+  // }, []);
   const [activeTab, setActiveTab] = useState<'chat' | 'friends'>('chat');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -649,9 +649,9 @@ export const ChatModal = React.memo(function ChatModal({
 
   if (!isOpen) return null;
   // [根本性修复] 在客户端挂载前，不渲染任何内容，避免服务端与客户端的HTML不匹配
-  if (!isClient) {
-    return null;
-  }
+  // if (!isClient) {
+    // return null;
+  // }
   return (
     <div
       className={`z-[2147483647] ${isMobile
