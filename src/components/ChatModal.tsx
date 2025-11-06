@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { ChatMessage, Conversation, Friend, FriendRequest, WebSocketMessage } from '../lib/types';
 import { getAuthInfoFromBrowserCookie } from '../lib/auth';
-import { useWebSocket } from '../hooks/useWebSocket';
+// import { useWebSocket } from '../hooks/useWebSocket';
 import { useToast } from './Toast';
 import { SidePanel } from './chat/SidePanel';
 import { ChatArea } from './chat/ChatArea';
@@ -278,10 +278,10 @@ export const ChatModal = React.memo(function ChatModal({
   }, [selectedConversation, preloadUserAvatars, isOpen]);
 
   // WebSocket 连接 - 从props接收，不再在此处创建
-  useWebSocket({
-    onMessage: handleWebSocketMessage,
-    enabled: isOpen, // 仅在模态框打开时监听消息
-  });
+  // useWebSocket({
+  //   onMessage: handleWebSocketMessage,
+  //   enabled: isOpen, // 仅在模态框打开时监听消息
+  // });
 
   const loadConversations = useCallback(async () => {
     const data = await fetchWithHandling('/api/chat/conversations');
