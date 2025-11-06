@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
 
       if (boundMachineCodes && boundMachineCodes.length > 0) {
         // 用户已绑定机器码，需要验证
-        if (!machineCode) {
+        if (!machineCode || !machineCode.trim()) { // 关键修复：增加对空字符串的判断
           return NextResponse.json({
             error: '该账户已绑定设备，请提供设备码',
             requireMachineCode: true
@@ -242,11 +242,15 @@ export async function POST(req: NextRequest) {
         }
       } else if (config.SiteConfig.RequireDeviceCode) {
         // 全局开启了设备码验证，但用户未绑定
-        if (!bindDevice || !machineCode) {
+        if (!bindDevice) {
           return NextResponse.json({
             error: '管理员已开启设备验证，请勾选“绑定此设备”后登录',
             requireMachineCode: true // 前端可以根据此标记提示用户
           }, { status: 403 });
+        }
+        // 关键修复：如果勾选了绑定，则必须提供有效的设备码
+        if (bindDevice && (!machineCode || !machineCode.trim())) {
+          return NextResponse.json({ error: '正在生成设备码，请稍候或刷新重试' }, { status: 400 });
         }
       }
       
@@ -262,7 +266,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 如果用户选择绑定设备，则执行绑定操作
-      if (bindDevice && machineCode) {
+      if (bindDevice && machineCode && machineCode.trim()) {
         const currentCodes = await db.getUserMachineCodes(username);
         if (currentCodes.length < 5) {
           await db.setUserMachineCode(username, machineCode, deviceInfo);
