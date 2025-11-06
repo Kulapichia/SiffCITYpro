@@ -434,7 +434,7 @@ function LoginPageClient() {
                   className='flex items-center cursor-pointer'
                 >
                   <div className='w-4 h-4 border-2 border-gray-300 dark:border-gray-600 rounded flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-500 transition-all duration-200'>
-                    {rememberMe && <span className='text-white text-xs'>✓</span>}
+                    {rememberMe && <span className='text-green-600 font-bold text-xs'>✓</span>}
                   </div>
                   <span className='ml-2 text-sm text-gray-600 dark:text-gray-400'>
                     记住我
