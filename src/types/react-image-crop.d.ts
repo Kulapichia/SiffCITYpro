@@ -1,5 +1,5 @@
 declare module 'react-image-crop' {
-  import { ComponentType, CSSProperties, SyntheticEvent } from 'react';
+  import { ComponentType, CSSProperties } from 'react';
 
   export interface Crop {
     unit?: string | '%' | 'px';
