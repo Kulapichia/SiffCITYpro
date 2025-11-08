@@ -137,6 +137,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   const actualSearchType = isAggregate
     ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
     : type;
+  // 判断是否为即将上映（未发布的内容）
+  const isUpcoming = remarks && (remarks.includes('天后上映') || remarks.includes('已上映') || remarks.includes('今日上映'));
 
   // 获取收藏状态（搜索结果、豆瓣和短剧页面不检查）
   useEffect(() => {
@@ -235,6 +237,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   );
 
   const handleClick = useCallback(() => {
+    // 如果是即将上映的内容，不执行跳转，显示提示
+    if (isUpcoming) {
+      return;
+    }
     // [滚动恢复整合] 在导航前调用回调以保存滚动状态
     onNavigate?.();
     // 如果从搜索页面点击，设置标记以便返回时使用缓存
@@ -666,7 +672,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             src={processImageUrl(actualPoster)}
             alt={actualTitle}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
             className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out group-hover:scale-110 ${
               imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
             }`}
@@ -874,7 +880,26 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               </span>
             </div>
           )}
-
+          {/* 上映状态徽章 - 美化版，放在底部左侧 */}
+          {remarks && (remarks.includes('天后上映') || remarks.includes('已上映') || remarks.includes('今日上映')) && (
+            <div
+              className="absolute bottom-2 left-2 bg-gradient-to-br from-orange-500/95 via-red-500/95 to-pink-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-orange-500/60 group-hover:ring-orange-300/50 animate-pulse"
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <span className="flex items-center gap-1">
+                <span className="text-[10px]">🔜</span>
+                {remarks}
+              </span>
+            </div>
+          )}
           {/* 评分徽章 - 动态颜色 */}
           {config.showRating && rate && (() => {
             const badgeStyle = getRatingBadgeStyle(rate);
