@@ -32,6 +32,7 @@ function SearchPageClient() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   // 滚动进度状态
   const [scrollProgress, setScrollProgress] = useState(0);
+  const virtualGridRef = useRef<VirtualSearchGridRef>(null); // 新增ref
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentQueryRef = useRef<string>('');
