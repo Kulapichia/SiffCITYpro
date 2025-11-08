@@ -1264,7 +1264,8 @@ function LivePageClient() {
         const Artplayer = (window as any).DynamicArtplayer;
 
         // 创建新的播放器实例
-        Artplayer.USE_RAF = true;
+        Artplayer.USE_RAF = false;
+        Artplayer.FULLSCREEN_WEB_IN_BODY = true;
 
         artPlayerRef.current = new Artplayer({
           container: artRef.current,
