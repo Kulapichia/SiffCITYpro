@@ -103,7 +103,7 @@ export async function getRecommendedShortDramas(
     }
 
     const apiUrl = isMobile()
-      ? `/api/shortdrama/recommend?${category ? `category=${category}&` : ''}size=${size}`
+      ? `/api/shortdrama/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`
       // MODIFIED: Use baseUrl from API_CONFIG
       : `${API_CONFIG.shortdrama.baseUrl}/vod/recommend?${category ? `category=${category}&` : ''}size=${size}`;
 
