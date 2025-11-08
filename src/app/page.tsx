@@ -29,12 +29,12 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories, getDoubanDetails } from '@/lib/douban.client'; // 引入 getDoubanDetails
 // 引入 Zod Schema 用于数据校验
 import { BangumiItemSchema } from '@/lib/schemas';
 import { cleanExpiredCache } from '@/lib/shortdrama-cache';
 import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
-import { DoubanItem, ShortDramaItem } from '@/lib/types';
+import { DoubanItem, ShortDramaItem, ReleaseCalendarItem } from '@/lib/types'; // 引入 ReleaseCalendarItem
 // [滚动恢复整合] 引入核心Hook
 import {
   RestorableData,
@@ -188,18 +188,22 @@ const HomeView = ({
   hotVarietyShows,
   hotShortDramas,
   bangumiCalendarData,
+  upcomingReleases,
   loadingStates,
   errorStates,
   onNavigate, // [滚动恢复整合] 接收 onNavigate 回调
+  saveScrollState
 }: {
   hotMovies: DoubanItem[];
   hotTvShows: DoubanItem[];
   hotVarietyShows: DoubanItem[];
   hotShortDramas: ShortDramaItem[];
   bangumiCalendarData: BangumiCalendarData[];
+  upcomingReleases: ReleaseCalendarItem[];
   loadingStates: Record<string, boolean>;
   errorStates: Record<string, boolean>;
   onNavigate: () => void; // [滚动恢复整合] 定义 onNavigate 类型
+  saveScrollState: () => void;
 }) => {
   return (
     <>
@@ -207,67 +211,67 @@ const HomeView = ({
       {!loadingStates.movies && !loadingStates.tvShows && (hotMovies.length > 0 || hotTvShows.length > 0) && (
         <section className='mb-8'>
           <HeroBanner
-        items={[
-          ...hotMovies.slice(0, 2).map((movie) => ({
-            id: movie.id,
-            title: movie.title,
-            poster: movie.poster,
-            description: movie.plot_summary,
-            year: movie.year,
-            rate: movie.rate,
-            douban_id: Number(movie.id),
-            type: 'movie',
-          })),
-          ...hotTvShows.slice(0, 2).map((show) => ({
-            id: show.id,
-            title: show.title,
-            poster: show.poster,
-            description: show.plot_summary,
-            year: show.year,
-            rate: show.rate,
-            douban_id: Number(show.id),
-            type: 'tv',
-          })),
-          ...hotVarietyShows.slice(0, 1).map((show) => ({
-            id: show.id,
-            title: show.title,
-            poster: show.poster,
-            description: show.plot_summary,
-            year: show.year,
-            rate: show.rate,
-            douban_id: Number(show.id),
-            type: 'variety',
-          })),
-          ...hotShortDramas.slice(0, 2).map((drama) => ({
-            id: drama.id,
-            title: drama.name,
-            poster: drama.cover,
-            description: drama.description,
-            year: '',
-            rate: drama.score ? drama.score.toString() : '',
-            type: 'shortdrama',
-          })),
-          ...(bangumiCalendarData.length > 0
-            ? (() => {
-                const today = new Date();
-                const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                const currentWeekday = weekdays[today.getDay()];
-                const todayAnimes = bangumiCalendarData.find(
-                  (item) => item.weekday.en === currentWeekday
-                )?.items || [];
-                return todayAnimes.slice(0, 1).map((anime: any) => ({
-                  id: anime.id,
-                  title: anime.name_cn || anime.name,
-                  poster: anime.images?.large || anime.images?.common || anime.images?.medium || '/placeholder-poster.jpg',
-                  description: anime.summary,
-                  year: anime.air_date?.split('-')?.[0] || '',
-                  rate: anime.rating?.score?.toFixed(1) || '',
-                  douban_id: anime.id,
-                  type: 'anime',
-                }));
-              })()
-            : [])
-        ]}
+            items={[
+              ...hotMovies.slice(0, 2).map((movie) => ({
+                id: movie.id,
+                title: movie.title,
+                poster: movie.poster,
+                description: movie.plot_summary,
+                year: movie.year,
+                rate: movie.rate,
+                douban_id: Number(movie.id),
+                type: 'movie',
+              })),
+              ...hotTvShows.slice(0, 2).map((show) => ({
+                id: show.id,
+                title: show.title,
+                poster: show.poster,
+                description: show.plot_summary,
+                year: show.year,
+                rate: show.rate,
+                douban_id: Number(show.id),
+                type: 'tv',
+              })),
+              ...hotVarietyShows.slice(0, 1).map((show) => ({
+                id: show.id,
+                title: show.title,
+                poster: show.poster,
+                description: show.plot_summary,
+                year: show.year,
+                rate: show.rate,
+                douban_id: Number(show.id),
+                type: 'variety',
+              })),
+              ...hotShortDramas.slice(0, 2).map((drama) => ({
+                id: drama.id,
+                title: drama.name,
+                poster: drama.cover,
+                description: drama.description,
+                year: '',
+                rate: drama.score ? drama.score.toString() : '',
+                type: 'shortdrama',
+              })),
+              ...(bangumiCalendarData.length > 0
+                ? (() => {
+                    const today = new Date();
+                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const currentWeekday = weekdays[today.getDay()];
+                    const todayAnimes = bangumiCalendarData.find(
+                      (item) => item.weekday.en === currentWeekday
+                    )?.items || [];
+                    return todayAnimes.slice(0, 1).map((anime: any) => ({
+                      id: anime.id,
+                      title: anime.name_cn || anime.name,
+                      poster: anime.images?.large || anime.images?.common || anime.images?.medium || '/placeholder-poster.jpg',
+                      description: anime.summary,
+                      year: anime.air_date?.split('-')?.[0] || '',
+                      rate: anime.rating?.score?.toFixed(1) || '',
+                      douban_id: anime.id,
+                      type: 'anime',
+                    }));
+                  })()
+                : [])
+            ]}
             autoPlayInterval={5000}
             showControls={true}
             showIndicators={true}
@@ -277,55 +281,57 @@ const HomeView = ({
 
       {/* 继续观看 */}
       <ContinueWatching />
-  {/* 即将上映 */}
-  {upcomingReleases.length > 0 && (
-    <section className='mb-8'>
-      <div className='mb-4 flex items-center justify-between'>
-        <SectionTitle title="即将上映" icon={Calendar} iconColor="text-orange-500" />
-        <Link
-          href='/release-calendar'
-          className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
-        >
-          查看更多
-          <ChevronRight className='w-4 h-4 ml-1' />
-        </Link>
-      </div>
-      <ScrollableRow>
-        {upcomingReleases.map((release: any, index) => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const releaseDate = new Date(release.releaseDate);
-          const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          let remarksText;
-          if (daysDiff < 0) {
-            remarksText = `已上映${Math.abs(daysDiff)}天`;
-          } else if (daysDiff === 0) {
-            remarksText = '今日上映';
-          } else {
-            remarksText = `${daysDiff}天后上映`;
-          }
-          return (
-            <div key={`${release.id}-${index}`} className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'>
-              <VideoCard
-                source='upcoming_release'
-                id={release.id}
-                source_name='即将上映'
-                from='douban'
-                title={release.title}
-                poster={release.cover || '/placeholder-poster.jpg'}
-                year={release.releaseDate.split('-')[0]}
-                type={release.type}
-                remarks={remarksText}
-                query={release.title}
-                episodes={release.type === 'tv' ? 99 : 1}
-                onNavigate={saveScrollState}
-              />
-            </div>
-          );
-        })}
-      </ScrollableRow>
-    </section>
-  )}
+
+      {/* 即将上映 */}
+      {upcomingReleases.length > 0 && (
+        <section className='mb-8'>
+          <div className='mb-4 flex items-center justify-between'>
+            <SectionTitle title="即将上映" icon={Calendar} iconColor="text-orange-500" />
+            <Link
+              href='/release-calendar'
+              className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+            >
+              查看更多
+              <ChevronRight className='w-4 h-4 ml-1' />
+            </Link>
+          </div>
+          <ScrollableRow>
+            {upcomingReleases.map((release: any, index) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const releaseDate = new Date(release.releaseDate);
+              const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              let remarksText;
+              if (daysDiff < 0) {
+                remarksText = `已上映${Math.abs(daysDiff)}天`;
+              } else if (daysDiff === 0) {
+                remarksText = '今日上映';
+              } else {
+                remarksText = `${daysDiff}天后上映`;
+              }
+              return (
+                <div key={`${release.id}-${index}`} className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'>
+                  <VideoCard
+                    source='upcoming_release'
+                    id={release.id}
+                    source_name='即将上映'
+                    from='douban'
+                    title={release.title}
+                    poster={release.cover || '/placeholder-poster.jpg'}
+                    year={release.releaseDate.split('-')[0]}
+                    type={release.type}
+                    remarks={remarksText}
+                    query={release.title}
+                    episodes={release.type === 'tv' ? 99 : 1}
+                    onNavigate={saveScrollState}
+                  />
+                </div>
+              );
+            })}
+          </ScrollableRow>
+        </section>
+      )}
+
       {/* 热门电影 */}
       <section className='mb-8'>
         <div className='mb-4 flex items-center justify-between'>
@@ -584,7 +590,8 @@ function HomeClient() {
   const [bangumiCalendarData, setBangumiCalendarData] = useState<
     BangumiCalendarData[]
   >([]);
-  const [upcomingReleases, setUpcomingReleases] = useState<any[]>([]); // 使用 any[] 兼容 ReleaseCalendarItem
+  const [upcomingReleases, setUpcomingReleases] = useState<ReleaseCalendarItem[]>([]);
+
   // Granular loading and error states for a better UX
   const [loadingStates, setLoadingStates] = useState({
     movies: true,
@@ -826,10 +833,7 @@ function HomeClient() {
         setBangumiCalendarData([]);
       }
       setLoadingStates((prev) => ({ ...prev, bangumi: false }));
-    };
 
-    fetchRecommendData();
-  }, [isRestoring]); // [滚动恢复整合] 添加 isRestoring 作为依赖
       // 处理即将上映数据
       if (upcomingReleasesData.status === 'fulfilled' && (upcomingReleasesData.value as any)?.items) {
         const releases = (upcomingReleasesData.value as any).items;
@@ -866,6 +870,10 @@ function HomeClient() {
         setUpcomingReleases([]);
       }
     };
+
+    fetchRecommendData();
+  }, [isRestoring]); // [滚动恢复整合] 添加 isRestoring 作为依赖
+
   // 处理收藏数据更新的函数
   const updateFavoriteItems = useCallback(
     async (allFavorites: Record<string, any>) => {
@@ -1007,9 +1015,11 @@ function HomeClient() {
                 hotVarietyShows={hotVarietyShows}
                 hotShortDramas={hotShortDramas}
                 bangumiCalendarData={bangumiCalendarData}
+                upcomingReleases={upcomingReleases}
                 loadingStates={loadingStates}
                 errorStates={errorStates}
                 onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+                saveScrollState={saveScrollState}
               />
             ) : (
               <FavoritesView
