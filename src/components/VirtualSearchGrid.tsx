@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
   () => import('react-window').then(mod => ({ default: mod.Grid })),
-  {
+  { 
     ssr: false,
     loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
   }
@@ -29,14 +29,14 @@ interface VirtualSearchGridProps {
   filteredResults: SearchResult[];
   aggregatedResults: [string, SearchResult[]][];
   filteredAggResults: [string, SearchResult[]][];
-
+  
   // 视图模式
   viewMode: 'agg' | 'all';
-
+  
   // 搜索相关
   searchQuery: string;
   isLoading: boolean;
-
+  
   // VideoCard相关props
   groupRefs: React.MutableRefObject<Map<string, React.RefObject<any>>>;
   groupStatsRef: React.MutableRefObject<Map<string, any>>;
@@ -65,7 +65,7 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<any>(null); // Grid ref for imperative scroll
   const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
-
+  
   // 渐进式加载状态
   const [visibleItemCount, setVisibleItemCount] = useState(INITIAL_BATCH_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -140,22 +140,6 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
     checkContainer();
   }, [containerWidth]);
 
-  // 检查是否还有更多项目可以加载
-  const hasNextPage = displayItemCount < totalItemCount;
-
-  // 加载更多项目
-  const loadMoreItems = useCallback(() => {
-    if (isLoadingMore || !hasNextPage) return;
-
-    setIsLoadingMore(true);
-
-    // 模拟异步加载
-    setTimeout(() => {
-      setVisibleItemCount(prev => Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount));
-      setIsLoadingMore(false);
-    }, 100);
-  }, [isLoadingMore, hasNextPage, totalItemCount]);
-
   // 暴露 scrollToTop 方法给父组件
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
@@ -173,6 +157,22 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
       }
     }
   }), []);
+
+  // 检查是否还有更多项目可以加载
+  const hasNextPage = displayItemCount < totalItemCount;
+
+  // 加载更多项目
+  const loadMoreItems = useCallback(() => {
+    if (isLoadingMore || !hasNextPage) return;
+    
+    setIsLoadingMore(true);
+    
+    // 模拟异步加载
+    setTimeout(() => {
+      setVisibleItemCount(prev => Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount));
+      setIsLoadingMore(false);
+    }, 100);
+  }, [isLoadingMore, hasNextPage, totalItemCount]);
 
   // 网格行数计算
   const rowCount = Math.ceil(displayItemCount / columnCount);
