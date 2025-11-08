@@ -227,7 +227,7 @@ export async function searchShortDramas(
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
     const apiUrl = isMobile()
-      ? `/api/shortdrama/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`
+      ? `/api/shortdrama/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`
       // MODIFIED: Use baseUrl from API_CONFIG
       : `${API_CONFIG.shortdrama.baseUrl}/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`;
 
