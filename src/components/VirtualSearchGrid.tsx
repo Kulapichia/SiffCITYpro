@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
@@ -49,7 +49,7 @@ const INITIAL_BATCH_SIZE = 12;
 const LOAD_MORE_BATCH_SIZE = 8;
 const LOAD_MORE_THRESHOLD = 5; // 恢复原来的阈值，避免过度触发
 
-export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualSearchGridProps>(({
+export const VirtualSearchGrid = forwardRef<VirtualSearchGridRef, VirtualSearchGridProps>(({
   allResults,
   filteredResults,
   aggregatedResults,
@@ -285,7 +285,6 @@ export const VirtualSearchGrid = React.forwardRef<VirtualSearchGridRef, VirtualS
         </div>
       ) : (
         <Grid
-          ref={gridRef}
           key={`grid-${containerWidth}-${columnCount}`}
           gridRef={gridRef}
           cellComponent={CellComponent}
