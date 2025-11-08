@@ -284,7 +284,6 @@ export const VirtualDoubanGrid = forwardRef<VirtualDoubanGridRef, VirtualDoubanG
         </div>
       ) : (
         <Grid
-          ref={gridRef}
           key={`grid-${containerWidth}-${columnCount}`}
           gridRef={gridRef}
           cellComponent={CellComponent}
