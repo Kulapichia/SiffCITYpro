@@ -450,7 +450,7 @@ export async function getDoubanList(
     default:
       try {
         const response = await fetch(
-          `/api/douban/list?type=${type}&tag=${tag}&limit=${pageLimit}&start=${pageStart}`
+          `/api/douban?tag=${tag}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}`
         );
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
@@ -666,14 +666,17 @@ export async function getDoubanDetails(id: string): Promise<{
     plot_summary?: string;
   };
 }> {
-  // 检查缓存
+  // 检查缓存 - 如果缓存中没有plot_summary则重新获取
   const cacheKey = getCacheKey('details', { id });
   const cached = await getCache(cacheKey);
-  if (cached) {
-    console.log(`豆瓣详情缓存命中: ${id}`);
+  if (cached && cached.data?.plot_summary) {
+    console.log(`豆瓣详情缓存命中(有简介): ${id}`);
     return cached;
   }
-  
+  if (cached && !cached.data?.plot_summary) {
+    console.log(`豆瓣详情缓存无效(缺少简介): ${id}，重新获取`);
+    // 缓存无效，继续执行下面的逻辑重新获取
+  }  
   try {
     const response = await fetch(`/api/douban/details?id=${id}`);
     
