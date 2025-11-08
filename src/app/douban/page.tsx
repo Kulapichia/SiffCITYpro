@@ -162,6 +162,9 @@ function DoubanPageClient() {
   const toggleVirtualization = () => {
     const newValue = !useVirtualization;
     setVirtualScrollEnabled(newValue);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('useDoubanVirtualization', JSON.stringify(newValue));
+    }
     // 切换虚拟化模式时，立即同步参数引用，避免一致性检查失败
     currentParamsRef.current = {
       type,
