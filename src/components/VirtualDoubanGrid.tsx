@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
   () => import('react-window').then(mod => ({ default: mod.Grid })),
-  { 
+  {
     ssr: false,
     loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
   }
@@ -14,23 +14,29 @@ const Grid = dynamic(
 
 import { DoubanItem } from '@/lib/types';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
+import { useImagePreload } from '@/hooks/useImagePreload';
 import VideoCard from '@/components/VideoCard';
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
+
+// 导出的 ref 接口，供父组件调用
+export interface VirtualDoubanGridRef {
+  scrollToTop: () => void;
+}
 
 interface VirtualDoubanGridProps {
   // 豆瓣数据
   doubanData: DoubanItem[];
-  
+
   // 分页相关
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
-  
+
   // 类型和状态
   type: string;
   loading: boolean;
   primarySelection?: string;
-  
+
   // 是否来自番组计划
   isBangumi?: boolean;
   onNavigate?: () => void; // 添加 onNavigate 属性
@@ -41,7 +47,7 @@ const INITIAL_BATCH_SIZE = 25;
 const LOAD_MORE_BATCH_SIZE = 25;
 const LOAD_MORE_THRESHOLD = 3; // 恢复原来的阈值，避免过度触发
 
-export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
+export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualDoubanGridProps>(({
   doubanData,
   hasMore,
   isLoadingMore,
@@ -51,26 +57,58 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
   primarySelection,
   isBangumi = false,
   onNavigate, // 在这里解构 onNavigate
-}) => {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<any>(null); // Grid ref for imperative scroll
   const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
-  
+
   // 渐进式加载状态
   const [visibleItemCount, setVisibleItemCount] = useState(INITIAL_BATCH_SIZE);
   const [isVirtualLoadingMore, setIsVirtualLoadingMore] = useState(false);
 
   // 总数据数量
   const totalItemCount = doubanData.length;
-  
+
   // 实际显示的项目数量（考虑渐进式加载）
   const displayItemCount = Math.min(visibleItemCount, totalItemCount);
   const displayData = doubanData.slice(0, displayItemCount);
+
+  // 预加载图片 - 收集即将显示的图片 URLs
+  const imagesToPreload = useMemo(() => {
+    const urls: string[] = [];
+    const itemsToPreload = doubanData.slice(displayItemCount, Math.min(displayItemCount + 20, totalItemCount));
+
+    itemsToPreload.forEach(item => {
+      if (item.poster) urls.push(item.poster);
+    });
+
+    return urls;
+  }, [doubanData, displayItemCount, totalItemCount]);
+
+  useImagePreload(imagesToPreload, totalItemCount > 0);
 
   // 重置可见项目数量（当数据变化时）
   useEffect(() => {
     setVisibleItemCount(INITIAL_BATCH_SIZE);
     setIsVirtualLoadingMore(false);
   }, [doubanData, type, primarySelection]);
+
+  // 当类型或筛选条件改变时，滚动到顶部
+  useEffect(() => {
+    if (gridRef.current?.scrollToCell && totalItemCount > 0 && !loading) {
+      try {
+        gridRef.current.scrollToCell({
+          columnIndex: 0,
+          rowIndex: 0,
+          align: 'start',
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        // 忽略滚动错误（可能在组件卸载时发生）
+        console.debug('Grid scroll error (safe to ignore):', error);
+      }
+    }
+  }, [type, primarySelection, totalItemCount, loading]);
 
   // 强制重新计算容器尺寸的useEffect
   useEffect(() => {
@@ -103,24 +141,42 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
   // 加载更多项目（虚拟层面）
   const loadMoreVirtualItems = useCallback(() => {
     if (isVirtualLoadingMore) return;
-    
+
     setIsVirtualLoadingMore(true);
-    
+
     // 模拟异步加载
     setTimeout(() => {
       setVisibleItemCount(prev => {
         const newCount = Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount);
-        
+
         // 如果虚拟数据即将用完，触发服务器数据加载
         if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
           onLoadMore();
         }
-        
+
         return newCount;
       });
       setIsVirtualLoadingMore(false);
     }, 100);
   }, [isVirtualLoadingMore, totalItemCount, hasMore, isLoadingMore, onLoadMore]);
+
+  // 暴露 scrollToTop 方法给父组件
+  useImperativeHandle(ref, () => ({
+    scrollToTop: () => {
+      if (gridRef.current?.scrollToCell) {
+        try {
+          gridRef.current.scrollToCell({
+            columnIndex: 0,
+            rowIndex: 0,
+            align: 'start',
+            behavior: 'smooth'
+          });
+        } catch (error) {
+          console.debug('Grid scroll to top error (safe to ignore):', error);
+        }
+      }
+    }
+  }), []);
 
   // 网格行数计算
   const rowCount = Math.ceil(displayItemCount / columnCount);
@@ -229,6 +285,7 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
       ) : (
         <Grid
           key={`grid-${containerWidth}-${columnCount}`}
+          ref={gridRef}
           cellComponent={CellComponent}
           cellProps={{
             displayData,
@@ -237,13 +294,13 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
             isBangumi,
             columnCount,
             displayItemCount,
-            onNavigate, // 传递 onNavigate
+            onNavigate,
           }}
           columnCount={columnCount}
           columnWidth={itemWidth + 16}
           rowCount={rowCount}
           rowHeight={itemHeight + 16}
-          overscanCount={3}
+          overscanCount={5}
           // 添加ARIA支持提升无障碍体验
           role="grid"
           aria-label={`豆瓣${type}列表，共${displayItemCount}个结果`}
@@ -353,6 +410,8 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
       )}
     </div>
   );
-};
+});
+
+VirtualDoubanGrid.displayName = 'VirtualDoubanGrid';
 
 export default VirtualDoubanGrid;
