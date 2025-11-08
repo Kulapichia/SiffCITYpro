@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
   () => import('react-window').then(mod => ({ default: mod.Grid })),
-  {
+  { 
     ssr: false,
     loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
   }
@@ -26,17 +26,17 @@ export interface VirtualDoubanGridRef {
 interface VirtualDoubanGridProps {
   // 豆瓣数据
   doubanData: DoubanItem[];
-
+  
   // 分页相关
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
-
+  
   // 类型和状态
   type: string;
   loading: boolean;
   primarySelection?: string;
-
+  
   // 是否来自番组计划
   isBangumi?: boolean;
   onNavigate?: () => void; // 添加 onNavigate 属性
@@ -47,7 +47,7 @@ const INITIAL_BATCH_SIZE = 25;
 const LOAD_MORE_BATCH_SIZE = 25;
 const LOAD_MORE_THRESHOLD = 3; // 恢复原来的阈值，避免过度触发
 
-export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualDoubanGridProps>(({
+export const VirtualDoubanGrid = forwardRef<VirtualDoubanGridRef, VirtualDoubanGridProps>(({
   doubanData,
   hasMore,
   isLoadingMore,
@@ -61,14 +61,14 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<any>(null); // Grid ref for imperative scroll
   const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
-
+  
   // 渐进式加载状态
   const [visibleItemCount, setVisibleItemCount] = useState(INITIAL_BATCH_SIZE);
   const [isVirtualLoadingMore, setIsVirtualLoadingMore] = useState(false);
 
   // 总数据数量
   const totalItemCount = doubanData.length;
-
+  
   // 实际显示的项目数量（考虑渐进式加载）
   const displayItemCount = Math.min(visibleItemCount, totalItemCount);
   const displayData = doubanData.slice(0, displayItemCount);
@@ -129,37 +129,6 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
     checkContainer();
   }, [containerWidth]);
 
-  // 检查是否还有更多项目可以加载（虚拟层面）
-  const hasNextVirtualPage = displayItemCount < totalItemCount;
-  
-  // 检查是否需要从服务器加载更多数据
-  const needsServerData = displayItemCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore;
-
-  // 防止重复调用onLoadMore的ref
-  const lastLoadMoreCallRef = useRef<number>(0);
-
-  // 加载更多项目（虚拟层面）
-  const loadMoreVirtualItems = useCallback(() => {
-    if (isVirtualLoadingMore) return;
-
-    setIsVirtualLoadingMore(true);
-
-    // 模拟异步加载
-    setTimeout(() => {
-      setVisibleItemCount(prev => {
-        const newCount = Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount);
-
-        // 如果虚拟数据即将用完，触发服务器数据加载
-        if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
-          onLoadMore();
-        }
-
-        return newCount;
-      });
-      setIsVirtualLoadingMore(false);
-    }, 100);
-  }, [isVirtualLoadingMore, totalItemCount, hasMore, isLoadingMore, onLoadMore]);
-
   // 暴露 scrollToTop 方法给父组件
   useImperativeHandle(ref, () => ({
     scrollToTop: () => {
@@ -177,6 +146,37 @@ export const VirtualDoubanGrid = React.forwardRef<VirtualDoubanGridRef, VirtualD
       }
     }
   }), []);
+
+  // 检查是否还有更多项目可以加载（虚拟层面）
+  const hasNextVirtualPage = displayItemCount < totalItemCount;
+  
+  // 检查是否需要从服务器加载更多数据
+  const needsServerData = displayItemCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore;
+
+  // 防止重复调用onLoadMore的ref
+  const lastLoadMoreCallRef = useRef<number>(0);
+
+  // 加载更多项目（虚拟层面）
+  const loadMoreVirtualItems = useCallback(() => {
+    if (isVirtualLoadingMore) return;
+    
+    setIsVirtualLoadingMore(true);
+    
+    // 模拟异步加载
+    setTimeout(() => {
+      setVisibleItemCount(prev => {
+        const newCount = Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount);
+        
+        // 如果虚拟数据即将用完，触发服务器数据加载
+        if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
+          onLoadMore();
+        }
+        
+        return newCount;
+      });
+      setIsVirtualLoadingMore(false);
+    }, 100);
+  }, [isVirtualLoadingMore, totalItemCount, hasMore, isLoadingMore, onLoadMore]);
 
   // 网格行数计算
   const rowCount = Math.ceil(displayItemCount / columnCount);
