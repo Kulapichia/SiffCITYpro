@@ -183,8 +183,8 @@ export default function ShortDramaPage() {
 
   return (
     <PageLayout activePath="/shortdrama">
-      <div className="min-h-screen bg-white dark:bg-black">
-        <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="min-h-screen -mt-6 md:mt-0">
+        <div className="">
           {/* 页面标题 */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -202,7 +202,7 @@ export default function ShortDramaPage() {
               <input
                 type="text"
                 placeholder="搜索短剧名称..."
-                className="w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-theme-accent/50 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 transition-all duration-300"
+                className="w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-purple-500 transition-all duration-300"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
               />
