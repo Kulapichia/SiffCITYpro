@@ -65,6 +65,9 @@ export function SidePanel({
   friends,
   onStartConversation
 }: SidePanelProps) {
+  // [LOG]
+  console.log('[SidePanel] Rendering. Active Tab:', activeTab);
+
   if (!isOpen) return null;
 
   return (
