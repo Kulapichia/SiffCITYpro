@@ -616,6 +616,7 @@ function HomeClient() {
   const [aiCheckTriggered, setAiCheckTriggered] = useState(false); // 新增状态
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
   const [greeting, setGreeting] = useState(''); // 新增状态来存储问候语
+
   // [滚动恢复整合] 创建 Ref 保存所有需要缓存的数据
   const dataRef = useRef<RestorableHomeData>({
     activeTab: 'home',
@@ -647,14 +648,6 @@ function HomeClient() {
       favoriteItems,
     };
   }, [activeTab, favoriteItems]);
-
-  // 获取用户名
-  useEffect(() => {
-    const authInfo = getAuthInfoFromBrowserCookie();
-    if (authInfo?.username) {
-      setUsername(authInfo.username);
-    }
-  }, []);
 
   // 获取用户名和生成问候语
   useEffect(() => {
