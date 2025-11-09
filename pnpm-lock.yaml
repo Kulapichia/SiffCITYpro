@@ -99,8 +99,8 @@ importers:
         specifier: ^11.0.10
         version: 11.0.10(react@18.3.1)
       react-window:
-        specifier: ^2.2.0
-        version: 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^2.2.3
+        version: 2.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-window-infinite-loader:
         specifier: ^1.0.10
         version: 1.0.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5175,8 +5175,8 @@ packages:
       react: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^15.3.0 || ^16.0.0-alpha || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-window@2.2.1:
-    resolution: {integrity: sha512-jrUMKDLW1B4yX4OU0QjdytGgWIg6wqWfiTe86lUhFsCUltkNNB/zYxFU0DTKAzBOMRbkpLVWS1IkLvQeO4L7nw==}
+  react-window@2.2.3:
+    resolution: {integrity: sha512-gTRqQYC8ojbiXyd9duYFiSn2TJw0ROXCgYjenOvNKITWzK0m0eCvkUsEUM08xvydkMh7ncp+LE0uS3DeNGZxnQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -8370,7 +8370,7 @@ snapshots:
 
   '@types/react-window@2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react-window: 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-window: 2.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react
       - react-dom
@@ -12374,7 +12374,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-window@2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-window@2.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
