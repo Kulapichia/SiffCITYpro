@@ -615,7 +615,7 @@ function HomeClient() {
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(true); // 默认显示，检查后再决定
   const [aiCheckTriggered, setAiCheckTriggered] = useState(false); // 新增状态
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
-
+  const [greeting, setGreeting] = useState(''); // 新增状态来存储问候语
   // [滚动恢复整合] 创建 Ref 保存所有需要缓存的数据
   const dataRef = useRef<RestorableHomeData>({
     activeTab: 'home',
@@ -653,6 +653,23 @@ function HomeClient() {
     const authInfo = getAuthInfoFromBrowserCookie();
     if (authInfo?.username) {
       setUsername(authInfo.username);
+    }
+  }, []);
+
+  // 获取用户名和生成问候语
+  useEffect(() => {
+    const authInfo = getAuthInfoFromBrowserCookie();
+    if (authInfo?.username) {
+      setUsername(authInfo.username);
+    }
+
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting('早上好');
+    } else if (hour < 18) {
+      setGreeting('下午好');
+    } else {
+      setGreeting('晚上好');
     }
   }, []);
 
@@ -949,12 +966,7 @@ function HomeClient() {
               <div className='flex-1 min-w-0'>
                 <h2 className='text-lg sm:text-xl font-bold text-white mb-1 flex items-center gap-2 flex-wrap'>
                   <span>
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '早上好';
-                      if (hour < 18) return '下午好';
-                      return '晚上好';
-                    })()}
+                    {greeting}
                     {username && '，'}
                   </span>
                   {username && (
@@ -962,7 +974,7 @@ function HomeClient() {
                       {username}
                     </span>
                   )}
-                  <span className='inline-block animate-wave origin-bottom-right'>👋</span>
+                  {greeting && <span className='inline-block animate-wave origin-bottom-right'>👋</span>}
                 </h2>
                 <p className='text-sm text-white/90'>
                   发现更多精彩影视内容 ✨
