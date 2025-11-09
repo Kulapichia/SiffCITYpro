@@ -176,7 +176,6 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         type: 'error',
         title: '错误',
         message: '请输入加密密码',
-        showConfirm: true,
       });
       return;
     }
@@ -254,7 +253,6 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         type: 'error',
         title: '错误',
         message: '请选择备份文件',
-        showConfirm: true,
       });
       return;
     }
@@ -264,7 +262,6 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         type: 'error',
         title: '错误',
         message: '请输入解密密码',
-        showConfirm: true,
       });
       return;
     }
