@@ -65,6 +65,9 @@ export function SidePanel({
   friends,
   onStartConversation
 }: SidePanelProps) {
+  // [LOG]
+  console.log('[SidePanel] Rendering. Active Tab:', activeTab);
+
   if (!isOpen) return null;
 
   return (
@@ -175,98 +178,106 @@ export function SidePanel({
       {/* 列表内容 */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'chat' ? (
-          <div className="space-y-1 p-2">
-            {conversations.map((conv) => {
-              // 获取对话头像 - 私人对话显示对方头像，群聊显示群组图标
-              const getConversationAvatar = () => {
-                if (conv.participants.length === 2) {
-                  // 私人对话：显示对方用户的头像
-                  const otherUser = conv.participants.find(p => p !== currentUser?.username);
-                  return otherUser ? (
-                    <div className="relative">
-                      <img
-                        src={getAvatarUrl(otherUser)}
-                        alt={getDisplayName(otherUser)}
-                        className="w-12 h-12 rounded-full ring-2 ring-white dark:ring-gray-700 shadow-sm"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const nextEl = target.nextElementSibling;
-                          if (nextEl) nextEl.classList.remove('hidden');
-                        }}
-                      />
-                      <div className="hidden w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm">
-                        {getDisplayName(otherUser).charAt(0).toUpperCase()}
+          conversations.length > 0 ? (
+            <div className="space-y-1 p-2">
+              {conversations.map((conv) => {
+                // 获取对话头像 - 私人对话显示对方头像，群聊显示群组图标
+                const getConversationAvatar = () => {
+                  if (conv.participants.length === 2) {
+                    // 私人对话：显示对方用户的头像
+                    const otherUser = conv.participants.find(p => p !== currentUser?.username);
+                    return otherUser ? (
+                      <div className="relative">
+                        <img
+                          src={getAvatarUrl(otherUser)}
+                          alt={getDisplayName(otherUser)}
+                          className="w-12 h-12 rounded-full ring-2 ring-white dark:ring-gray-700 shadow-sm"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const nextEl = target.nextElementSibling;
+                            if (nextEl) nextEl.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="hidden w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-gray-700 shadow-sm">
+                          {getDisplayName(otherUser).charAt(0).toUpperCase()}
+                        </div>
+                        {/* 在线状态指示器 */}
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-gray-700 ${isUserOnline(otherUser) ? 'bg-green-400' : 'bg-gray-400'}`} />
                       </div>
-                      {/* 在线状态指示器 */}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-gray-700 ${isUserOnline(otherUser) ? 'bg-green-400' : 'bg-gray-400'}`} />
-                    </div>
-                  ) : null;
-                } else {
-                  // 群聊：显示群组图标和参与者头像叠加
-                  return (
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-sm ring-2 ring-white dark:ring-gray-700">
-                        <Users className="w-6 h-6" />
+                    ) : null;
+                  } else {
+                    // 群聊：显示群组图标和参与者头像叠加
+                    return (
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-sm ring-2 ring-white dark:ring-gray-700">
+                          <Users className="w-6 h-6" />
+                        </div>
+                        {/* 群聊成员数量指示 */}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-gray-700">
+                          {conv.participants.length}
+                        </div>
                       </div>
-                      {/* 群聊成员数量指示 */}
-                      <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-gray-700">
-                        {conv.participants.length}
-                      </div>
-                    </div>
-                  );
-                }
-              };
+                    );
+                  }
+                };
 
-              return (
-                <button
-                  key={conv.id}
-                  onClick={() => onConversationSelect(conv)}
-                  className={`w-full p-3 rounded-lg text-left transition-all duration-200 relative ${selectedConversation?.id === conv.id
-                    ? 'bg-blue-100 dark:bg-blue-900/50 shadow-md'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-sm'
-                    }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    {/* 对话头像 */}
-                    <div className="flex-shrink-0">
-                      {getConversationAvatar()}
-                    </div>
-                    {/* 对话信息 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="font-medium text-gray-900 dark:text-white truncate">
-                          {conv.name}
-                        </div>
-                        {/* 最后消息时间 */}
-                        {conv.last_message?.timestamp && (
-                          <div className="text-xs text-gray-400 dark:text-gray-500 ml-2 flex-shrink-0">
-                            <ClientTime timestamp={conv.last_message.timestamp} />
-                          </div>
-                        )}
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => onConversationSelect(conv)}
+                    className={`w-full p-3 rounded-lg text-left transition-all duration-200 relative ${selectedConversation?.id === conv.id
+                      ? 'bg-blue-100 dark:bg-blue-900/50 shadow-md'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-sm'
+                      }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {/* 对话头像 */}
+                      <div className="flex-shrink-0">
+                        {getConversationAvatar()}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1 mr-2">
-                          {conv.last_message?.message_type === 'image'
-                            ? '[图片]'
-                            : (conv.last_message?.content || '暂无消息')
-                          }
-                        </div>
-                        {/* 未读消息数量 */}
-                        {conversationUnreadCounts[conv.id] > 0 && (
-                          <div className="flex-shrink-0">
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-                              {conversationUnreadCounts[conv.id] > 99 ? '99+' : conversationUnreadCounts[conv.id]}
-                            </span>
+                      {/* 对话信息 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-gray-900 dark:text-white truncate">
+                            {conv.name}
                           </div>
-                        )}
+                          {/* 最后消息时间 */}
+                          {conv.last_message?.timestamp && (
+                            <div className="text-xs text-gray-400 dark:text-gray-500 ml-2 flex-shrink-0">
+                              <ClientTime timestamp={conv.last_message.timestamp} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1 mr-2">
+                            {conv.last_message?.message_type === 'image'
+                              ? '[图片]'
+                              : (conv.last_message?.content || '暂无消息')
+                            }
+                          </div>
+                          {/* 未读消息数量 */}
+                          {conversationUnreadCounts[conv.id] > 0 && (
+                            <div className="flex-shrink-0">
+                              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                                {conversationUnreadCounts[conv.id] > 99 ? '99+' : conversationUnreadCounts[conv.id]}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 text-gray-500 dark:text-gray-400">
+              <MessageCircle className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" />
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300">没有对话</h3>
+              <p className="text-sm">点击“好友”标签页，添加好友并开始聊天吧！</p>
+            </div>
+          )
         ) : (
           <div className="space-y-2 p-2">
             {/* 好友申请 */}

@@ -213,9 +213,17 @@ function parseDoubanDetails(html: string, id: string) {
     }
 
     // 提取剧情简介
-    const summaryMatch = html.match(/<span[^>]*class="all hidden">([^<]+)<\/span>/) || 
-                         html.match(/<span[^>]*property="v:summary"[^>]*>([^<]+)<\/span>/);
-    const plot_summary = summaryMatch ? summaryMatch[1].trim().replace(/\s+/g, ' ') : '';
+    const summaryMatch = html.match(/<span[^>]*class="all hidden">([\s\S]*?)<\/span>/) ||
+                         html.match(/<span[^>]*property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
+    let plot_summary = '';
+    if (summaryMatch) {
+      // 移除HTML标签，保留文本内容
+      plot_summary = summaryMatch[1]
+        .replace(/<br\s*\/?>/gi, '\n')  // 将<br>转换为换行
+        .replace(/<[^>]+>/g, '')         // 移除其他HTML标签
+        .trim()
+        .replace(/\n{3,}/g, '\n\n');     // 将多个换行合并为最多两个
+    }
 
     return {
       code: 200,

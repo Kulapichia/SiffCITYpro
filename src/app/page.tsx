@@ -29,12 +29,12 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories, getDoubanDetails } from '@/lib/douban.client'; // 引入 getDoubanDetails
 // 引入 Zod Schema 用于数据校验
 import { BangumiItemSchema } from '@/lib/schemas';
 import { cleanExpiredCache } from '@/lib/shortdrama-cache';
 import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
-import { DoubanItem, ShortDramaItem } from '@/lib/types';
+import { DoubanItem, ShortDramaItem, ReleaseCalendarItem } from '@/lib/types'; // 引入 ReleaseCalendarItem
 // [滚动恢复整合] 引入核心Hook
 import {
   RestorableData,
@@ -188,18 +188,22 @@ const HomeView = ({
   hotVarietyShows,
   hotShortDramas,
   bangumiCalendarData,
+  upcomingReleases,
   loadingStates,
   errorStates,
   onNavigate, // [滚动恢复整合] 接收 onNavigate 回调
+  saveScrollState
 }: {
   hotMovies: DoubanItem[];
   hotTvShows: DoubanItem[];
   hotVarietyShows: DoubanItem[];
   hotShortDramas: ShortDramaItem[];
   bangumiCalendarData: BangumiCalendarData[];
+  upcomingReleases: ReleaseCalendarItem[];
   loadingStates: Record<string, boolean>;
   errorStates: Record<string, boolean>;
   onNavigate: () => void; // [滚动恢复整合] 定义 onNavigate 类型
+  saveScrollState: () => void;
 }) => {
   return (
     <>
@@ -207,17 +211,67 @@ const HomeView = ({
       {!loadingStates.movies && !loadingStates.tvShows && (hotMovies.length > 0 || hotTvShows.length > 0) && (
         <section className='mb-8'>
           <HeroBanner
-            items={[...hotMovies.slice(0, 5), ...hotTvShows.slice(0, 3)]
-              .map((item) => ({
-                id: item.id,
-                title: item.title,
-                poster: item.poster,
-                description: item.plot_summary,
-                year: item.year,
-                rate: item.rate,
-                douban_id: Number(item.id),
-                type: hotMovies.includes(item) ? 'movie' : 'tv',
-              }))}
+            items={[
+              ...hotMovies.slice(0, 2).map((movie) => ({
+                id: movie.id,
+                title: movie.title,
+                poster: movie.poster,
+                description: movie.plot_summary,
+                year: movie.year,
+                rate: movie.rate,
+                douban_id: Number(movie.id),
+                type: 'movie',
+              })),
+              ...hotTvShows.slice(0, 2).map((show) => ({
+                id: show.id,
+                title: show.title,
+                poster: show.poster,
+                description: show.plot_summary,
+                year: show.year,
+                rate: show.rate,
+                douban_id: Number(show.id),
+                type: 'tv',
+              })),
+              ...hotVarietyShows.slice(0, 1).map((show) => ({
+                id: show.id,
+                title: show.title,
+                poster: show.poster,
+                description: show.plot_summary,
+                year: show.year,
+                rate: show.rate,
+                douban_id: Number(show.id),
+                type: 'variety',
+              })),
+              ...hotShortDramas.slice(0, 2).map((drama) => ({
+                id: drama.id,
+                title: drama.name,
+                poster: drama.cover,
+                description: drama.description,
+                year: '',
+                rate: drama.score ? drama.score.toString() : '',
+                type: 'shortdrama',
+              })),
+              ...(bangumiCalendarData.length > 0
+                ? (() => {
+                    const today = new Date();
+                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const currentWeekday = weekdays[today.getDay()];
+                    const todayAnimes = bangumiCalendarData.find(
+                      (item) => item.weekday.en === currentWeekday
+                    )?.items || [];
+                    return todayAnimes.slice(0, 1).map((anime: any) => ({
+                      id: anime.id,
+                      title: anime.name_cn || anime.name,
+                      poster: anime.images?.large || anime.images?.common || anime.images?.medium || '/placeholder-poster.jpg',
+                      description: anime.summary,
+                      year: anime.air_date?.split('-')?.[0] || '',
+                      rate: anime.rating?.score?.toFixed(1) || '',
+                      douban_id: anime.id,
+                      type: 'anime',
+                    }));
+                  })()
+                : [])
+            ]}
             autoPlayInterval={5000}
             showControls={true}
             showIndicators={true}
@@ -227,6 +281,56 @@ const HomeView = ({
 
       {/* 继续观看 */}
       <ContinueWatching />
+
+      {/* 即将上映 */}
+      {upcomingReleases.length > 0 && (
+        <section className='mb-8'>
+          <div className='mb-4 flex items-center justify-between'>
+            <SectionTitle title="即将上映" icon={Calendar} iconColor="text-orange-500" />
+            <Link
+              href='/release-calendar'
+              className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+            >
+              查看更多
+              <ChevronRight className='w-4 h-4 ml-1' />
+            </Link>
+          </div>
+          <ScrollableRow>
+            {upcomingReleases.map((release: any, index) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const releaseDate = new Date(release.releaseDate);
+              const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              let remarksText;
+              if (daysDiff < 0) {
+                remarksText = `已上映${Math.abs(daysDiff)}天`;
+              } else if (daysDiff === 0) {
+                remarksText = '今日上映';
+              } else {
+                remarksText = `${daysDiff}天后上映`;
+              }
+              return (
+                <div key={`${release.id}-${index}`} className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'>
+                  <VideoCard
+                    source='upcoming_release'
+                    id={release.id}
+                    source_name='即将上映'
+                    from='douban'
+                    title={release.title}
+                    poster={release.cover || '/placeholder-poster.jpg'}
+                    year={release.releaseDate.split('-')[0]}
+                    type={release.type}
+                    remarks={remarksText}
+                    query={release.title}
+                    episodes={release.type === 'tv' ? 99 : 1}
+                    onNavigate={saveScrollState}
+                  />
+                </div>
+              );
+            })}
+          </ScrollableRow>
+        </section>
+      )}
 
       {/* 热门电影 */}
       <section className='mb-8'>
@@ -486,6 +590,7 @@ function HomeClient() {
   const [bangumiCalendarData, setBangumiCalendarData] = useState<
     BangumiCalendarData[]
   >([]);
+  const [upcomingReleases, setUpcomingReleases] = useState<ReleaseCalendarItem[]>([]);
 
   // Granular loading and error states for a better UX
   const [loadingStates, setLoadingStates] = useState({
@@ -510,6 +615,7 @@ function HomeClient() {
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(true); // 默认显示，检查后再决定
   const [aiCheckTriggered, setAiCheckTriggered] = useState(false); // 新增状态
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
+  const [greeting, setGreeting] = useState(''); // 新增状态来存储问候语
 
   // [滚动恢复整合] 创建 Ref 保存所有需要缓存的数据
   const dataRef = useRef<RestorableHomeData>({
@@ -543,11 +649,20 @@ function HomeClient() {
     };
   }, [activeTab, favoriteItems]);
 
-  // 获取用户名
+  // 获取用户名和生成问候语
   useEffect(() => {
     const authInfo = getAuthInfoFromBrowserCookie();
     if (authInfo?.username) {
       setUsername(authInfo.username);
+    }
+
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting('早上好');
+    } else if (hour < 18) {
+      setGreeting('下午好');
+    } else {
+      setGreeting('晚上好');
     }
   }, []);
 
@@ -634,19 +749,27 @@ function HomeClient() {
     cleanExpiredCache().catch(console.error);
 
     const fetchRecommendData = async () => {
-      // 并行获取热门电影、热门剧集、热门综艺和热门短剧
+      // 并行获取热门电影、热门剧集、热门综艺、热门短剧和即将上映
       const [
         moviesData,
         tvShowsData,
         varietyShowsData,
         shortDramasData,
         bangumiData,
+        upcomingReleasesData,
       ] = await Promise.allSettled([
         getDoubanCategories({ kind: 'movie', category: '热门', type: '全部' }),
         getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
         getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
         getRecommendedShortDramas(undefined, 8),
         GetBangumiCalendarData(),
+        fetch('/api/release-calendar?limit=100').then(res => {
+          if (!res.ok) {
+            console.error('获取即将上映数据失败，状态码:', res.status);
+            return { items: [] };
+          }
+          return res.json();
+        }),
       ]);
 
       // 处理电影数据
@@ -720,6 +843,42 @@ function HomeClient() {
         setBangumiCalendarData([]);
       }
       setLoadingStates((prev) => ({ ...prev, bangumi: false }));
+
+      // 处理即将上映数据
+      if (upcomingReleasesData.status === 'fulfilled' && (upcomingReleasesData.value as any)?.items) {
+        const releases = (upcomingReleasesData.value as any).items;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const ninetyDaysLater = new Date(today);
+        ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+
+        const upcoming = releases.filter((item: any) => {
+          const releaseDateStr = item.releaseDate;
+          const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+          const ninetyDaysStr = ninetyDaysLater.toISOString().split('T')[0];
+          return releaseDateStr >= sevenDaysAgoStr && releaseDateStr <= ninetyDaysStr;
+        });
+
+        const uniqueUpcoming = upcoming.reduce((acc: any[], current: any) => {
+          const existingItem = acc.find(item => item.title === current.title);
+          if (!existingItem) {
+            acc.push(current);
+          } else {
+            if (new Date(current.releaseDate) < new Date(existingItem.releaseDate)) {
+              const existingIndex = acc.findIndex(item => item.title === current.title);
+              acc[existingIndex] = current;
+            }
+          }
+          return acc;
+        }, []);
+
+        setUpcomingReleases(uniqueUpcoming.slice(0, 10)); // 智能分配逻辑简化为取前10条
+      } else {
+        console.warn('获取即将上映数据失败:', upcomingReleasesData.status === 'rejected' ? (upcomingReleasesData as any).reason : '数据格式错误');
+        setUpcomingReleases([]);
+      }
     };
 
     fetchRecommendData();
@@ -800,12 +959,7 @@ function HomeClient() {
               <div className='flex-1 min-w-0'>
                 <h2 className='text-lg sm:text-xl font-bold text-white mb-1 flex items-center gap-2 flex-wrap'>
                   <span>
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '早上好';
-                      if (hour < 18) return '下午好';
-                      return '晚上好';
-                    })()}
+                    {greeting}
                     {username && '，'}
                   </span>
                   {username && (
@@ -813,7 +967,7 @@ function HomeClient() {
                       {username}
                     </span>
                   )}
-                  <span className='inline-block animate-wave origin-bottom-right'>👋</span>
+                  {greeting && <span className='inline-block animate-wave origin-bottom-right'>👋</span>}
                 </h2>
                 <p className='text-sm text-white/90'>
                   发现更多精彩影视内容 ✨
@@ -866,9 +1020,11 @@ function HomeClient() {
                 hotVarietyShows={hotVarietyShows}
                 hotShortDramas={hotShortDramas}
                 bangumiCalendarData={bangumiCalendarData}
+                upcomingReleases={upcomingReleases}
                 loadingStates={loadingStates}
                 errorStates={errorStates}
                 onNavigate={saveScrollState} // [滚动恢复整合] 传递 onNavigate
+                saveScrollState={saveScrollState}
               />
             ) : (
               <FavoritesView

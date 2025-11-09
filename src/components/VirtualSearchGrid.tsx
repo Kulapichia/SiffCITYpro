@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const Grid = dynamic(
@@ -14,8 +14,14 @@ const Grid = dynamic(
 
 import { SearchResult } from '@/lib/types';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
+import { useImagePreload } from '@/hooks/useImagePreload';
 
 import VideoCard from '@/components/VideoCard';
+
+// 导出的 ref 接口，供父组件调用
+export interface VirtualSearchGridRef {
+  scrollToTop: () => void;
+}
 
 interface VirtualSearchGridProps {
   // 搜索结果数据
@@ -43,7 +49,7 @@ const INITIAL_BATCH_SIZE = 12;
 const LOAD_MORE_BATCH_SIZE = 8;
 const LOAD_MORE_THRESHOLD = 5; // 恢复原来的阈值，避免过度触发
 
-export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
+export const VirtualSearchGrid = forwardRef<VirtualSearchGridRef, VirtualSearchGridProps>(({
   allResults,
   filteredResults,
   aggregatedResults,
@@ -55,8 +61,9 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
   groupStatsRef,
   getGroupRef,
   computeGroupStats,
-}) => {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<any>(null); // Grid ref for imperative scroll
   const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
   
   // 渐进式加载状态
@@ -71,11 +78,48 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
   const displayItemCount = Math.min(visibleItemCount, totalItemCount);
   const displayData = currentData.slice(0, displayItemCount);
 
+  // 预加载图片 - 收集即将显示的图片 URLs
+  const imagesToPreload = useMemo(() => {
+    const urls: string[] = [];
+    const itemsToPreload = currentData.slice(displayItemCount, Math.min(displayItemCount + 20, totalItemCount));
+
+    itemsToPreload.forEach(item => {
+      if (viewMode === 'agg') {
+        const [, group] = item as [string, SearchResult[]];
+        if (group[0]?.poster) urls.push(group[0].poster);
+      } else {
+        const searchItem = item as SearchResult;
+        if (searchItem.poster) urls.push(searchItem.poster);
+      }
+    });
+
+    return urls;
+  }, [currentData, displayItemCount, totalItemCount, viewMode]);
+
+  useImagePreload(imagesToPreload, totalItemCount > 0);
+
   // 重置可见项目数量（当搜索或过滤变化时）
   useEffect(() => {
     setVisibleItemCount(INITIAL_BATCH_SIZE);
     setIsLoadingMore(false);
   }, [currentData, viewMode]);
+
+  // 当搜索关键词或视图模式改变时，滚动到顶部
+  useEffect(() => {
+    if (gridRef.current?.scrollToCell && totalItemCount > 0) {
+      try {
+        gridRef.current.scrollToCell({
+          columnIndex: 0,
+          rowIndex: 0,
+          align: 'start',
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        // 忽略滚动错误（可能在组件卸载时发生）
+        console.debug('Grid scroll error (safe to ignore):', error);
+      }
+    }
+  }, [searchQuery, viewMode, totalItemCount]);
 
   // 强制重新计算容器尺寸的useEffect
   useEffect(() => {
@@ -95,6 +139,24 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
     
     checkContainer();
   }, [containerWidth]);
+
+  // 暴露 scrollToTop 方法给父组件
+  useImperativeHandle(ref, () => ({
+    scrollToTop: () => {
+      if (gridRef.current?.scrollToCell) {
+        try {
+          gridRef.current.scrollToCell({
+            columnIndex: 0,
+            rowIndex: 0,
+            align: 'start',
+            behavior: 'smooth'
+          });
+        } catch (error) {
+          console.debug('Grid scroll to top error (safe to ignore):', error);
+        }
+      }
+    }
+  }), []);
 
   // 检查是否还有更多项目可以加载
   const hasNextPage = displayItemCount < totalItemCount;
@@ -224,6 +286,7 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
       ) : (
         <Grid
           key={`grid-${containerWidth}-${columnCount}`}
+          gridRef={gridRef}
           cellComponent={CellComponent}
           cellProps={{
             displayData,
@@ -239,7 +302,7 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
           columnWidth={itemWidth + 16}
           rowCount={rowCount}
           rowHeight={itemHeight + 16}
-          overscanCount={3}
+          overscanCount={5}
           // 添加ARIA支持提升无障碍体验
           role="grid"
           aria-label={`搜索结果列表 "${searchQuery}"，共${displayItemCount}个结果，当前视图：${viewMode === 'agg' ? '聚合视图' : '全部结果'}`}
@@ -288,6 +351,8 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
       )}
     </div>
   );
-};
+});
+
+VirtualSearchGrid.displayName = 'VirtualSearchGrid';
 
 export default VirtualSearchGrid;

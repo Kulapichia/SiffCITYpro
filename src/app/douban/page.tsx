@@ -21,7 +21,7 @@ import DoubanSelector from '@/components/DoubanSelector';
 import PageLayout from '@/components/PageLayout';
 import { useSite } from '@/components/SiteProvider'; // [滚动恢复整合] 引入 useSite
 import VideoCard from '@/components/VideoCard';
-import VirtualDoubanGrid from '@/components/VirtualDoubanGrid';
+import VirtualDoubanGrid, { VirtualDoubanGridRef } from '@/components/VirtualDoubanGrid';
 import { useVirtualScroll } from '@/components/VirtualScrollProvider';
 import { clearScrollCache } from '@/lib/scrollCache'; // [滚动恢复整合] 引入 clearScrollCache
 import {
@@ -53,6 +53,8 @@ function DoubanPageClient() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 返回顶部按钮显示状态
   const [showBackToTop, setShowBackToTop] = useState(false);
+  // VirtualDoubanGrid ref for scroll control
+  const virtualGridRef = useRef<VirtualDoubanGridRef>(null);
 
   // [滚动恢复整合] 引入 pathname 和 mainContainerRef
   const pathname = usePathname();
@@ -160,6 +162,9 @@ function DoubanPageClient() {
   const toggleVirtualization = () => {
     const newValue = !useVirtualization;
     setVirtualScrollEnabled(newValue);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('useDoubanVirtualization', JSON.stringify(newValue));
+    }
     // 切换虚拟化模式时，立即同步参数引用，避免一致性检查失败
     currentParamsRef.current = {
       type,
@@ -893,10 +898,21 @@ function DoubanPageClient() {
   // 返回顶部功能
   const scrollToTop = () => {
     // [滚动恢复整合] 适配滚动容器
-    mainContainerRef.current?.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    try {
+      // 1. 滚动页面容器到顶部
+      mainContainerRef.current?.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+
+      // 2. 重置虚拟列表到第一项
+      if (virtualGridRef.current) {
+        virtualGridRef.current.scrollToTop();
+      }
+    } catch (error) {
+      // 如果平滑滚动完全失败，使用立即滚动
+      if (mainContainerRef.current) mainContainerRef.current.scrollTop = 0;
+    }
   };
 
   return (
@@ -906,7 +922,7 @@ function DoubanPageClient() {
         className='flex-grow overflow-y-auto'
         ref={mainContainerRef as React.RefObject<HTMLDivElement>}
       >
-        <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible'>
+        <div className='overflow-visible -mt-6 md:mt-0'>
           {/* 页面标题和选择器 */}
           <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
             {/* 页面标题 */}
@@ -991,6 +1007,7 @@ function DoubanPageClient() {
               </div>
             ) : useVirtualization ? (
               <VirtualDoubanGrid
+                ref={virtualGridRef}
                 doubanData={doubanData}
                 hasMore={hasMore}
                 isLoadingMore={isLoadingMore}

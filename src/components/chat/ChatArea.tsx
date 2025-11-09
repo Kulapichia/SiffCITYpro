@@ -47,6 +47,8 @@ export function ChatArea({
   showEmojiPicker,
   onShowEmojiPickerChange,
 }: ChatAreaProps) {
+  // [LOG]
+  console.log('[ChatArea] Rendering. Selected Conversation ID:', selectedConversation?.id);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +64,7 @@ export function ChatArea({
     '❤️', '💙', '💚', '💛', '💜', '🧡', '🖤', '🤍', '🤎', '💕',
     '💖', '💗', '💘', '💝', '💞', '💟', '❣️', '💔', '❤️‍🔥', '💯'
   ];
-  
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -84,7 +86,7 @@ export function ChatArea({
     onNewMessageChange(newMessage + emoji);
     onShowEmojiPickerChange(false);
   };
-  
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -190,18 +192,18 @@ export function ChatArea({
 
           {/* 消息列表 */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-1 bg-gradient-to-b from-gray-50/30 to-white/50 dark:from-gray-800/30 dark:to-gray-900/50">
-              {messages.map((message, index) => (
-                  <MessageBubble
-                      key={message.id}
-                      message={message}
-                      isOwnMessage={message.sender_id === currentUser?.username}
-                      showName={index === 0 || messages[index - 1].sender_id !== message.sender_id}
-                      getAvatarUrl={getAvatarUrl}
-                      getDisplayName={getDisplayName}
-                      formatMessageTime={formatMessageTime}
-                  />
-              ))}
-              <div ref={messagesEndRef} />
+            {messages.map((message, index) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isOwnMessage={message.sender_id === currentUser?.username}
+                showName={index === 0 || messages[index - 1].sender_id !== message.sender_id}
+                getAvatarUrl={getAvatarUrl}
+                getDisplayName={getDisplayName}
+                formatMessageTime={formatMessageTime}
+              />
+            ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* 消息输入区域 */}

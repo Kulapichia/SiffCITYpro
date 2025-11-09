@@ -18,7 +18,7 @@ import PageLayout from '@/components/PageLayout';
 import SearchResultFilter, { SearchFilterCategory } from '@/components/SearchResultFilter';
 import SearchSuggestions from '@/components/SearchSuggestions';
 import VideoCard, { VideoCardHandle } from '@/components/VideoCard';
-import VirtualSearchGrid from '@/components/VirtualSearchGrid';
+import VirtualSearchGrid, { VirtualSearchGridRef } from '@/components/VirtualSearchGrid';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import YouTubeVideoCard from '@/components/YouTubeVideoCard';
@@ -32,6 +32,7 @@ function SearchPageClient() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   // 滚动进度状态
   const [scrollProgress, setScrollProgress] = useState(0);
+  const virtualGridRef = useRef<VirtualSearchGridRef>(null); // 新增ref
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentQueryRef = useRef<string>('');
@@ -1162,7 +1163,7 @@ function SearchPageClient() {
   const handleSuggestionSelect = (suggestion: string) => {
     setSearchQuery(suggestion);
     setShowSuggestions(false);
-
+  const virtualGridRef = useRef<VirtualSearchGridRef>(null); // 新增ref
     // 自动执行搜索
     setIsLoading(true);
     setShowResults(true);
@@ -1174,11 +1175,15 @@ function SearchPageClient() {
   // 返回顶部功能
   const scrollToTop = () => {
     try {
-      // 根据调试结果，真正的滚动容器是 document.body
+      // 1. 滚动页面到顶部
       document.body.scrollTo({
         top: 0,
         behavior: 'smooth',
       });
+      // 2. 重置虚拟列表到第一项
+      if (virtualGridRef.current) {
+        virtualGridRef.current.scrollToTop();
+      }
     } catch (error) {
       // 如果平滑滚动完全失败，使用立即滚动
       document.body.scrollTop = 0;
@@ -1772,6 +1777,7 @@ function SearchPageClient() {
               {/* 条件渲染：虚拟化 vs 传统网格 */}
               {useVirtualization ? (
                 <VirtualSearchGrid
+                  ref={virtualGridRef} // 传递ref
                   allResults={searchResults}
                   filteredResults={filteredAllResults}
                   aggregatedResults={aggregatedResults}

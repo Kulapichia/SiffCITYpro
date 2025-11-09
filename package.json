@@ -1,6 +1,6 @@
 {
   "name": "moontv",
-  "version": "5.6.1",
+  "version": "5.6.2",
   "private": true,
   "description": "开箱即用的、跨平台的全功能影视聚合播放平台",
   "main": "electron/main.js",
@@ -72,7 +72,7 @@
     "react-dom": "^18.3.0",
     "react-icons": "^5.4.0",
     "react-image-crop": "^11.0.10",
-    "react-window": "^2.2.0",
+    "react-window": "^2.2.3",
     "react-window-infinite-loader": "^1.0.10",
     "redis": "^5.8.3",
     "swiper": "^11.2.8",

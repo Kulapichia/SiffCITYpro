@@ -30,10 +30,13 @@ export const ChatModal = React.memo(function ChatModal({
   isConnected,
   sendMessage: sendWebSocketMessage,
 }: ChatModalProps) {
-  // [根本性修复] 添加客户端渲染门，解决水合错误
+  // [LOG] 1. 组件渲染入口
+  console.log('[ChatModal] Component rendering started. Props:', { isOpen, isConnected });
+
+  // [根本性修复] 添加客户端渲染门，解决水合错误 - 此处不再需要，已在ThemeToggle中使用dynamic import解决
   // const [isClient, setIsClient] = useState(false);
   // useEffect(() => {
-    // setIsClient(true);
+  // setIsClient(true);
   // }, []);
   const [activeTab, setActiveTab] = useState<'chat' | 'friends'>('chat');
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -57,10 +60,27 @@ export const ChatModal = React.memo(function ChatModal({
   const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
 
+  // [LOG] 2. 打印关键状态
+  console.log('[ChatModal] Current state:', {
+    activeTab,
+    selectedConversationId: selectedConversation?.id,
+    messagesCount: messages.length,
+    isMobile,
+  });
+
   const modalRef = useRef<HTMLDivElement>(null); // Ref for the modal itself to get its dimensions
   const authInfo = getAuthInfoFromBrowserCookie();
   const currentUser = authInfo && authInfo.username ? authInfo : null;
   const { showError, showSuccess } = useToast();
+
+  // [LOG] 3. 组件挂载与卸载
+  useEffect(() => {
+    console.log('[ChatModal] Component did mount (useEffect [] ran).');
+    return () => {
+      console.log('[ChatModal] Component will unmount.');
+    };
+  }, []);
+
 
   // 拖动相关事件处理
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -87,7 +107,7 @@ export const ChatModal = React.memo(function ChatModal({
 
     const newX = e.clientX - dragStartPosition.x;
     const newY = e.clientY - dragStartPosition.y;
-    
+
     // 【修复】拖动范围计算优化
     const modalRect = modalRef.current.getBoundingClientRect();
     const edgePadding = 40; // 保留边距避免完全移出
@@ -96,7 +116,7 @@ export const ChatModal = React.memo(function ChatModal({
     const maxX = window.innerWidth - modalRect.right - edgePadding;
     const minY = -(modalRect.top - edgePadding);
     const maxY = window.innerHeight - modalRect.bottom - edgePadding;
-    
+
     setDragPosition({
       x: Math.max(minX, Math.min(maxX, newX)),
       y: Math.max(minY, Math.min(maxY, newY))
@@ -119,7 +139,7 @@ export const ChatModal = React.memo(function ChatModal({
     const maxX = window.innerWidth - modalRect.right - edgePadding;
     const minY = -(modalRect.top - edgePadding);
     const maxY = window.innerHeight - modalRect.bottom - edgePadding;
-    
+
     // 阻止页面滚动
     e.preventDefault();
 
@@ -128,7 +148,7 @@ export const ChatModal = React.memo(function ChatModal({
       y: Math.max(minY, Math.min(maxY, newY))
     });
   }, [isDragging, dragStartPosition]);
-  
+
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
@@ -224,6 +244,8 @@ export const ChatModal = React.memo(function ChatModal({
 
   // 使用 useCallback 稳定 onMessage 函数引用
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    // [LOG] 接收到WebSocket消息
+    console.log('[ChatModal] Received WebSocket message:', message);
     switch (message.type) {
       case 'message':
         const conversationId = message.data.conversation_id;
@@ -284,16 +306,23 @@ export const ChatModal = React.memo(function ChatModal({
   // });
 
   const loadConversations = useCallback(async () => {
+    // [LOG] 加载会话列表
+    console.log('[ChatModal] Loading conversations...');
     const data = await fetchWithHandling('/api/chat/conversations');
     if (data) {
+      console.log('[ChatModal] Conversations loaded successfully:', data);
       setConversations(data);
       const allParticipants = data.reduce((acc: string[], conv: Conversation) => [...acc, ...conv.participants], []);
       preloadUserAvatars(allParticipants);
+    } else {
+      console.error('[ChatModal] Failed to load conversations.');
     }
   }, [preloadUserAvatars]);
 
   useEffect(() => {
     if (isOpen) {
+      // [LOG] Modal is open, loading initial data.
+      console.log('[ChatModal] isOpen changed to true. Loading initial data...');
       loadConversations();
       loadFriends();
       loadFriendRequests();
@@ -440,7 +469,7 @@ export const ChatModal = React.memo(function ChatModal({
         } else {
           showError('加载消息失败', errorData.error || '服务器错误');
         }
-        
+
         setMessages([]); // Clear messages on error
       }
     } catch (error) {
@@ -462,7 +491,7 @@ export const ChatModal = React.memo(function ChatModal({
       timestamp: Date.now(),
       is_read: false,
     };
-    
+
     const sentMessage = await fetchWithHandling('/api/chat/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -482,7 +511,7 @@ export const ChatModal = React.memo(function ChatModal({
       }
     }
   }, [newMessage, selectedConversation, currentUser, isConnected, sendWebSocketMessage, loadMessages, loadConversations]);
-  
+
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) return showError('文件类型错误', '请选择图片文件');
@@ -524,7 +553,7 @@ export const ChatModal = React.memo(function ChatModal({
             });
           }
         } else {
-            showError('发送失败', '图片发送失败，请重试');
+          showError('发送失败', '图片发送失败，请重试');
         }
       }
     } catch (error) {
@@ -637,56 +666,67 @@ export const ChatModal = React.memo(function ChatModal({
   };
 
   const handleConversationSelect = (conv: Conversation) => {
+    // [LOG] 选择了一个会话
+    console.log(`[ChatModal] Conversation selected: ID=${conv.id}, Name=${conv.name}`);
     setSelectedConversation(conv);
     loadMessages(conv.id);
 
     const resetCount = conversationUnreadCounts[conv.id] || 0;
     if (resetCount > 0) {
+      console.log(`[ChatModal] Resetting unread count for conversation ${conv.id} by ${resetCount}`);
       setConversationUnreadCounts(prev => ({ ...prev, [conv.id]: 0 }));
       onChatCountReset?.(resetCount);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    // [LOG] 组件因为 isOpen=false 而不渲染
+    console.log('[ChatModal] Not rendering because isOpen is false.');
+    return null;
+  }
   // [根本性修复] 在客户端挂载前，不渲染任何内容，避免服务端与客户端的HTML不匹配
   // if (!isClient) {
-    // return null;
+  // return null;
   // }
-  return (
-    <div
-      className={`z-[2147483647] ${isMobile
-        ? 'fixed top-0 left-0 right-0 bottom-0 bg-white dark:bg-gray-900'
-        : 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'
-        }`}
-      style={{
-        zIndex: '2147483647',
-        ...(isMobile && {
-          paddingTop: '56px', // 减少顶部padding
-          paddingBottom: '72px' // 减少底部padding
-        })
-      }}
-    >
+
+  // [DEBUG] 4. 使用 try...catch 包裹渲染逻辑
+  try {
+    console.log('[ChatModal] Entering render try block. About to return JSX.');
+    return (
       <div
-        ref={modalRef}
-        className={`${isMobile
-          ? 'w-full bg-white dark:bg-gray-900 flex flex-col'
-          : 'w-full max-w-6xl h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-row relative'
+        className={`z-[2147483647] ${isMobile
+          ? 'fixed top-0 left-0 right-0 bottom-0 bg-white dark:bg-gray-900'
+          : 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'
           }`}
         style={{
-          transform: !isMobile ? `translate(${dragPosition.x}px, ${dragPosition.y}px)` : 'none',
-          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+          zIndex: '2147483647',
           ...(isMobile && {
-            height: 'calc(100vh - 128px)', // 调整为新的padding总和
-            minHeight: 'calc(100vh - 128px)'
+            paddingTop: '56px', // 减少顶部padding
+            paddingBottom: '72px' // 减少底部padding
           })
         }}
       >
-        {/* 拖动头部 - 仅桌面端显示 */}
-        {!isMobile && (
+        <div
+          ref={modalRef}
+          className={`${isMobile
+            ? 'w-full bg-white dark:bg-gray-900 flex flex-col'
+            : 'w-full max-w-6xl h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-row relative'
+            }`}
+          style={{
+            transform: !isMobile ? `translate(${dragPosition.x}px, ${dragPosition.y}px)` : 'none',
+            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+            ...(isMobile && {
+              height: 'calc(100vh - 128px)', // 调整为新的padding总和
+              minHeight: 'calc(100vh - 128px)'
+            })
+          }}
+        >
+          {/* 拖动头部 - 仅桌面端显示 */}
+          {!isMobile && (
             <div
-                className="absolute top-0 left-0 right-0 h-8 bg-gray-100 dark:bg-gray-800 rounded-t-lg cursor-grab active:cursor-grabbing flex items-center justify-center"
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
+              className="absolute top-0 left-0 right-0 h-8 bg-gray-100 dark:bg-gray-800 rounded-t-lg cursor-grab active:cursor-grabbing flex items-center justify-center"
+              onMouseDown={handleMouseDown}
+              onTouchStart={handleTouchStart}
             >
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
@@ -694,59 +734,75 @@ export const ChatModal = React.memo(function ChatModal({
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               </div>
             </div>
-        )}
-        
-        <SidePanel
-          isMobile={isMobile}
-          isOpen={!isMobile || !selectedConversation}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          isConnected={isConnected}
-          onClose={onClose}
-          unreadChatCount={unreadChatCount}
-          unreadFriendRequestCount={unreadFriendRequestCount}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          friendSearchQuery={friendSearchQuery}
-          onFriendSearchQueryChange={setFriendSearchQuery}
-          searchResults={searchResults}
-          getAvatarUrl={getAvatarUrl}
-          isFriend={(username) => friends.some(f => f.username === username)}
-          onSendFriendRequest={sendFriendRequest}
-          conversations={conversations.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
-          selectedConversation={selectedConversation}
-          onConversationSelect={handleConversationSelect}
-          currentUser={currentUser as any}
-          getDisplayName={getDisplayName}
-          isUserOnline={(username) => onlineUsers.includes(username)}
-          conversationUnreadCounts={conversationUnreadCounts}
-          friendRequests={friendRequests}
-          onFriendRequestAction={handleFriendRequest}
-          friends={friends}
-          onStartConversation={startConversationWithFriend}
-        />
+          )}
 
-        <ChatArea
-          isMobile={isMobile}
-          isOpen={!isMobile || !!selectedConversation}
-          selectedConversation={selectedConversation}
-          onBack={() => setSelectedConversation(null)}
-          getAvatarUrl={getAvatarUrl}
-          getDisplayName={getDisplayName}
-          isUserOnline={(username) => onlineUsers.includes(username)}
-          currentUser={currentUser as any}
-          messages={messages}
-          newMessage={newMessage}
-          onNewMessageChange={setNewMessage}
-          onSendMessage={handleSendMessage}
-          onImageUpload={handleImageUpload}
-          uploadingImage={uploadingImage}
-          isConnected={isConnected}
-          showEmojiPicker={showEmojiPicker}
-          onShowEmojiPickerChange={setShowEmojiPicker}
-        />
+          <SidePanel
+            isMobile={isMobile}
+            isOpen={!isMobile || !selectedConversation}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            isConnected={isConnected}
+            onClose={onClose}
+            unreadChatCount={unreadChatCount}
+            unreadFriendRequestCount={unreadFriendRequestCount}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            friendSearchQuery={friendSearchQuery}
+            onFriendSearchQueryChange={setFriendSearchQuery}
+            searchResults={searchResults}
+            getAvatarUrl={getAvatarUrl}
+            isFriend={(username) => friends.some(f => f.username === username)}
+            onSendFriendRequest={sendFriendRequest}
+            conversations={conversations.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
+            selectedConversation={selectedConversation}
+            onConversationSelect={handleConversationSelect}
+            currentUser={currentUser as any}
+            getDisplayName={getDisplayName}
+            isUserOnline={(username) => onlineUsers.includes(username)}
+            conversationUnreadCounts={conversationUnreadCounts}
+            friendRequests={friendRequests}
+            onFriendRequestAction={handleFriendRequest}
+            friends={friends}
+            onStartConversation={startConversationWithFriend}
+          />
 
+          <ChatArea
+            isMobile={isMobile}
+            isOpen={!isMobile || !!selectedConversation}
+            selectedConversation={selectedConversation}
+            onBack={() => setSelectedConversation(null)}
+            getAvatarUrl={getAvatarUrl}
+            getDisplayName={getDisplayName}
+            isUserOnline={(username) => onlineUsers.includes(username)}
+            currentUser={currentUser as any}
+            messages={messages}
+            newMessage={newMessage}
+            onNewMessageChange={setNewMessage}
+            onSendMessage={handleSendMessage}
+            onImageUpload={handleImageUpload}
+            uploadingImage={uploadingImage}
+            isConnected={isConnected}
+            showEmojiPicker={showEmojiPicker}
+            onShowEmojiPickerChange={setShowEmojiPicker}
+          />
+
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error: any) {
+    // [DEBUG] 5. 捕获渲染错误
+    console.error('[ChatModal] FATAL: Error occurred during render!', error);
+    // 返回一个备用UI，而不是空白，方便看到错误
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75">
+        <div className="w-3/4 max-w-2xl p-6 bg-red-100 border-2 border-red-500 text-red-800 rounded-lg overflow-auto max-h-[80vh]">
+          <h1 className="text-xl font-bold mb-4">Chat Component Failed to Render</h1>
+          <h2 className="font-semibold">Error:</h2>
+          <p className="mb-4">{error.message}</p>
+          <h2 className="font-semibold">Stack Trace:</h2>
+          <pre className="text-xs whitespace-pre-wrap bg-red-50 p-2 rounded">{error.stack}</pre>
+        </div>
+      </div>
+    );
+  }
 });

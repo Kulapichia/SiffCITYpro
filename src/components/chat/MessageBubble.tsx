@@ -21,6 +21,9 @@ export const MessageBubble = React.memo(function MessageBubble({
   getDisplayName,
   formatMessageTime,
 }: MessageBubbleProps) {
+  // [LOG]
+  console.log('[MessageBubble] Rendering. Message ID:', message.id);
+
   // 修复: 增加 state 来处理客户端时间格式化, 避免 hydration error
   const [clientFormattedTime, setClientFormattedTime] = useState('');
 
@@ -33,12 +36,12 @@ export const MessageBubble = React.memo(function MessageBubble({
       <div className={`flex items-end space-x-3 max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
         {/* 头像 */}
         <div className="flex-shrink-0">
-            {/* 使用 opacity-0 占位，避免连续消息抖动 */}
-            <img
-              src={getAvatarUrl(message.sender_id)}
-              alt={getDisplayName(message.sender_id)}
-              className={`w-10 h-10 rounded-full ring-2 ring-white dark:ring-gray-600 shadow-md ${!showName ? 'opacity-0' : ''}`}
-            />
+          {/* 使用 opacity-0 占位，避免连续消息抖动 */}
+          <img
+            src={getAvatarUrl(message.sender_id)}
+            alt={getDisplayName(message.sender_id)}
+            className={`w-10 h-10 rounded-full ring-2 ring-white dark:ring-gray-600 shadow-md ${!showName ? 'opacity-0' : ''}`}
+          />
         </div>
 
         {/* 消息内容 */}
@@ -57,7 +60,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             className={`relative px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl ${isOwnMessage
               ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/25 rounded-br-md'
               : 'bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-white shadow-gray-900/10 dark:shadow-black/20 ring-1 ring-gray-200/50 dark:ring-gray-600/50 rounded-bl-md'
-            }`}
+              }`}
           >
             {message.message_type === 'image' ? (
               <div className="group">
@@ -96,7 +99,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               className={`absolute bottom-2 w-3 h-3 ${isOwnMessage
                 ? 'right-0 -mr-1.5 bg-gradient-to-br from-blue-500 to-blue-600'
                 : 'left-0 -ml-1.5 bg-white/90 dark:bg-gray-700/90 ring-1 ring-gray-200/50 dark:ring-gray-600/50'
-              } transform rotate-45`}
+                } transform rotate-45`}
             ></div>
           </div>
 

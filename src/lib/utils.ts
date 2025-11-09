@@ -120,7 +120,10 @@ export function getImageProxyUrl(): string | null {
  */
 export function processImageUrl(originalUrl: string): string {
   if (!originalUrl) return originalUrl;
-
+  // 处理 manmankan 图片防盗链
+  if (originalUrl.includes('manmankan.com')) {
+    return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+  }
   // 优先处理豆瓣图片代理
   if (originalUrl.includes('doubanio.com')) {
     const { proxyType, proxyUrl } = getDoubanImageProxyConfig();

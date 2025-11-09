@@ -50,6 +50,7 @@ export interface VideoCardProps {
   isAggregate?: boolean;
   origin?: 'vod' | 'live';
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
+  releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
   // 短剧相关字段
   vod_class?: string;
   vod_tag?: string;
@@ -84,6 +85,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     isAggregate = false,
     origin = 'vod',
     remarks,
+    releaseDate,
     // 新增短剧相关字段
     vod_class,
     vod_tag,
@@ -137,10 +139,18 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   const actualSearchType = isAggregate
     ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
     : type;
+  // 判断是否为即将上映（未发布的内容）- 只有真正未上映的才算
+  const isUpcoming = remarks && remarks.includes('天后上映');
 
-  // 获取收藏状态（搜索结果、豆瓣和短剧页面不检查）
+  // 判断是否有上映相关标记（包括已上映、今日上映、即将上映）
+  const hasReleaseTag = remarks && (remarks.includes('天后上映') || remarks.includes('已上映') || remarks.includes('今日上映'));
+
+  // 获取收藏状态（搜索结果页面不检查，但即将上映需要检查）
   useEffect(() => {
-    if (from === 'douban' || from === 'search' || from === 'shortdrama' || !actualSource || !actualId) return;
+    // 即将上映的内容需要检查收藏状态
+    const shouldCheckFavorite = isUpcoming || (from !== 'douban' && from !== 'search' && from !== 'shortdrama');
+
+    if (!shouldCheckFavorite || !actualSource || !actualId) return;
 
     const fetchFavoriteStatus = async () => {
       try {
@@ -165,13 +175,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     );
 
     return unsubscribe;
-  }, [from, actualSource, actualId]);
+  }, [from, actualSource, actualId, isUpcoming]);
 
   const handleToggleFavorite = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (from === 'douban' || from === 'shortdrama' || !actualSource || !actualId) return;
+      // 即将上映的内容允许收藏
+      if ((from === 'douban' && !isUpcoming) || (from === 'shortdrama') || !actualSource || !actualId) return;
 
       try {
         // 确定当前收藏状态
@@ -189,11 +200,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           // 如果未收藏，添加收藏
           await saveFavorite(actualSource, actualId, {
             title: actualTitle,
-            source_name: source_name || '',
+            source_name: source_name || '即将上映',
             year: actualYear || '',
             cover: actualPoster,
             total_episodes: actualEpisodes ?? 1,
             save_time: Date.now(),
+            search_title: actualQuery || actualTitle, // 保存搜索标题用于后续查找资源
+            releaseDate: releaseDate, // 保存上映日期
+            remarks: remarks, // 保存备注信息
           });
           if (from === 'search') {
             setSearchFavorited(true);
@@ -207,6 +221,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     },
     [
       from,
+      isUpcoming,
       actualSource,
       actualId,
       actualTitle,
@@ -214,8 +229,11 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       actualYear,
       actualPoster,
       actualEpisodes,
+      actualQuery,
       favorited,
       searchFavorited,
+      releaseDate,
+      remarks,
     ]
   );
 
@@ -235,6 +253,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   );
 
   const handleClick = useCallback(() => {
+    // 如果是即将上映的内容，不执行跳转，显示提示
+    if (isUpcoming) {
+      return;
+    }
     // [滚动恢复整合] 在导航前调用回调以保存滚动状态
     onNavigate?.();
     // 如果从搜索页面点击，设置标记以便返回时使用缓存
@@ -259,7 +281,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
       const url = `/play?${urlParams.toString()}`;
       router.push(url);
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId)) {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+      // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
         }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
       router.push(url);
@@ -272,6 +295,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       router.push(url);
     }
   }, [
+    isUpcoming,
     origin,
     from,
     actualSource,
@@ -297,7 +321,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       // 直播内容跳转到直播页面
       const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
       window.open(url, '_blank');
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId)) {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+      // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
       window.open(url, '_blank');
     } else if (actualSource && actualId) {
@@ -432,7 +457,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         showSourceName: false,
         showProgress: false,
         showPlayButton: true,
-        showHeart: false,
+        showHeart: isUpcoming, // 即将上映的内容显示收藏按钮
         showCheckCircle: false,
         showDoubanLink: true,
         showRating: !!rate,
@@ -461,13 +486,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     };
     const configsTyped = configs as Record<typeof from, typeof configs.search>;
     return configsTyped[from] || configs.search;
-  }, [from, rate]);
+  }, [from, rate, isUpcoming]);
+  
   // 移动端操作菜单配置
   const mobileActions = useMemo(() => {
     const actions = [];
 
-    // 播放操作
-    if (config.showPlayButton) {
+    // 播放操作（即将上映的内容不显示播放选项）
+    if (config.showPlayButton && !isUpcoming) {
       actions.push({
         id: 'play',
         label: origin === 'live' ? '观看直播' : '播放',
@@ -486,10 +512,22 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       });
     }
 
+    // 即将上映提示（替代播放操作）
+    if (isUpcoming) {
+      actions.push({
+        id: 'upcoming-notice',
+        label: '该影片尚未上映，敬请期待',
+        icon: <span className="text-lg">📅</span>,
+        onClick: () => {}, // 不执行任何操作
+        disabled: true,
+        color: 'default' as const,
+      });
+    }
+
     // 聚合源信息 - 直接在菜单中展示，不需要单独的操作项
 
-    // 收藏/取消收藏操作
-    if (config.showHeart && from !== 'douban' && from !== 'shortdrama' && actualSource && actualId) {
+    // 收藏/取消收藏操作（即将上映的内容也显示收藏选项）
+    if (config.showHeart && (isUpcoming || (from !== 'douban' && from !== 'shortdrama')) && actualSource && actualId) {
       const currentFavorited = from === 'search' ? searchFavorited : favorited;
 
       if (from === 'search') {
@@ -590,7 +628,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     isBangumi,
     isAggregate,
     dynamicSourceNames,
+    isUpcoming,
+    origin,
     handleClick,
+    handlePlayInNewTab,
     handleToggleFavorite,
     handleDeleteRecord,
   ]);
@@ -600,7 +641,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       <motion.div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
-        onClick={handleClick}
         {...longPressProps}
         style={{
           // 禁用所有默认的长按和选择效果
@@ -666,12 +706,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             src={processImageUrl(actualPoster)}
             alt={actualTitle}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
             className={`${origin === 'live' ? 'object-contain' : 'object-cover'} transition-all duration-700 ease-out group-hover:scale-110 ${
               imageLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-md scale-105'
             }`}
             referrerPolicy='no-referrer'
             loading='lazy'
+            quality={85}
             onLoadingComplete={() => {
               setIsLoading(true);
               setImageLoaded(true);
@@ -705,7 +746,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
           {/* 悬浮遮罩 - 玻璃态效果 */}
           <div
-            className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-all duration-300 ease-in-out'
+            className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 backdrop-blur-[2px]'
             style={{
               WebkitUserSelect: 'none',
               userSelect: 'none',
@@ -717,7 +758,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             }}
           />
 
-          {/* 播放按钮 */}
+          {/* 播放按钮 / 即将上映提示 */}
           {config.showPlayButton && (
             <div
               data-button="true"
@@ -732,27 +773,36 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 return false;
               }}
             >
-              <div className="p-3 bg-black/40 backdrop-blur-sm rounded-full">
-                <PlayCircleIcon
-                  size={50}
-                  strokeWidth={0.8}
-                  className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500/50 hover:scale-110'
-                  style={{
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none',
-                    WebkitTouchCallout: 'none',
-                  } as React.CSSProperties}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    return false;
-                  }}
-                />
-              </div>
+              {isUpcoming ? (
+                // 即将上映 - 显示敬请期待
+                <div className='flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md px-6 py-4 rounded-xl'>
+                  <span className='text-3xl'>📅</span>
+                  <span className='text-white font-bold text-sm whitespace-nowrap'>敬请期待</span>
+                </div>
+              ) : (
+                // 正常内容 - 显示播放按钮
+                <div className="p-3 bg-black/40 backdrop-blur-sm rounded-full">
+                  <PlayCircleIcon
+                    size={50}
+                    strokeWidth={0.8}
+                    className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1]'
+                    style={{
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                    } as React.CSSProperties}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      return false;
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {/* 操作按钮 */}
-          {(config.showHeart || config.showCheckCircle) && (
+          {/* 操作按钮 - hover显示（非收藏页面） */}
+          {(config.showHeart || config.showCheckCircle) && from !== 'favorite' && (
             <div
               data-button="true"
               className='absolute bottom-3 right-3 flex gap-3 opacity-0 translate-y-2 transition-all duration-300 ease-in-out sm:group-hover:opacity-100 sm:group-hover:translate-y-0'
@@ -771,7 +821,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   <Trash2
                     onClick={handleDeleteRecord}
                     size={20}
-                    className='text-white transition-all duration-300 ease-out hover:stroke-red-500 hover:scale-110'
+                    className='text-white transition-all duration-300 ease-out hover:stroke-red-500 hover:scale-[1.1]'
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -792,7 +842,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     className={`transition-all duration-300 ease-out ${favorited
                       ? 'fill-red-600 stroke-red-600'
                       : 'fill-transparent stroke-white hover:stroke-red-400'
-                      } hover:scale-110`}
+                      } hover:scale-[1.1]`}
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -808,10 +858,62 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 集数徽章 - 左上角第一位 */}
-          {actualEpisodes && actualEpisodes > 1 && (
+          {/* 收藏页面专用：固定显示的爱心按钮 */}
+          {from === 'favorite' && config.showHeart && (
             <div
-              className='absolute top-2 left-2 bg-gradient-to-br from-emerald-500/95 via-teal-500/95 to-cyan-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-emerald-500/60 group-hover:ring-emerald-300/50 z-30'
+              className='absolute bottom-2 right-2 z-30'
+              onClick={handleToggleFavorite}
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+                cursor: 'pointer',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <Heart
+                size={16}
+                className='fill-red-500 stroke-red-500 transition-all duration-300 hover:scale-110 hover:fill-red-600 hover:stroke-red-600'
+              />
+            </div>
+          )}
+
+          {/* 类型徽章 - 左上角第一位（电影/电视剧）*/}
+          {hasReleaseTag && type && (
+            <div
+              className={`absolute top-2 left-2 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 z-30 ${
+                type === 'movie'
+                  ? 'bg-gradient-to-br from-red-500/95 via-rose-500/95 to-pink-600/95 group-hover:shadow-red-500/60 group-hover:ring-red-300/50'
+                  : 'bg-gradient-to-br from-blue-500/95 via-indigo-500/95 to-purple-600/95 group-hover:shadow-blue-500/60 group-hover:ring-blue-300/50'
+              }`}
+              style={{
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                return false;
+              }}
+            >
+              <span className="flex items-center gap-1">
+                <span className="text-[10px]">{type === 'movie' ? '🎬' : '📺'}</span>
+                {type === 'movie' ? '电影' : '电视剧'}
+              </span>
+            </div>
+          )}
+
+          {/* 集数徽章 - 左上角第二位（如果有类型徽章，则向下偏移）*/}
+          {/* 即将上映的内容不显示集数徽章（因为是占位符数据）*/}
+          {/* 收藏页面：过滤掉99集的占位符显示，只显示真实集数 */}
+          {actualEpisodes && actualEpisodes > 1 && !isUpcoming && !(from === 'favorite' && actualEpisodes === 99) && (
+            <div
+              className={`absolute left-2 bg-gradient-to-br from-emerald-500/95 via-teal-500/95 to-cyan-600/95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-emerald-500/60 group-hover:ring-emerald-300/50 z-30 ${
+                hasReleaseTag && type ? 'top-[48px]' : 'top-2'
+              }`}
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -831,11 +933,22 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </div>
           )}
 
-          {/* 年份徽章 - 左上角第二位（如果有集数徽章，则向下偏移） */}
+          {/* 年份徽章 - 左上角（根据前面的徽章数量动态调整位置）*/}
           {config.showYear && actualYear && actualYear !== 'unknown' && actualYear.trim() !== '' && (
             <div
               className={`absolute left-2 bg-gradient-to-br from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 group-hover:shadow-purple-500/50 group-hover:ring-purple-300/50 ${
-                actualEpisodes && actualEpisodes > 1 ? 'top-[48px]' : 'top-2'
+                (() => {
+                  let offset = 2; // 默认 top-2
+                  // 如果有上映相关的类型徽章
+                  if (hasReleaseTag && type) {
+                    offset += 46; // top-[48px]
+                  }
+                  // 如果有集数徽章
+                  if (actualEpisodes && actualEpisodes > 1) {
+                    offset += 46; // 再加 46px
+                  }
+                  return `top-[${offset}px]`;
+                })()
               }`}
               style={{
                 WebkitUserSelect: 'none',
@@ -874,6 +987,47 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               </span>
             </div>
           )}
+
+          {/* 上映状态徽章 - 美化版，放在底部左侧 */}
+          {hasReleaseTag && (() => {
+            // 根据状态选择emoji和颜色
+            let emoji = '🔜';
+            let bgColors = 'from-orange-500/95 via-red-500/95 to-pink-600/95';
+            let shadowColor = 'group-hover:shadow-orange-500/60';
+            let ringColor = 'group-hover:ring-orange-300/50';
+
+            if (remarks?.includes('已上映')) {
+              emoji = '🎬';
+              bgColors = 'from-green-500/95 via-emerald-500/95 to-teal-600/95';
+              shadowColor = 'group-hover:shadow-green-500/60';
+              ringColor = 'group-hover:ring-green-300/50';
+            } else if (remarks?.includes('今日上映')) {
+              emoji = '🎉';
+              bgColors = 'from-yellow-500/95 via-orange-500/95 to-red-600/95';
+              shadowColor = 'group-hover:shadow-yellow-500/60';
+              ringColor = 'group-hover:ring-yellow-300/50';
+            }
+
+            return (
+              <div
+                className={`absolute bottom-2 left-2 bg-gradient-to-br ${bgColors} backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/30 transition-all duration-300 ease-out group-hover:scale-105 ${shadowColor} ${ringColor} animate-pulse`}
+                style={{
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                } as React.CSSProperties}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  return false;
+                }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="text-[10px]">{emoji}</span>
+                  {remarks}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* 评分徽章 - 动态颜色 */}
           {config.showRating && rate && (() => {
@@ -920,7 +1074,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               }}
             >
               <div
-                className='bg-green-500/80 backdrop-blur-sm text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-green-600 hover:scale-110 transition-all duration-300 ease-out'
+                className='bg-green-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-green-600 hover:scale-[1.1] transition-all duration-300 ease-out'
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -971,7 +1125,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   } as React.CSSProperties}
                 >
                   <div
-                    className='bg-gradient-to-br from-orange-500/95 via-amber-500/95 to-yellow-500/95 backdrop-blur-md text-white text-xs font-bold w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hover:scale-115 transition-all duration-300 ease-out cursor-pointer hover:shadow-orange-500/50'
+                    className='bg-gradient-to-br from-orange-500/95 via-amber-500/95 to-yellow-500/95 backdrop-blur-md text-white text-xs font-bold w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hover:scale-[1.15] transition-all duration-300 ease-out cursor-pointer hover:shadow-orange-500/50'
                     style={{
                       WebkitUserSelect: 'none',
                       userSelect: 'none',
@@ -1069,7 +1223,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
         {/* 进度条 */}
         {config.showProgress && progress !== undefined && (
           <div
-            className='mt-2 h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'
+            className='mt-1 h-1 w-full bg-gray-200 rounded-full overflow-hidden'
             style={{
               WebkitUserSelect: 'none',
               userSelect: 'none',
@@ -1121,7 +1275,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             <div className='absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-900/0 group-hover:via-green-50/50 dark:group-hover:via-green-900/30 transition-all duration-300 rounded-md'></div>
 
             <span
-              className='block text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-102 peer relative z-10 group-hover:bg-gradient-to-r group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-green-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
+              className='block text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-[1.02] peer relative z-10 group-hover:bg-gradient-to-r group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-green-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
               style={{
                 WebkitUserSelect: 'none',
                 userSelect: 'none',
@@ -1169,21 +1323,53 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               ></div>
             </div>
           </div>
-          {config.showSourceName && source_name && (
-            <div
-              className='flex items-center justify-center mt-2'
-              style={{
-                WebkitUserSelect: 'none',
-                userSelect: 'none',
-                WebkitTouchCallout: 'none',
-              } as React.CSSProperties}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                return false;
-              }}
-            >
-              <span
-                className='relative inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out overflow-hidden group-hover:border-green-500/80 group-hover:text-green-600 dark:group-hover:text-green-400 group-hover:shadow-md group-hover:shadow-green-500/20 group-hover:scale-105'
+          {config.showSourceName && source_name && (() => {
+            // 智能显示source_name：如果有上映状态标记，优先显示状态；否则显示来源
+            let displayText = source_name;
+            let themeColor = 'green'; // 默认绿色主题
+
+            if (hasReleaseTag && remarks) {
+              // 有上映状态时，根据状态显示不同文本和颜色
+              if (remarks.includes('天后上映')) {
+                displayText = remarks; // 显示"X天后上映"
+                themeColor = 'orange';
+              } else if (remarks.includes('今日上映')) {
+                displayText = '今日上映';
+                themeColor = 'yellow';
+              } else if (remarks.includes('已上映')) {
+                displayText = remarks; // 显示"已上映X天"
+                themeColor = 'green';
+              }
+            }
+
+            // 根据主题颜色设置class
+            const colorClasses = {
+              green: 'group-hover:border-green-500/80 group-hover:text-green-600 dark:group-hover:text-green-400 group-hover:shadow-green-500/20',
+              orange: 'group-hover:border-orange-500/80 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:shadow-orange-500/20',
+              yellow: 'group-hover:border-yellow-500/80 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 group-hover:shadow-yellow-500/20',
+            }[themeColor];
+
+            const bgGradient = {
+              green: 'group-hover:via-green-50/80 dark:group-hover:via-green-500/20',
+              orange: 'group-hover:via-orange-50/80 dark:group-hover:via-orange-500/20',
+              yellow: 'group-hover:via-yellow-50/80 dark:group-hover:via-yellow-500/20',
+            }[themeColor];
+
+            const dotColor = {
+              green: 'group-hover:bg-green-500 dark:group-hover:bg-green-400 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+              orange: 'group-hover:bg-orange-500 dark:group-hover:bg-orange-400 group-hover:shadow-[0_0_8px_rgba(249,115,22,0.6)]',
+              yellow: 'group-hover:bg-yellow-500 dark:group-hover:bg-yellow-400 group-hover:shadow-[0_0_8px_rgba(234,179,8,0.6)]',
+            }[themeColor];
+
+            const iconColor = {
+              green: 'group-hover:text-green-500 dark:group-hover:text-green-400',
+              orange: 'group-hover:text-orange-500 dark:group-hover:text-orange-400',
+              yellow: 'group-hover:text-yellow-500 dark:group-hover:text-yellow-400',
+            }[themeColor];
+
+            return (
+              <div
+                className='flex items-center justify-center mt-2'
                 style={{
                   WebkitUserSelect: 'none',
                   userSelect: 'none',
@@ -1194,23 +1380,36 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                   return false;
                 }}
               >
-                {/* 背景渐变效果 */}
-                <span className='absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 group-hover:via-green-50/80 dark:group-hover:via-green-500/20 transition-all duration-300'></span>
+                <span
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border border-gray-300/60 dark:border-gray-600/60 text-gray-600 dark:text-gray-400 transition-all duration-300 ease-out overflow-hidden group-hover:shadow-md group-hover:scale-105 ${colorClasses}`}
+                  style={{
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                    WebkitTouchCallout: 'none',
+                  } as React.CSSProperties}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    return false;
+                  }}
+                >
+                  {/* 背景渐变效果 */}
+                  <span className={`absolute inset-0 bg-gradient-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 transition-all duration-300 ${bgGradient}`}></span>
 
-                {/* 左侧装饰点 */}
-                <span className='relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-green-500 dark:group-hover:bg-green-400 transition-all duration-300 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]'></span>
+                  {/* 左侧装饰点 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
 
-                {origin === 'live' && (
-                  <Radio size={12} className="relative inline-block transition-all duration-300 group-hover:text-green-500 dark:group-hover:text-green-400" />
-                )}
+                  {origin === 'live' && (
+                    <Radio size={12} className={`relative inline-block transition-all duration-300 ${iconColor}`} />
+                  )}
 
-                <span className='relative font-semibold'>{source_name}</span>
+                  <span className='relative font-semibold'>{displayText}</span>
 
-                {/* 右侧装饰点 */}
-                <span className='relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-green-500 dark:group-hover:bg-green-400 transition-all duration-300 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]'></span>
-              </span>
-            </div>
-          )}
+                  {/* 右侧装饰点 */}
+                  <span className={`relative w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-300 ${dotColor}`}></span>
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </motion.div>
 

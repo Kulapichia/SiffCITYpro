@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -154,6 +153,13 @@
 
   .animate-scaleIn {
     animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Aurora blob animation delays */
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
   }
 }
 
@@ -1989,41 +1995,39 @@ div[data-media-provider] video {
 }
 
 /* 修复音量控制hover区域 - 精确控制触发范围 */
-@media (hover: hover) {
-  .art-control-volume {
-    position: relative !important;
-    padding: 3px; /* 和弹幕按钮一样的hover区域 */
-  }
+.art-control-volume {
+  position: relative !important;
+  padding: 3px; /* 和弹幕按钮一样的hover区域 */
+}
 
-  /* 缩小hover检测区域，只稍微扩展到面板方向 */
-  .art-control-volume::before {
-    content: '';
-    position: absolute;
-    top: -20px; /* 只扩展20px，避免过早触发 */
-    left: -5px;
-    right: -5px;
-    bottom: -3px;
-    z-index: -1;
-    pointer-events: auto;
-  }
+/* 缩小hover检测区域，只稍微扩展到面板方向 */
+.art-control-volume::before {
+  content: '';
+  position: absolute;
+  top: -20px; /* 只扩展20px，避免过早触发 */
+  left: -5px;
+  right: -5px;
+  bottom: -3px;
+  z-index: -1;
+  pointer-events: auto;
+}
 
-  /* 按钮或面板hover时都显示音量面板 */
-  .art-control-volume:hover .art-volume-panel,
-  .art-volume-panel:hover {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
-    transition:
-      opacity 0.15s ease 0.1s,
-      transform 0.15s ease 0.1s !important; /* 0.1s显示延迟 */
-  }
+/* 按钮或面板hover时都显示音量面板 */
+.art-control-volume:hover .art-volume-panel,
+.art-volume-panel:hover {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+  transition:
+    opacity 0.15s ease 0.1s,
+    transform 0.15s ease 0.1s !important; /* 0.1s显示延迟 */
+}
 
-  /* 音量面板默认隐藏状态，和弹幕一样的延迟 */
-  .art-volume-panel {
-    transition:
-      opacity 0.15s ease 0.3s,
-      transform 0.15s ease 0.3s !important; /* 0.3s隐藏延迟 */
-  }
+/* 音量面板默认隐藏状态，和弹幕一样的延迟 */
+.art-volume-panel {
+  transition:
+    opacity 0.15s ease 0.3s,
+    transform 0.15s ease 0.3s !important; /* 0.3s隐藏延迟 */
 }
 
 /* 修复移动端弹幕面板定位问题 - 根据不同挂载位置处理 */
@@ -2081,14 +2085,14 @@ div[data-media-provider] video {
 }
 
 /* 移动端隐藏弹幕配置按钮 */
-@media (max-width: 1080px), (hover: none) {
+@media (max-width: 1080px) {
   .artplayer-plugin-danmuku .apd-config {
     display: none !important;
   }
 }
 
 /* 修复桌面端弹幕配置弹窗hover不稳定问题 */
-@media (min-width: 1081px) and (hover: hover) {
+@media (min-width: 1081px) {
   /* 扩大按钮的实际hover区域，但不影响视觉 */
   .artplayer-plugin-danmuku .apd-config {
     position: relative;
@@ -2125,5 +2129,38 @@ div[data-media-provider] video {
     pointer-events: none !important;
     visibility: hidden !important;
     transition: none !important;
+  }
+}
+
+/* 超小屏幕适配 - 确保控制按钮完整显示 */
+@media (max-width: 380px) {
+  /* 减小控制按钮的间距和尺寸 */
+  .art-controls button,
+  .art-control {
+    min-width: 28px !important;
+    padding: 0 4px !important;
+    font-size: 13px !important;
+  }
+
+  /* 减小控制栏的内边距 */
+  .art-controls {
+    padding: 0 4px !important;
+  }
+
+  /* 确保全屏按钮始终可见 */
+  .art-control-fullscreen {
+    display: flex !important;
+    min-width: 32px !important;
+  }
+
+  /* 调整播放器时间显示更紧凑 */
+  .art-control-time {
+    font-size: 11px !important;
+    padding: 0 2px !important;
+  }
+
+  /* 减小进度条高度以节省空间 */
+  .art-progress {
+    height: 3px !important;
   }
 }
