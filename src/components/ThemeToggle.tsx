@@ -13,15 +13,23 @@ import { WebSocketMessage } from '../lib/types';
 
 // 使用 dynamic import 并禁用 SSR 来加载 ChatModal
 const ChatModal = dynamic(
-  () => import('./ChatModal').then((mod) => mod.ChatModal),
+  () => {
+    // [LOG] 动态加载 ChatModal 组件
+    console.log('[ThemeToggle] Dynamically importing ChatModal...');
+    return import('./ChatModal').then((mod) => mod.ChatModal);
+  },
   {
     ssr: false, // 关键：禁用服务端渲染
-    loading: () => (
-      // 添加一个加载状态，提升用户体验
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-        <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    ),
+    loading: () => {
+      // [LOG] 显示 ChatModal 加载动画
+      console.log('[ThemeToggle] Showing ChatModal loading state.');
+      return (
+        // 添加一个加载状态，提升用户体验
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    },
   }
 );
 
@@ -48,6 +56,18 @@ export function ThemeToggle() {
   const handleFriendRequestCountReset = useCallback((resetCount: number) => {
     // 仅用于同步状态，实际计数由ChatModal管理
   }, []);
+
+  // [LOG] 增加一个函数来处理点击，方便添加日志
+  const openChatModal = () => {
+    console.log('[ThemeToggle] Chat icon clicked. Setting isChatModalOpen to true.');
+    setIsChatModalOpen(true);
+  };
+
+  const closeChatModal = () => {
+    console.log('[ThemeToggle] Closing ChatModal. Setting isChatModalOpen to false.');
+    setIsChatModalOpen(false);
+  };
+
   const setThemeColor = (theme?: string) => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {
@@ -108,7 +128,7 @@ export function ThemeToggle() {
         {/* 聊天按钮 - 在登录页面不显示 */}
         {!isLoginPage && (
           <button
-            onClick={() => setIsChatModalOpen(true)}
+            onClick={openChatModal}
             className={`relative group ${isMobile ? 'w-8 h-8 p-1.5' : 'w-10 h-10 p-2'} rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30 dark:hover:shadow-blue-400/30`}
             aria-label='打开聊天'
           >
@@ -142,7 +162,7 @@ export function ThemeToggle() {
       {!isLoginPage && isChatModalOpen && (
         <ChatModal
           isOpen={isChatModalOpen}
-          onClose={() => setIsChatModalOpen(false)}
+          onClose={closeChatModal}
           onMessageCountChange={handleMessageCountFromModal}
           onChatCountReset={handleChatCountReset}
           onFriendRequestCountReset={handleFriendRequestCountReset}
