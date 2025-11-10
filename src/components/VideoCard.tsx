@@ -307,9 +307,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     }
 
     if (url) {
-      // 使用 window.location.assign() 替代 router.push() 来强制页面刷新跳转
-      // 这可以绕过因客户端路由脚本损坏导致无法导航的问题
-      window.location.assign(url);
+      router.push(url);
     }
   }, [
     isUpcoming,
@@ -317,7 +315,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     from,
     actualSource,
     actualId,
-    // router,
+    router,
     actualTitle,
     actualYear,
     isAggregate,
