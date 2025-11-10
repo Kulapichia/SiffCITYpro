@@ -303,7 +303,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     from,
     actualSource,
     actualId,
-    router,
+    // router,
     actualTitle,
     actualYear,
     isAggregate,
