@@ -782,7 +782,29 @@ function HomeClient() {
 
       // 处理电影数据
       if (moviesData.status === 'fulfilled' && moviesData.value?.code === 200) {
-        setHotMovies(moviesData.value.list);
+        const movies = moviesData.value.list;
+        setHotMovies(movies);
+        // 异步获取前2条电影的详情（用于Hero Banner）
+        Promise.all(
+          movies.slice(0, 2).map(async (movie) => {
+            try {
+              const detailsRes = await getDoubanDetails(movie.id);
+              if (detailsRes.code === 200 && detailsRes.data?.plot_summary) {
+                return { id: movie.id, plot_summary: detailsRes.data.plot_summary };
+              }
+            } catch (error) {
+              console.warn(`获取电影 ${movie.id} 详情失败:`, error);
+            }
+            return null;
+          })
+        ).then((results) => {
+          setHotMovies(prev =>
+            prev.map(m => {
+              const detail = results.find(r => r?.id === m.id);
+              return detail ? { ...m, plot_summary: detail.plot_summary } : m;
+            })
+          );
+        });
       } else {
         setErrorStates((prev) => ({ ...prev, movies: true }));
         console.warn(
@@ -797,7 +819,29 @@ function HomeClient() {
         tvShowsData.status === 'fulfilled' &&
         tvShowsData.value?.code === 200
       ) {
-        setHotTvShows(tvShowsData.value.list);
+        const tvShows = tvShowsData.value.list;
+        setHotTvShows(tvShows);
+        // 异步获取前2条剧集的详情（用于Hero Banner）
+        Promise.all(
+          tvShows.slice(0, 2).map(async (show) => {
+            try {
+              const detailsRes = await getDoubanDetails(show.id);
+              if (detailsRes.code === 200 && detailsRes.data?.plot_summary) {
+                return { id: show.id, plot_summary: detailsRes.data.plot_summary };
+              }
+            } catch (error) {
+              console.warn(`获取剧集 ${show.id} 详情失败:`, error);
+            }
+            return null;
+          })
+        ).then((results) => {
+          setHotTvShows(prev =>
+            prev.map(s => {
+              const detail = results.find(r => r?.id === s.id);
+              return detail ? { ...s, plot_summary: detail.plot_summary } : s;
+            })
+          );
+        });
       } else {
         setErrorStates((prev) => ({ ...prev, tvShows: true }));
         console.warn(
@@ -812,7 +856,26 @@ function HomeClient() {
         varietyShowsData.status === 'fulfilled' &&
         varietyShowsData.value?.code === 200
       ) {
-        setHotVarietyShows(varietyShowsData.value.list);
+        const varietyShows = varietyShowsData.value.list;
+        setHotVarietyShows(varietyShows);
+        // 异步获取第1条综艺的详情（用于Hero Banner）
+        if (varietyShows.length > 0) {
+          const show = varietyShows[0];
+          getDoubanDetails(show.id)
+            .then((detailsRes) => {
+              if (detailsRes.code === 200 && detailsRes.data?.plot_summary) {
+                setHotVarietyShows(prev =>
+                  prev.map(s => s.id === show.id
+                    ? { ...s, plot_summary: detailsRes.data!.plot_summary }
+                    : s
+                  )
+                );
+              }
+            })
+            .catch((error) => {
+              console.warn(`获取综艺 ${show.id} 详情失败:`, error);
+            });
+        }
       } else {
         setErrorStates((prev) => ({ ...prev, varietyShows: true }));
         console.warn(
@@ -826,7 +889,32 @@ function HomeClient() {
 
       // 处理短剧数据
       if (shortDramasData.status === 'fulfilled') {
-        setHotShortDramas(shortDramasData.value);
+        const dramas = shortDramasData.value;
+        setHotShortDramas(dramas);
+        // 异步获取前2条短剧的详情（用于Hero Banner）
+        Promise.all(
+          dramas.slice(0, 2).map(async (drama) => {
+            try {
+              const response = await fetch(`/api/shortdrama/detail?id=${drama.id}&episode=1`);
+              if (response.ok) {
+                const detailData = await response.json();
+                if (detailData.desc) {
+                  return { id: drama.id, description: detailData.desc };
+                }
+              }
+            } catch (error) {
+              console.warn(`获取短剧 ${drama.id} 详情失败:`, error);
+            }
+            return null;
+          })
+        ).then((results) => {
+          setHotShortDramas(prev =>
+            prev.map(d => {
+              const detail = results.find(r => r?.id === d.id);
+              return detail ? { ...d, description: detail.description } : d;
+            })
+          );
+        });
       } else {
         setErrorStates((prev) => ({ ...prev, shortDramas: true }));
         console.warn('获取热门短剧失败:', shortDramasData.reason);
@@ -839,7 +927,46 @@ function HomeClient() {
         bangumiData.status === 'fulfilled' &&
         Array.isArray(bangumiData.value)
       ) {
-        setBangumiCalendarData(bangumiData.value);
+        const bangumiResult = bangumiData.value;
+        setBangumiCalendarData(bangumiResult);
+        // 获取今天的番剧并尝试获取详情（用于Hero Banner）
+        const today = new Date();
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentWeekday = weekdays[today.getDay()];
+        const todayAnimes = bangumiResult.find(
+          (item) => item.weekday.en === currentWeekday
+        )?.items || [];
+
+        // 如果今天有番剧且第一个番剧没有summary，尝试获取详情
+        if (todayAnimes.length > 0 && !(todayAnimes[0] as any).summary) {
+          const anime: any = todayAnimes[0];
+          try {
+            const response = await fetch(`https://api.bgm.tv/v0/subjects/${anime.id}`);
+            if (response.ok) {
+              const detailData = await response.json();
+              if (detailData.summary) {
+                // 更新 bangumiCalendarData 中对应的番剧
+                setBangumiCalendarData(prev =>
+                  prev.map(dayData => {
+                    if (dayData.weekday.en === currentWeekday) {
+                      return {
+                        ...dayData,
+                        items: dayData.items.map((item: any) =>
+                          item.id === anime.id
+                            ? { ...item, summary: detailData.summary }
+                            : item
+                        )
+                      };
+                    }
+                    return dayData;
+                  })
+                );
+              }
+            }
+          } catch (error) {
+            console.warn(`获取番剧 ${anime.id} 详情失败:`, error);
+          }
+        }
       } else {
         setErrorStates((prev) => ({ ...prev, bangumi: true }));
         console.warn(
