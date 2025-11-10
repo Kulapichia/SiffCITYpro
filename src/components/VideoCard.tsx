@@ -266,10 +266,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     // 构建豆瓣ID参数
     const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
     
+    let url = '';
     if (origin === 'live' && actualSource && actualId) {
       // 直播内容跳转到直播页面
-      const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
-      router.push(url);
+      url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
     } else if (from === 'shortdrama' && actualId) {
       // 短剧内容跳转到播放页面，传递剧集ID用于调用获取全集地址的接口
       const urlParams = new URLSearchParams();
@@ -279,20 +279,23 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       if (vod_class) urlParams.set('vod_class', vod_class);
       if (vod_tag) urlParams.set('vod_tag', vod_tag);
 
-      const url = `/play?${urlParams.toString()}`;
-      router.push(url);
+      url = `/play?${urlParams.toString()}`;
     } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
       // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
-      const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
+      url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
         }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
-      router.push(url);
     } else if (actualSource && actualId) {
-      const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
+      url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
         actualTitle
       )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${isAggregate ? '&prefer=true' : ''
         }${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
-      router.push(url);
+    }
+
+    if (url) {
+      // 使用 window.location.assign() 替代 router.push() 来强制页面刷新跳转
+      // 这可以绕过因客户端路由脚本损坏导致无法导航的问题
+      window.location.assign(url);
     }
   }, [
     isUpcoming,
