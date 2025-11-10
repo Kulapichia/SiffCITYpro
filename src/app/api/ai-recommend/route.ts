@@ -263,16 +263,27 @@ ${youtubeEnabled && youtubeConfig.apiKey ? `### YouTube推荐格式：
     }
 
     // 调用AI API
-    const openaiResponse = await fetch(aiConfig.apiUrl.endsWith('/chat/completions') 
-      ? aiConfig.apiUrl 
-      : `${aiConfig.apiUrl.replace(/\/$/, '')}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${aiConfig.apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // 修改：将 fetch 调用包裹在一个独立的 try-catch 块中，以捕获网络层面的错误
+    let openaiResponse;
+    try {
+      openaiResponse = await fetch(aiConfig.apiUrl.endsWith('/chat/completions') 
+        ? aiConfig.apiUrl 
+        : `${aiConfig.apiUrl.replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${aiConfig.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (fetchError: any) {
+      // 捕获 fetch 本身的错误，如网络不可达
+      console.error('Fetch to OpenAI API failed:', fetchError);
+      return NextResponse.json({ 
+        error: '无法连接到AI服务，请检查网络或API地址配置',
+        details: fetchError.message
+      }, { status: 503 }); // 503 Service Unavailable 更为合适
+    }
 
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.text();
