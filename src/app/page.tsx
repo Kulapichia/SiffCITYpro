@@ -697,11 +697,19 @@ function HomeClient() {
           }),
         });
         if (!cancelled) {
+          // 修改：增加对 response.ok 的判断，捕获 4xx/5xx 错误
+          if (!response.ok) {
+            console.error('AI recommend API failed with status:', response.status);
+            setAiEnabled(false); // 在服务器错误时明确禁用AI功能
+            return; // 提前退出，不再继续执行
+          }
           setAiEnabled(response.status !== 403);
         }
       } catch (error) {
         if (!cancelled) {
-          setAiEnabled(true);
+          // 网络层面的错误，同样禁用AI功能
+          console.error('AI recommend API fetch failed:', error);
+          setAiEnabled(false);
         }
       } finally {
         if (!cancelled) {
