@@ -253,6 +253,20 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   );
 
   const handleClick = useCallback(() => {
+    // --- ↓↓↓ 新增调试代码 ↓↓↓ ---
+    console.log('--- VideoCard handleClick function was called! ---');
+    console.log('Received props:', {
+      isUpcoming,
+      origin,
+      from,
+      actualSource,
+      actualId,
+      actualTitle,
+      actualYear,
+      actualDoubanId,
+    });
+    // --- ↑↑↑ 新增调试代码 ↑↑↑ ---
+
     // 如果是即将上映的内容，不执行跳转，显示提示
     if (isUpcoming) {
       return;
