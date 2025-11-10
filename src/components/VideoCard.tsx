@@ -387,7 +387,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   }, [showMobileActions, from, isAggregate, actualSource, actualId, searchFavorited, checkSearchFavoriteStatus]);
 
   // 长按手势hook
-  const longPressProps = useLongPress({
+  const longPressEvents = useLongPress({
     onLongPress: handleLongPress,
     onClick: handleClick, // [滚动恢复整合] 确保 onClick 调用的是我们包含了 onNavigate 的 handleClick
     longPressDelay: 500,
@@ -656,7 +656,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       <motion.div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
-        {...longPressProps}
+        {...longPressEvents({})}
         style={{
           // 禁用所有默认的长按和选择效果
           WebkitUserSelect: 'none',
