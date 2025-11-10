@@ -1,5 +1,6 @@
 import { TouchEvent, MouseEvent, useCallback, useRef } from 'react';
 
+// 保持接口定义不变
 interface UseLongPressOptions<T = unknown> {
   onLongPress: (event: TouchEvent | MouseEvent, context: T) => void;
   onClick?: (event: TouchEvent | MouseEvent, context: T) => void;
@@ -142,12 +143,10 @@ export const useLongPress = <T = unknown>({
   );
 
 
-  return useCallback(
-    (context: T) => ({
-      onTouchStart: (e: React.TouchEvent) => onTouchStart(e, context),
-      onTouchMove,
-      onTouchEnd,
-    }),
-    [onTouchStart, onTouchMove, onTouchEnd]
-  );
+  // 直接返回一个包含事件处理器的对象
+  return {
+    onTouchStart: (e: React.TouchEvent) => onTouchStart(e, {} as T),
+    onTouchMove,
+    onTouchEnd,
+  };
 };
