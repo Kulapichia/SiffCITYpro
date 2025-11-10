@@ -1,6 +1,5 @@
 import { TouchEvent, MouseEvent, useCallback, useRef } from 'react';
 
-// 保持接口定义不变
 interface UseLongPressOptions<T = unknown> {
   onLongPress: (event: TouchEvent | MouseEvent, context: T) => void;
   onClick?: (event: TouchEvent | MouseEvent, context: T) => void;
@@ -95,7 +94,7 @@ export const useLongPress = <T = unknown>({
         !isLongPress.current && !wasButton.current && onClick && isActive.current;
 
       if (shouldClick) {
-        onClick(e, contextRef.current as T);
+        onClick?.(e, contextRef.current as T);
       }
 
       // 重置所有状态
@@ -142,11 +141,18 @@ export const useLongPress = <T = unknown>({
     [handleEnd]
   );
 
-
-  // 直接返回一个包含事件处理器的对象
-  return {
-    onTouchStart: (e: React.TouchEvent) => onTouchStart(e, {} as T),
-    onTouchMove,
-    onTouchEnd,
-  };
+  // 返回一个可以接收 context 的函数，该函数再返回事件处理器对象
+  return useCallback(
+    (context: T) => ({
+      onTouchStart: (e: React.TouchEvent) => onTouchStart(e, context),
+      onTouchMove,
+      onTouchEnd,
+      onClick: (e: React.MouseEvent) => {
+        // 模拟一个完整的点击流程
+        handleStart(e, context, false);
+        handleEnd(e);
+      },
+    }),
+    [onTouchStart, onTouchMove, onTouchEnd, handleStart, handleEnd]
+  );
 };
