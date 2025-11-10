@@ -279,7 +279,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     }
     // 构建豆瓣ID参数
     const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
-    
+
     let url = '';
     if (origin === 'live' && actualSource && actualId) {
       // 直播内容跳转到直播页面
