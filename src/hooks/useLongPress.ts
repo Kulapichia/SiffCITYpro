@@ -94,7 +94,7 @@ export const useLongPress = <T = unknown>({
         !isLongPress.current && !wasButton.current && onClick && isActive.current;
 
       if (shouldClick) {
-        onClick?.(e, contextRef.current as T);
+        onClick(e, contextRef.current as T);
       }
 
       // 重置所有状态
@@ -147,12 +147,7 @@ export const useLongPress = <T = unknown>({
       onTouchStart: (e: React.TouchEvent) => onTouchStart(e, context),
       onTouchMove,
       onTouchEnd,
-      onClick: (e: React.MouseEvent) => {
-        // 模拟一个完整的点击流程
-        handleStart(e, context, false);
-        handleEnd(e);
-      },
     }),
-    [onTouchStart, onTouchMove, onTouchEnd, handleStart, handleEnd]
+    [onTouchStart, onTouchMove, onTouchEnd]
   );
 };
