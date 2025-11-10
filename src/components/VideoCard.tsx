@@ -253,6 +253,20 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   );
 
   const handleClick = useCallback(() => {
+    // --- ↓↓↓ 新增调试代码 ↓↓↓ ---
+    console.log('--- VideoCard handleClick function was called! ---');
+    console.log('Received props:', {
+      isUpcoming,
+      origin,
+      from,
+      actualSource,
+      actualId,
+      actualTitle,
+      actualYear,
+      actualDoubanId,
+    });
+    // --- ↑↑↑ 新增调试代码 ↑↑↑ ---
+
     // 如果是即将上映的内容，不执行跳转，显示提示
     if (isUpcoming) {
       return;
@@ -265,7 +279,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     }
     // 构建豆瓣ID参数
     const doubanIdParam = actualDoubanId && actualDoubanId > 0 ? `&douban_id=${actualDoubanId}` : '';
-    
+
     let url = '';
     if (origin === 'live' && actualSource && actualId) {
       // 直播内容跳转到直播页面
@@ -293,9 +307,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     }
 
     if (url) {
-      // 使用 window.location.assign() 替代 router.push() 来强制页面刷新跳转
-      // 这可以绕过因客户端路由脚本损坏导致无法导航的问题
-      window.location.assign(url);
+      router.push(url);
     }
   }, [
     isUpcoming,
@@ -303,7 +315,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     from,
     actualSource,
     actualId,
-    // router,
+    router,
     actualTitle,
     actualYear,
     isAggregate,
@@ -375,7 +387,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   }, [showMobileActions, from, isAggregate, actualSource, actualId, searchFavorited, checkSearchFavoriteStatus]);
 
   // 长按手势hook
-  const longPressProps = useLongPress({
+  const longPressEvents = useLongPress({
     onLongPress: handleLongPress,
     onClick: handleClick, // [滚动恢复整合] 确保 onClick 调用的是我们包含了 onNavigate 的 handleClick
     longPressDelay: 500,
@@ -644,7 +656,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       <motion.div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
-        {...longPressProps}
+        {...longPressEvents({})}
         style={{
           // 禁用所有默认的长按和选择效果
           WebkitUserSelect: 'none',

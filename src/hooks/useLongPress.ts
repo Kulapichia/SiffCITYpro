@@ -141,7 +141,7 @@ export const useLongPress = <T = unknown>({
     [handleEnd]
   );
 
-
+  // 返回一个可以接收 context 的函数，该函数再返回事件处理器对象
   return useCallback(
     (context: T) => ({
       onTouchStart: (e: React.TouchEvent) => onTouchStart(e, context),
