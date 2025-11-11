@@ -192,7 +192,7 @@ export async function GET(request: Request) {
     const response = await fetch(decodedUrl, {
       headers: requestHeaders,
       signal: AbortSignal.timeout(10000), // 密钥文件很小，10秒超时足够
-      // @ts-ignore - Node.js specific option for connection pooling
+      // @ts-expect-error - The 'agent' property is a Node.js-specific extension to the fetch API for connection pooling and is not part of the standard web API types.
       agent: typeof window === 'undefined' ? agent : undefined,
     });
 
