@@ -44,7 +44,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '参数无效' }, { status: 400 });
     }
 
-    let { link, bv, cid, season_id, media_id, ep, p } = query.data;
+    const { link, ep, p } = query.data;
+    let { bv, cid, season_id, media_id } = query.data;
 
     let targetCid = cid;
 
