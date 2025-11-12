@@ -655,6 +655,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     <>
       <motion.div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
+        onClick={handleClick}
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
         {...longPressEvents({})}
         style={{
