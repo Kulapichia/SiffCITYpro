@@ -76,8 +76,9 @@ export async function GET(request: Request) {
           year: parsedItem.card_subtitle?.match(/(\d{4})/)?.[1] || '',
         }];
       } catch (error) {
-        // 3. 如果验证失败，打印错误并跳过此项
-        console.error('Skipping invalid Douban category item:', item, error);
+        // 3. 如果验证失败，打印详细的Zod错误并跳过此项
+        console.error('[Zod Validation Error] Skipping invalid Douban category item. Details:', JSON.stringify(error, null, 2));
+        console.error('[Zod Validation Error] Original item data:', JSON.stringify(item, null, 2));
         return []; // flatMap 会将空数组自动移除
       }
     });
