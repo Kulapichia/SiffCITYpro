@@ -99,14 +99,14 @@ jobs:
       - name: 📝 Set lowercase image name
         run: echo "IMAGE_NAME_LC=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      # 为预览构建提取元数据，标签格式为 pr-<PR编号>
+      # 为预览构建提取元数据，标签格式为 pr-<分支名称>
       - name: 🏷️ Extract Docker metadata for Preview
         id: meta_preview
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME_LC }}
           tags: |
-            type=raw,value=pr-${{ github.event.number }}
+            type=ref,event=pr,prefix=pr-
 
       # 构建并推送预览镜像
       - name: 🚀 Build and push preview image
