@@ -72,7 +72,7 @@ export function SidePanel({
 
   return (
     <div className={`
-      ${isMobile ? 'w-full flex' : 'w-1/3'}
+      ${isMobile ? 'w-full flex' : 'w-1/3 flex'}
       border-r border-gray-200 dark:border-gray-700 flex-col h-full
     `}>
       {/* 头部 */}
