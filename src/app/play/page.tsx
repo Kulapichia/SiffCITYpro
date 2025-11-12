@@ -2473,7 +2473,8 @@ function PlayPageClient() {
     if (
       !detailData ||
       !detailData.episodes ||
-      episodeIndex >= detailData.episodes.length
+      episodeIndex >= detailData.episodes.length ||
+      episodeIndex < 0 // 增加索引有效性检查
     ) {
       setVideoUrl('');
       return;

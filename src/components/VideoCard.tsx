@@ -655,6 +655,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
     <>
       <motion.div
         className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
+        onClick={handleClick}
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
         {...longPressEvents({})}
         style={{
@@ -776,7 +777,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           {/* 播放按钮 / 即将上映提示 */}
           {config.showPlayButton && (
             <div
-              data-button="true"
+              // data-button="true"
               className='absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-in-out delay-75 group-hover:opacity-100 group-hover:scale-100'
               style={{
                 WebkitUserSelect: 'none',

@@ -33,27 +33,27 @@ export async function POST(request: NextRequest) {
     let targetUsers: string[] = [];
 
     switch (message.type) {
-      case 'message':
+      case 'message': {
         const { participants } = message.data;
         if (participants && Array.isArray(participants)) {
           targetUsers = participants;
         }
         break;
-
-      case 'friend_request':
+      }
+      case 'friend_request': {
         const { to_user } = message.data;
         if (to_user) {
           targetUsers = [to_user];
         }
         break;
-
-      case 'friend_accepted':
+      }
+      case 'friend_accepted': {
         const { from_user } = message.data;
         if (from_user) {
           targetUsers = [from_user];
         }
         break;
-
+      }
       default:
         return NextResponse.json({ error: '不支持的消息类型' }, { status: 400 });
     }

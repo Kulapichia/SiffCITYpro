@@ -92,7 +92,9 @@ export async function POST(request: NextRequest) {
         // 尝试解析JSON，但不强制要求，因为有些API可能返回200 OK但无内容
         try {
             await response.json();
-        } catch {}
+        } catch {
+            // 忽略JSON解析错误，因为响应体可能为空，这是预期行为。
+        }
         return NextResponse.json({ success: true, message: `自定义 API 连接成功 (状态码: ${response.status})` });
       } else {
         const errorText = await response.text();
