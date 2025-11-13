@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { FriendRequest, Friend } from '@/lib/types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 
-export const runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
