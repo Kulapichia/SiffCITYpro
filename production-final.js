@@ -98,8 +98,14 @@ function setupServerTasks() {
         clearInterval(intervalId);
 
         setTimeout(() => {
+          // 服务器启动后，立即执行一次 cron 任务
           executeCronJob();
         }, 3000);
+        
+        // 然后设置每小时执行一次cron任务
+        setInterval(() => {
+          executeCronJob();
+        }, 60 * 60 * 1000); // 每小时执行一次
       }
     });
 
