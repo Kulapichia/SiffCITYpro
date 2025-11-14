@@ -212,98 +212,91 @@ export async function POST(req: NextRequest) {
         );
       }
       
-      // 检查机器码绑定
-      const boundMachineCodes = await db.getUserMachineCodes(username);
-      // [BIND_DEBUG] 2. 打印当前用户已绑定的设备码
-      console.log(`[BIND_DEBUG] User '${username}' has ${boundMachineCodes?.length || 0} bound devices.`);
-      if (boundMachineCodes && boundMachineCodes.length > 0) {
-        // [BIND_DEBUG] 3a. 用户已绑定设备，进入验证流程
-        console.log('[BIND_DEBUG] User has bound devices, starting validation.');
-        // 用户已绑定机器码，需要验证
-        if (!machineCode || !machineCode.trim()) { // 关键修复：增加对空字符串的判断
+      // 步骤1：如果用户勾选了绑定设备，则优先处理绑定逻辑
+      if (bindDevice) {
+        if (!machineCode || !machineCode.trim()) {
+          console.error('[BIND_DEBUG] 用户勾选了绑定，但设备码为空');
+          return NextResponse.json({ error: '正在生成设备码，请稍候或刷新重试' }, { status: 400 });
+        }
+
+        // [BIND_DEBUG] 2. 用户勾选绑定，进入绑定处理流程
+        console.log(`[BIND_DEBUG] 'bindDevice' is true. Processing binding for user '${username}'...`);
+
+        // 检查此设备是否已被其他用户绑定
+        const codeOwner = await db.isMachineCodeBound(machineCode);
+        if (codeOwner && codeOwner !== username) {
+          console.error(`[BIND_DEBUG] Machine code '${machineCode}' already bound to user: ${codeOwner}`);
+          return NextResponse.json({
+            error: `该设备已被用户 ${codeOwner} 绑定，无法重复绑定`,
+            machineCodeTaken: true
+          }, { status: 409 });
+        }
+
+        const currentCodes = await db.getUserMachineCodes(username);
+        const isAlreadyBoundToThisUser = currentCodes.some(
+          (code: any) => code.machineCode.toUpperCase() === machineCode.toUpperCase()
+        );
+        
+        if (!isAlreadyBoundToThisUser) {
+          if (currentCodes.length >= 5) {
+            console.error(`[BIND_DEBUG] Device limit reached for user: ${username}`);
+            return NextResponse.json({
+              error: '绑定设备数量已达上限（5台）',
+              machineCodeMismatch: true
+            }, { status: 403 });
+          }
+          // [BIND_DEBUG] 2a. 设备未被此用户绑定且未达上限，执行绑定
+          console.log(`[BIND_DEBUG] Adding new device for '${username}'.`);
+          await db.setUserMachineCode(username, machineCode, deviceInfo);
+          console.log(`[BIND_DEBUG] New device bound successfully.`);
+        } else {
+          // [BIND_DEBUG] 2b. 设备已绑定，跳过重复添加
+          console.log(`[BIND_DEBUG] Device already bound to this user. Skipping add.`);
+        }
+      }
+
+      // 步骤2：完成绑定（如果需要）后，进行登录验证
+      const boundMachineCodesAfterUpdate = await db.getUserMachineCodes(username);
+      // [BIND_DEBUG] 3. 验证阶段开始，用户当前绑定设备数: ${boundMachineCodesAfterUpdate.length}
+      console.log(`[BIND_DEBUG] Validation phase. User now has ${boundMachineCodesAfterUpdate.length} bound devices.`);
+
+      if (config.SiteConfig.RequireDeviceCode) {
+        if (boundMachineCodesAfterUpdate.length === 0) {
+          // 如果强制要求，但用户没有任何绑定设备（说明他是新用户且没有勾选bindDevice）
+          return NextResponse.json({
+            error: '管理员已开启设备验证，首次登录请勾选“绑定此设备”',
+            requireMachineCode: true
+          }, { status: 403 });
+        }
+
+        if (!machineCode || !machineCode.trim()) {
           return NextResponse.json({
             error: '该账户已绑定设备，请提供设备码',
             requireMachineCode: true
           }, { status: 403 });
         }
 
-        const isMachineBound = boundMachineCodes.some(
-          (code) => (code as any).machineCode.toUpperCase() === machineCode.toUpperCase()
+        const isNowMachineBound = boundMachineCodesAfterUpdate.some(
+          (code: any) => code.machineCode.toUpperCase() === machineCode.toUpperCase()
         );
 
-        if (!isMachineBound) {
-          // 如果是新设备，且用户选择绑定，检查是否已达上限
-          if (bindDevice) {
-            if (boundMachineCodes.length >= 5) {
-              return NextResponse.json({
-                error: '绑定设备数量已达上限（5台），请在其他设备解绑后再试',
-                machineCodeMismatch: true
-              }, { status: 403 });
-            }
-          } else {
-            return NextResponse.json({
-              error: '设备码不匹配，此设备未绑定。如需绑定，请勾选“绑定此设备”',
-              machineCodeMismatch: true
-            }, { status: 403 });
-          }
-        }
-      } else if (config.SiteConfig.RequireDeviceCode) {
-        // [BIND_DEBUG] 3b. 全局需要绑定，但用户未绑定
-        console.log('[BIND_DEBUG] Site requires device code, but user has none. Checking bindDevice flag...');
-        // 全局开启了设备码验证，但用户未绑定
-        if (!bindDevice) {
-          // [BIND_DEBUG] 3b-1. 用户未勾选绑定，返回错误
-          console.log('[BIND_DEBUG] `bindDevice` is false. Rejecting login.');
+        if (!isNowMachineBound) {
+          // [BIND_DEBUG] 3c. 验证失败
+          console.log(`[BIND_DEBUG] Validation failed. Current device code not in user's list.`);
           return NextResponse.json({
-            error: '管理员已开启设备验证，请勾选“绑定此设备”后登录',
-            requireMachineCode: true // 前端可以根据此标记提示用户
-          }, { status: 403 });
-        }
-        // 关键修复：如果勾选了绑定，则必须提供有效的设备码
-        if (bindDevice && (!machineCode || !machineCode.trim())) {
-          return NextResponse.json({ error: '正在生成设备码，请稍候或刷新重试' }, { status: 400 });
-        }
-      }
-      
-      // 检查新设备码是否已被他人绑定
-      if (machineCode) {
-        const codeOwner = await db.isMachineCodeBound(machineCode);
-        if (codeOwner && codeOwner !== username) {
-          return NextResponse.json({
-            error: `该设备已被用户 ${codeOwner} 绑定`,
-            machineCodeTaken: true
-          }, { status: 409 });
-        }
-      }
-
-      // 如果用户选择绑定设备，则执行绑定操作
-      if (bindDevice && machineCode && machineCode.trim()) {
-        // [BIND_DEBUG] 4. 符合绑定条件，准备执行绑定
-        console.log(`[BIND_DEBUG] Conditions met for binding. bindDevice: ${bindDevice}, machineCode: '${machineCode}'`);
-        const currentCodes = await db.getUserMachineCodes(username);
-        if (currentCodes.length < 5) {
-          // [BIND_DEBUG] 4a. 设备未满，执行绑定
-          console.log(`[BIND_DEBUG] Binding new device for user '${username}'.`);
-          await db.setUserMachineCode(username, machineCode, deviceInfo);
-          // [BIND_DEBUG] 4b. 绑定操作完成
-          console.log(`[BIND_DEBUG] db.setUserMachineCode called successfully.`);
-        } else {
-          // [BIND_DEBUG] 4c. 设备已满，无法绑定
-          console.log(`[BIND_DEBUG] Device limit reached. Cannot bind new device.`);
-          // 再次检查以防万一
-          return NextResponse.json({
-            error: '绑定设备数量已达上限（5台）',
+            error: '设备码不匹配。如果这是新设备，请勾选“登录并绑定此设备”后重试',
             machineCodeMismatch: true
           }, { status: 403 });
         }
-      } else {
-        // [BIND_DEBUG] 5. 不满足绑定条件，跳过绑定逻辑
-        console.log(`[BIND_DEBUG] Conditions not met for binding, skipping. bindDevice: ${bindDevice}, machineCode: '${machineCode}'`);
+
+        // [BIND_DEBUG] 3d. 验证成功
+        console.log(`[BIND_DEBUG] Validation successful. Current device is bound.`);
       }
+
       // 验证成功，设置认证cookie
       const response = NextResponse.json({
         ok: true,
-        machineCodeBound: !!(boundMachineCodes && boundMachineCodes.length > 0),
+        machineCodeBound: !!(boundMachineCodesAfterUpdate && boundMachineCodesAfterUpdate.length > 0),
         username: username
       });
       const cookieValue = await generateAuthCookie(
@@ -333,3 +326,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
 }
+
