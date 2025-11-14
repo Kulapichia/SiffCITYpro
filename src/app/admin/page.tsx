@@ -7523,7 +7523,7 @@ function AdminPageClient() {
   useEffect(() => {
     // 首次加载时显示骨架
     fetchConfig(true);
-    // fetchMachineCodeUsers();
+    fetchMachineCodeUsers();
     // 获取存储类型
     fetch('/api/server-config')
       .then((res) => res.json())
