@@ -141,7 +141,15 @@ const CollapsibleTab = ({
         </div>
       </button>
 
-      {isExpanded && <div className='px-6 py-4'>{children}</div>}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className='px-6 py-4'>
+          {children}
+        </div>
+      </div>
     </div>
   );
 };
