@@ -84,6 +84,25 @@ function ScrollableRow({
     };
   }, [childrenCount, checkScroll]);
 
+  // [功能融入] 添加 MutationObserver 来监听子节点变化，确保异步内容加载后也能正确更新滚动按钮
+  useEffect(() => {
+    if (containerRef.current) {
+      const observer = new MutationObserver(() => {
+        if (checkScrollTimeoutRef.current) {
+          clearTimeout(checkScrollTimeoutRef.current);
+        }
+        checkScrollTimeoutRef.current = setTimeout(checkScroll, 100);
+      });
+
+      observer.observe(containerRef.current, {
+        childList: true,
+        subtree: true,
+      });
+
+      return () => observer.disconnect();
+    }
+  }, [checkScroll]);
+
   const handleScrollRightClick = useCallback(() => {
     if (containerRef.current) {
       containerRef.current.scrollBy({
