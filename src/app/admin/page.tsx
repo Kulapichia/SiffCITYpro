@@ -222,44 +222,28 @@ const UserAvatar = ({ username, size = 'sm' }: UserAvatarProps) => {
   );
 };
 
-// 机器码单元格组件
-interface MachineCodeCellProps {
-  username: string;
-  canManage: boolean;
-  machineCodeData: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
-  onRefresh: () => void;
-  showAlert: (config: any) => void;
-}
-
-const MachineCodeCell = ({ username, canManage, machineCodeData, onRefresh, showAlert }: MachineCodeCellProps) => {
+// 子组件：用于显示单个设备信息，并包含智能定位逻辑
+const DeviceEntry = ({ device, user, canManage, onRefresh, showAlert }: { device: any; user: { username: string }; canManage: boolean; onRefresh: () => void; showAlert: (config: any) => void; }) => {
   const [unbinding, setUnbinding] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom'>('bottom');
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLElement>(null);
-
-  const machineCodeInfo = machineCodeData[username] || null;
 
   // 智能定位逻辑
   const handleMouseEnter = useCallback(() => {
     if (!codeRef.current) return;
-
     const element = codeRef.current;
     const rect = element.getBoundingClientRect();
     const tableContainer = element.closest('[data-table="user-list"]');
-
     if (tableContainer) {
       const containerRect = tableContainer.getBoundingClientRect();
       const elementCenterY = rect.top + rect.height / 2;
       const containerCenterY = containerRect.top + containerRect.height / 2;
-
-      // 如果元素在容器上半部分，悬浮框向下显示；否则向上显示
       if (elementCenterY < containerCenterY) {
         setTooltipPosition('bottom');
       } else {
         setTooltipPosition('top');
       }
     } else {
-      // 后备方案：根据视口位置决定
       const viewportHeight = window.innerHeight;
       if (rect.top < viewportHeight / 2) {
         setTooltipPosition('bottom');
@@ -269,32 +253,29 @@ const MachineCodeCell = ({ username, canManage, machineCodeData, onRefresh, show
     }
   }, []);
 
-  // 解绑机器码
-  const handleUnbind = async () => {
-    if (!machineCodeInfo || !canManage) return;
-
+  // 解绑单个设备 - API调用升级为新版
+  const handleUnbind = async (machineCode: string) => {
+    if (!canManage) return;
+    setUnbinding(true);
     try {
-      setUnbinding(true);
-      const response = await fetch('/api/machine-code', {
+      const response = await fetch('/api/admin/user', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'unbind',
-          targetUser: username,
+          action: 'unbindDevice',
+          targetUsername: user.username,
+          machineCode: machineCode,
         }),
       });
 
       if (response.ok) {
-        showSuccess('机器码解绑成功', showAlert);
+        showSuccess('设备解绑成功', showAlert);
         onRefresh(); // 刷新数据
       } else {
         const error = await response.json();
         showError(`解绑失败: ${error.error || '未知错误'}`, showAlert);
       }
     } catch (error) {
-      console.error('解绑机器码失败:', error);
       showError('解绑失败，请重试', showAlert);
     } finally {
       setUnbinding(false);
@@ -302,84 +283,82 @@ const MachineCodeCell = ({ username, canManage, machineCodeData, onRefresh, show
   };
 
   const formatMachineCode = (code: string) => {
-    if (code.length !== 32) return code;
+    if (!code || typeof code !== 'string') return code;
     return code.match(/.{1,4}/g)?.join('-') || code;
   };
-
+  
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    if (!timestamp) return '未知时间';
+    return new Date(timestamp).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
-
-  if (!machineCodeInfo) {
-    return (
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-500 dark:text-gray-400">未绑定</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col space-y-1">
+    <div className="flex items-center justify-between py-1">
       <div className="flex items-center space-x-2">
         <div className="group relative" onMouseEnter={handleMouseEnter}>
           <code
             ref={codeRef}
             className="text-xs font-mono text-gray-700 dark:text-gray-300 cursor-help"
           >
-            {formatMachineCode(machineCodeInfo.machineCode).substring(0, 12)}...
+            {formatMachineCode(device.machineCode).substring(0, 12)}...
           </code>
           {/* 悬停显示完整机器码 - 智能定位 */}
           <div
-            ref={tooltipRef}
             className={`absolute left-0 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-50 ${tooltipPosition === 'bottom'
               ? 'top-full mt-2'
               : 'bottom-full mb-2'
               }`}
           >
-            <div className="font-mono">
-              {formatMachineCode(machineCodeInfo.machineCode)}
-            </div>
-            {machineCodeInfo.deviceInfo && (
-              <div className="mt-1 text-gray-300">
-                {machineCodeInfo.deviceInfo}
-              </div>
-            )}
-            <div className="mt-1 text-gray-400">
-              绑定时间: {formatDate(machineCodeInfo.bindTime)}
-            </div>
-            {/* 箭头 - 根据位置动态调整 */}
-            <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${tooltipPosition === 'bottom'
-              ? 'bottom-full border-b-4 border-b-gray-800'
-              : 'top-full border-t-4 border-t-gray-800'
-              }`}></div>
+            <div className="font-mono">{formatMachineCode(device.machineCode)}</div>
+            {device.deviceInfo && <div className="mt-1 text-gray-300">{device.deviceInfo}</div>}
+            <div className="mt-1 text-gray-400">绑定时间: {formatDate(device.bindTime)}</div>
+            <div className={`absolute left-4 w-0 h-0 border-l-4 border-r-4 border-transparent ${tooltipPosition === 'bottom' ? 'bottom-full border-b-4 border-b-gray-800' : 'top-full border-t-4 border-t-gray-800'}`}></div>
           </div>
         </div>
-        {canManage && (
-          <button
-            onClick={handleUnbind}
-            disabled={unbinding}
-            className={`${buttonStyles.roundedDanger} ${unbinding ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title="解绑机器码"
-          >
-            {unbinding ? '解绑中...' : '解绑'}
-          </button>
-        )}
       </div>
-      <div className="flex items-center space-x-1">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-          已绑定
-        </span>
-      </div>
+      {canManage && (
+        <button
+          onClick={() => handleUnbind(device.machineCode)}
+          disabled={unbinding}
+          className={`${buttonStyles.dangerSmall} ${unbinding ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title="解绑此设备"
+        >
+          {unbinding ? '...' : '解绑'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// 机器码单元格组件 - 主组件，现在是容器
+interface MachineCodeCellProps {
+  user: { username: string; devices?: any[] };
+  canManage: boolean;
+  onRefresh: () => void;
+  showAlert: (config: any) => void;
+}
+
+const MachineCodeCell = ({ user, canManage, onRefresh, showAlert }: MachineCodeCellProps) => {
+  if (!user.devices || user.devices.length === 0) {
+    return <span className="text-sm text-gray-500 dark:text-gray-400">未绑定</span>;
+  }
+
+  return (
+    <div className="flex flex-col space-y-1">
+      {user.devices.map((device, index) => (
+        <DeviceEntry 
+          key={device.machineCode || index}
+          device={device}
+          user={user}
+          canManage={canManage}
+          onRefresh={onRefresh}
+          showAlert={showAlert}
+        />
+      ))}
     </div>
   );
 };
+
 
 
 // 用户配置组件
@@ -387,11 +366,11 @@ interface UserConfigProps {
   config: AdminConfig | null;
   role: 'owner' | 'admin' | null;
   refreshConfig: () => Promise<void>;
-  machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
-  fetchMachineCodeUsers: () => Promise<void>;
+  // machineCodeUsers: Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>;
+  // fetchMachineCodeUsers: () => Promise<void>;
 }
 
-const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachineCodeUsers }: UserConfigProps) => {
+const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
   const [selectedShowAdultContent, setSelectedShowAdultContent] = useState(false);
@@ -1539,10 +1518,10 @@ const UserConfig = ({ config, role, refreshConfig, machineCodeUsers, fetchMachin
                         </td>
                         <td className='px-6 py-4 whitespace-nowrap'>
                           <MachineCodeCell
-                            username={user.username}
+                            user={user}
                             canManage={canOperate}
-                            machineCodeData={machineCodeUsers}
-                            onRefresh={fetchMachineCodeUsers}
+                            // machineCodeData={machineCodeUsers}
+                            onRefresh={refreshConfig}
                             showAlert={showAlert}
                           />
                         </td>
@@ -7497,7 +7476,7 @@ function AdminPageClient() {
   });
   
   // 机器码管理状态
-  const [machineCodeUsers, setMachineCodeUsers] = useState<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>>({});
+  // const [machineCodeUsers, setMachineCodeUsers] = useState<Record<string, { machineCode: string; deviceInfo?: string; bindTime: number }>>({});
 
   // 获取机器码用户列表的逻辑已合并到 fetchConfig 中
   const fetchMachineCodeUsers = useCallback(async () => {
@@ -7544,7 +7523,7 @@ function AdminPageClient() {
   useEffect(() => {
     // 首次加载时显示骨架
     fetchConfig(true);
-    fetchMachineCodeUsers();
+    // fetchMachineCodeUsers();
     // 获取存储类型
     fetch('/api/server-config')
       .then((res) => res.json())
@@ -7747,8 +7726,8 @@ function AdminPageClient() {
                 config={config}
                 role={role}
                 refreshConfig={fetchConfig}
-                machineCodeUsers={machineCodeUsers}
-                fetchMachineCodeUsers={fetchMachineCodeUsers}
+                // machineCodeUsers={machineCodeUsers}
+                // fetchMachineCodeUsers={fetchMachineCodeUsers}
               />
             </CollapsibleTab>
 
