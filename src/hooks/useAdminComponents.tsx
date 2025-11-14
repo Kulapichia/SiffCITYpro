@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
-
+import { useState, useEffect, useCallback } from 'react'; // <--- 引入 useCallback
 // 统一按钮样式系统
 export const buttonStyles = {
   // 主要操作按钮（蓝色）- 用于配置、设置、确认等
@@ -168,13 +168,13 @@ export const useAlertModal = () => {
     title: '',
   });
 
-  const showAlert = (config: Omit<typeof alertModal, 'isOpen'>) => {
+  const showAlert = useCallback((config: Omit<typeof alertModal, 'isOpen'>) => {
     setAlertModal({ ...config, isOpen: true });
-  };
+  }, []);
 
-  const hideAlert = () => {
+  const hideAlert = useCallback(() => {
     setAlertModal(prev => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
   return { alertModal, showAlert, hideAlert };
 };
