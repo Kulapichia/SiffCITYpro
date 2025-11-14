@@ -125,7 +125,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 数据库 / redis 模式——校验用户名并尝试连接数据库
-    const { username, password, machineCode, bindDevice, deviceInfo } = await req.json();
+    const body = await req.json();
+    const { username, password, machineCode, bindDevice, deviceInfo } = body;
+    
+    // [BIND_DEBUG] 1. 打印完整的请求体
+    console.log('[BIND_DEBUG] Received login request body:', JSON.stringify(body, null, 2));
 
     if (!username || typeof username !== 'string') {
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
@@ -210,8 +214,11 @@ export async function POST(req: NextRequest) {
       
       // 检查机器码绑定
       const boundMachineCodes = await db.getUserMachineCodes(username);
-
+      // [BIND_DEBUG] 2. 打印当前用户已绑定的设备码
+      console.log(`[BIND_DEBUG] User '${username}' has ${boundMachineCodes?.length || 0} bound devices.`);
       if (boundMachineCodes && boundMachineCodes.length > 0) {
+        // [BIND_DEBUG] 3a. 用户已绑定设备，进入验证流程
+        console.log('[BIND_DEBUG] User has bound devices, starting validation.');
         // 用户已绑定机器码，需要验证
         if (!machineCode || !machineCode.trim()) { // 关键修复：增加对空字符串的判断
           return NextResponse.json({
@@ -241,8 +248,12 @@ export async function POST(req: NextRequest) {
           }
         }
       } else if (config.SiteConfig.RequireDeviceCode) {
+        // [BIND_DEBUG] 3b. 全局需要绑定，但用户未绑定
+        console.log('[BIND_DEBUG] Site requires device code, but user has none. Checking bindDevice flag...');
         // 全局开启了设备码验证，但用户未绑定
         if (!bindDevice) {
+          // [BIND_DEBUG] 3b-1. 用户未勾选绑定，返回错误
+          console.log('[BIND_DEBUG] `bindDevice` is false. Rejecting login.');
           return NextResponse.json({
             error: '管理员已开启设备验证，请勾选“绑定此设备”后登录',
             requireMachineCode: true // 前端可以根据此标记提示用户
@@ -267,16 +278,27 @@ export async function POST(req: NextRequest) {
 
       // 如果用户选择绑定设备，则执行绑定操作
       if (bindDevice && machineCode && machineCode.trim()) {
+        // [BIND_DEBUG] 4. 符合绑定条件，准备执行绑定
+        console.log(`[BIND_DEBUG] Conditions met for binding. bindDevice: ${bindDevice}, machineCode: '${machineCode}'`);
         const currentCodes = await db.getUserMachineCodes(username);
         if (currentCodes.length < 5) {
+          // [BIND_DEBUG] 4a. 设备未满，执行绑定
+          console.log(`[BIND_DEBUG] Binding new device for user '${username}'.`);
           await db.setUserMachineCode(username, machineCode, deviceInfo);
+          // [BIND_DEBUG] 4b. 绑定操作完成
+          console.log(`[BIND_DEBUG] db.setUserMachineCode called successfully.`);
         } else {
+          // [BIND_DEBUG] 4c. 设备已满，无法绑定
+          console.log(`[BIND_DEBUG] Device limit reached. Cannot bind new device.`);
           // 再次检查以防万一
           return NextResponse.json({
             error: '绑定设备数量已达上限（5台）',
             machineCodeMismatch: true
           }, { status: 403 });
         }
+      } else {
+        // [BIND_DEBUG] 5. 不满足绑定条件，跳过绑定逻辑
+        console.log(`[BIND_DEBUG] Conditions not met for binding, skipping. bindDevice: ${bindDevice}, machineCode: '${machineCode}'`);
       }
       // 验证成功，设置认证cookie
       const response = NextResponse.json({
