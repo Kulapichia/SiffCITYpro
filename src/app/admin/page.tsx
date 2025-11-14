@@ -7554,7 +7554,7 @@ function AdminPageClient() {
       .catch(() => {
         setStorageType('localstorage');
       });
-  }, [fetchConfig, fetchMachineCodeUsers]);
+  }, []);
 
   // 切换标签展开状态
   const toggleTab = (tabKey: string) => {
