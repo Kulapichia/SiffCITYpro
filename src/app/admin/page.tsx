@@ -7489,7 +7489,7 @@ function AdminPageClient() {
     } catch (error) {
       console.error('获取机器码用户列表失败:', error);
     }
-  }, []);
+  }, [setMachineCodeUsers]); // React hooks/exhaustive-deps 规则建议添加依赖
   
   // 获取管理员配置
   // showLoading 用于控制是否在请求期间显示整体加载骨架。
