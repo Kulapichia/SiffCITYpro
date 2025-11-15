@@ -96,10 +96,20 @@ function setupServerTasks() {
       if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
         console.log('Server is up, stop polling.');
         clearInterval(intervalId);
-
+        // 显示服务状态
+        console.log('====================================');
+        console.log(`✅ Next.js服务运行在: http://${hostname}:${httpPort}`);
+        console.log(`✅ WebSocket服务运行在: ws://${hostname}:${wsPort}`);
+        console.log('====================================');
         setTimeout(() => {
+          // 服务器启动后，立即执行一次 cron 任务
           executeCronJob();
         }, 3000);
+        
+        // 然后设置每小时执行一次cron任务
+        setInterval(() => {
+          executeCronJob();
+        }, 60 * 60 * 1000); // 每小时执行一次
       }
     });
 
@@ -142,4 +152,11 @@ function executeCronJob() {
     console.error('Cron job timeout');
     req.destroy();
   });
+}
+// 如果直接运行此文件，设置任务
+if (require.main === module) {
+  // 延迟启动任务，等待服务器完全启动
+  setTimeout(() => {
+    setupServerTasks();
+  }, 5000);
 }

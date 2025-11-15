@@ -5,6 +5,23 @@ import { MessageCircle, Search, Users, X, UserPlus } from 'lucide-react';
 import { Conversation, Friend, FriendRequest } from '../../lib/types';
 import { User } from '@/lib/admin.types';
 
+// 新增：用于客户端时间格式化的辅助组件，避免水合错误
+// 修复：将 ClientTime 组件定义移到 SidePanel 组件外部的顶层作用域
+const ClientTime = ({ timestamp }: { timestamp: number }) => {
+  const [formattedTime, setFormattedTime] = useState('');
+
+  useEffect(() => {
+    setFormattedTime(
+      new Date(timestamp).toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }, [timestamp]);
+
+  return <>{formattedTime}</>;
+};
+
 // 定义 Props 类型
 interface SidePanelProps {
   isMobile: boolean;
@@ -72,7 +89,7 @@ export function SidePanel({
 
   return (
     <div className={`
-      ${isMobile ? 'w-full flex' : 'w-1/3'}
+      ${isMobile ? 'w-full flex' : 'w-1/3 flex'}
       border-r border-gray-200 dark:border-gray-700 flex-col h-full
     `}>
       {/* 头部 */}
@@ -387,18 +404,4 @@ export function SidePanel({
     </div>
   );
 }
-// 新增：用于客户端时间格式化的辅助组件，避免水合错误
-const ClientTime = ({ timestamp }: { timestamp: number }) => {
-  const [formattedTime, setFormattedTime] = useState('');
 
-  useEffect(() => {
-    setFormattedTime(
-      new Date(timestamp).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    );
-  }, [timestamp]);
-
-  return <>{formattedTime}</>;
-};

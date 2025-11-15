@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-
+export const runtime = 'nodejs';
 // 这个端点主要用于 WebSocket 升级，实际的 WebSocket 处理在自定义服务器中进行
 export async function GET(request: NextRequest) {
   // 如果运行在自定义服务器环境下，WebSocket 连接应该已经被处理

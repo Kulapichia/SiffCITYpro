@@ -2,7 +2,7 @@
 
 'use client'; // 确保这是一个客户端组件文件
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 
@@ -168,13 +168,13 @@ export const useAlertModal = () => {
     title: '',
   });
 
-  const showAlert = (config: Omit<typeof alertModal, 'isOpen'>) => {
+  const showAlert = useCallback((config: Omit<typeof alertModal, 'isOpen'>) => {
     setAlertModal({ ...config, isOpen: true });
-  };
+  }, []);
 
-  const hideAlert = () => {
+  const hideAlert = useCallback(() => {
     setAlertModal(prev => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
   return { alertModal, showAlert, hideAlert };
 };

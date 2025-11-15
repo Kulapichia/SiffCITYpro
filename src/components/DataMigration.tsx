@@ -231,7 +231,7 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         type: 'error',
         title: '导出失败',
         message: error instanceof Error ? error.message : '导出过程中发生错误',
-
+        showConfirm: true,
       });
     } finally {
       setIsExporting(false);
@@ -320,7 +320,7 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
         type: 'error',
         title: '导入失败',
         message: error instanceof Error ? error.message : '导入过程中发生错误',
-
+        showConfirm: true,
       });
     } finally {
       setIsImporting(false);

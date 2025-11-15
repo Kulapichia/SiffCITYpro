@@ -13,7 +13,26 @@ export async function GET(request: NextRequest) {
     }
 
     const conversations = await db.getConversations(authInfo.username);
-    return NextResponse.json(conversations);
+    // 为每个对话补充最后一条消息和未读计数
+    const detailedConversations = await Promise.all(
+      conversations.map(async (conv: Conversation) => {
+        // 使用 getMessages(conv.id, 1) 获取最新的一条消息来替代不存在的 getLastMessage
+        const messages = await db.getMessages(conv.id, 1);
+        const lastMessage = messages.length > 0 ? messages[0] : null;
+
+        // 由于 getUnreadMessageCount 方法不存在，暂时将未读数设置为 0
+        // TODO: 后续需要在 lib/db.ts 中实现 getUnreadMessageCount 方法来提供真实数据
+        const unreadCount = 0;
+        return {
+          ...conv,
+          lastMessage: lastMessage,
+          unreadCount: unreadCount,
+        };
+      })
+    );
+    
+    return NextResponse.json(detailedConversations);
+    // return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error loading conversations:', error);
     return NextResponse.json({ error: '获取对话列表失败' }, { status: 500 });
