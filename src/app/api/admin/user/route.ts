@@ -467,6 +467,9 @@ export async function POST(request: NextRequest) {
         break;
       }
       case 'unbindDevice': {
+        if (!targetEntry) {
+          return NextResponse.json({ error: '目标用户不存在' }, { status: 404 });
+        }
         if (operatorRole !== 'owner' && operatorRole !== 'admin') {
           return NextResponse.json({ error: '权限不足' }, { status: 403 });
         }
@@ -475,7 +478,12 @@ export async function POST(request: NextRequest) {
         if (!machineCode) {
           return NextResponse.json({ error: '缺少要解绑的设备码' }, { status: 400 });
         }
-
+        // 【修复】从 adminConfig 的用户对象中移除设备
+        if (targetEntry.devices && Array.isArray(targetEntry.devices)) {
+          targetEntry.devices = targetEntry.devices.filter(
+            (device: any) => device.machineCode !== machineCode
+          );
+        }
         // 调用数据库方法解绑单个设备
         await db.deleteUserMachineCode(targetUsername!, machineCode);
 
