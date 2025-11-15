@@ -16,11 +16,16 @@ export async function GET(request: NextRequest) {
     // 为每个对话补充最后一条消息和未读计数
     const detailedConversations = await Promise.all(
       conversations.map(async (conv: Conversation) => {
-        const lastMessage = await db.getLastMessage(conv.id);
-        const unreadCount = await db.getUnreadMessageCount(conv.id, authInfo.username);
+        // 使用 getMessages(conv.id, 1) 获取最新的一条消息来替代不存在的 getLastMessage
+        const messages = await db.getMessages(conv.id, 1);
+        const lastMessage = messages.length > 0 ? messages[0] : null;
+
+        // 由于 getUnreadMessageCount 方法不存在，暂时将未读数设置为 0
+        // TODO: 后续需要在 lib/db.ts 中实现 getUnreadMessageCount 方法来提供真实数据
+        const unreadCount = 0;
         return {
           ...conv,
-          lastMessage: lastMessage || null,
+          lastMessage: lastMessage,
           unreadCount: unreadCount,
         };
       })
