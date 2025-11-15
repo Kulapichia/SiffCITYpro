@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
               bindTime: Date.now()
             });
             // 保存更新后的主配置
-            await db.setAdminConfig(config);
+            await db.saveAdminConfig(config);
           }
         } else {
           // [BIND_DEBUG] 2b. 设备已绑定，跳过重复添加
