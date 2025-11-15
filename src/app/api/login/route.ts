@@ -249,6 +249,20 @@ export async function POST(req: NextRequest) {
           console.log(`[BIND_DEBUG] Adding new device for '${username}'.`);
           await db.setUserMachineCode(username, machineCode, deviceInfo);
           console.log(`[BIND_DEBUG] New device bound successfully.`);
+          // 【修复】将设备信息同步到主 adminConfig 的用户对象中
+          const userInConfig = config.UserConfig.Users.find(u => u.username === username);
+          if (userInConfig) {
+            if (!userInConfig.devices) {
+              userInConfig.devices = [];
+            }
+            userInConfig.devices.push({
+              machineCode: machineCode,
+              deviceInfo: deviceInfo || '',
+              bindTime: Date.now()
+            });
+            // 保存更新后的主配置
+            await db.setAdminConfig(config);
+          }
         } else {
           // [BIND_DEBUG] 2b. 设备已绑定，跳过重复添加
           console.log(`[BIND_DEBUG] Device already bound to this user. Skipping add.`);
