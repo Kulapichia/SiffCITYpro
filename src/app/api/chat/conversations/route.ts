@@ -13,7 +13,21 @@ export async function GET(request: NextRequest) {
     }
 
     const conversations = await db.getConversations(authInfo.username);
-    return NextResponse.json(conversations);
+    // 为每个对话补充最后一条消息和未读计数
+    const detailedConversations = await Promise.all(
+      conversations.map(async (conv: Conversation) => {
+        const lastMessage = await db.getLastMessage(conv.id);
+        const unreadCount = await db.getUnreadMessageCount(conv.id, authInfo.username);
+        return {
+          ...conv,
+          lastMessage: lastMessage || null,
+          unreadCount: unreadCount,
+        };
+      })
+    );
+    
+    return NextResponse.json(detailedConversations);
+    // return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error loading conversations:', error);
     return NextResponse.json({ error: '获取对话列表失败' }, { status: 500 });
