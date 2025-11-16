@@ -1196,7 +1196,6 @@ function DoubanPageClient() {
             )}
           </div>
         </div>
-      </div>
 
       {/* 返回顶部悬浮按钮 */}
       <button
