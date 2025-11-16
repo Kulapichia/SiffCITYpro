@@ -133,9 +133,11 @@ export const useLongPress = <T = unknown>({
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      // 始终阻止默认行为，避免任何系统长按菜单
-      e.preventDefault();
-      e.stopPropagation();
+      // 仅在识别为长按时才阻止默认行为，以避免影响单击
+      if (isLongPress.current) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       handleEnd(e);
     },
     [handleEnd]
