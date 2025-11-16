@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
     const conversation: Conversation = {
       id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: name || participants.filter((p: string) => p !== authInfo.username).join(', '),
-      participants,
       type: conversationType,
+      participants,
       created_at: Date.now(),
       updated_at: Date.now(),
       is_group: isGroup,
