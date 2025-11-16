@@ -72,8 +72,8 @@ export async function GET() {
     ];
     
     const response = NextResponse.json({
-      categories: fallbackCategories,
-      total: fallbackCategories.length
+        categories: fallbackCategories,
+        total: fallbackCategories.length
     });
     // 对备用数据也设置缓存，避免短时间内对失效接口的频繁请求
     const cacheTime = 300; // 备用数据缓存5分钟
