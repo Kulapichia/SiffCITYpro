@@ -21,7 +21,9 @@ import DoubanSelector from '@/components/DoubanSelector';
 import PageLayout from '@/components/PageLayout';
 import { useSite } from '@/components/SiteProvider'; // [滚动恢复整合] 引入 useSite
 import VideoCard from '@/components/VideoCard';
-import VirtualDoubanGrid, { VirtualDoubanGridRef } from '@/components/VirtualDoubanGrid';
+import VirtualDoubanGrid, {
+  VirtualDoubanGridRef,
+} from '@/components/VirtualDoubanGrid';
 import { useVirtualScroll } from '@/components/VirtualScrollProvider';
 import { clearScrollCache } from '@/lib/scrollCache'; // [滚动恢复整合] 引入 clearScrollCache
 import {
@@ -494,7 +496,8 @@ function DoubanPageClient() {
         const currentSnapshot = { ...currentParamsRef.current };
         const keyParamsMatch =
           requestSnapshot.type === currentSnapshot.type &&
-          requestSnapshot.primarySelection === currentSnapshot.primarySelection &&
+          requestSnapshot.primarySelection ===
+            currentSnapshot.primarySelection &&
           requestSnapshot.secondarySelection ===
             currentSnapshot.secondarySelection &&
           requestSnapshot.selectedWeekday === currentSnapshot.selectedWeekday &&
@@ -916,12 +919,13 @@ function DoubanPageClient() {
   };
 
   return (
-    <PageLayout 
-      activePath={getActivePath()} 
-      mainContainerRef={mainContainerRef as React.RefObject<HTMLDivElement>}
-      mainContainerClassName='flex-grow overflow-y-auto'
-    >
-      <div className='overflow-visible -mt-6 md:mt-0'>
+    <PageLayout activePath={getActivePath()}>
+      {/* [滚动恢复整合] 将主内容包裹在由 mainContainerRef 引用的可滚动 div 中 */}
+      <div
+        ref={mainContainerRef as React.RefObject<HTMLDivElement>}
+        className='flex-grow overflow-y-auto'
+      >
+        <div className='overflow-visible -mt-6 md:mt-0'>
           {/* 页面标题和选择器 */}
           <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
             {/* 页面标题 */}
@@ -1054,7 +1058,10 @@ function DoubanPageClient() {
 
                 {/* 加载更多指示器 */}
                 {hasMore && !loading && (
-                  <div ref={loadingRef} className='flex justify-center mt-12 py-8'>
+                  <div
+                    ref={loadingRef}
+                    className='flex justify-center mt-12 py-8'
+                  >
                     {isLoadingMore && (
                       <div className='relative px-8 py-4 rounded-2xl bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200/50 dark:border-green-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
                         {/* 动画背景 */}
@@ -1197,18 +1204,19 @@ function DoubanPageClient() {
           </div>
         </div>
 
-      {/* 返回顶部悬浮按钮 */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${
-          showBackToTop
-            ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
-        aria-label='返回顶部'
-      >
-        <ChevronUp className='w-6 h-6 transition-transform group-hover:scale-110' />
-      </button>
+        {/* 返回顶部悬浮按钮 */}
+        <button
+          onClick={scrollToTop}
+          className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${
+            showBackToTop
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}
+          aria-label='返回顶部'
+        >
+          <ChevronUp className='w-6 h-6 transition-transform group-hover:scale-110' />
+        </button>
+      </div>
     </PageLayout>
   );
 }
