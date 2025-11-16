@@ -916,13 +916,12 @@ function DoubanPageClient() {
   };
 
   return (
-    <PageLayout activePath={getActivePath()}>
-      {/* [滚动恢复整合] 将主内容包裹在由 mainContainerRef 引用的可滚动 div 中 */}
-      <div
-        className='flex-grow overflow-y-auto'
-        ref={mainContainerRef as React.RefObject<HTMLDivElement>}
-      >
-        <div className='overflow-visible -mt-6 md:mt-0'>
+    <PageLayout 
+      activePath={getActivePath()} 
+      mainContainerRef={mainContainerRef as React.RefObject<HTMLDivElement>}
+      mainContainerClassName='flex-grow overflow-y-auto'
+    >
+      <div className='overflow-visible -mt-6 md:mt-0'>
           {/* 页面标题和选择器 */}
           <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
             {/* 页面标题 */}
