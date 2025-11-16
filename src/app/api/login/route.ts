@@ -1,7 +1,7 @@
 /* eslint-disable no-console,@typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -262,6 +262,7 @@ export async function POST(req: NextRequest) {
             });
             // 保存更新后的主配置
             await db.saveAdminConfig(config);
+            clearConfigCache(); // 新增：清除配置缓存
           }
         } else {
           // [BIND_DEBUG] 2b. 设备已绑定，跳过重复添加
