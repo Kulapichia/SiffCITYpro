@@ -341,8 +341,8 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   const handleEpisodeClick = useCallback(
-    (episodeNumber: number) => {
-      onChange?.(episodeNumber - 1);
+    (episodeIndex: number) => {
+      onChange?.(episodeIndex);
     },
     [onChange]
   );
@@ -355,14 +355,14 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   // 4. 新增：调用 useLongPress Hook 来获取长按事件处理器
-  const longPressEvents = useLongPress<{ title: string }>({
-    onLongPress: (e, context) => {
-      if (context?.title) {
-        onLongPress?.(context.title); // 触发从父组件传入的回调
-      }
-    },
-    longPressDelay: 300,
-  });
+  // const longPressEvents = useLongPress<{ title: string }>({
+    // onLongPress: (e, context) => {
+      // if (context?.title) {
+        // onLongPress?.(context.title); // 触发从父组件传入的回调
+      // }
+    // },
+    // longPressDelay: 300,
+  // });
 
 
   const currentStart = currentPage * episodesPerPage + 1;
@@ -496,8 +496,8 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 <button
                   key={episodeNumber}
                   // 5. 新增：将长按事件绑定到按钮上
-                  {...longPressEvents({ title: episodes_titles?.[episodeNumber - 1] || `第 ${episodeNumber} 集` })}
-                  onClick={() => handleEpisodeClick(episodeNumber)}
+                  // {...longPressEvents({ title: episodes_titles?.[episodeNumber - 1] || `第 ${episodeNumber} 集` })}
+                  onClick={() => handleEpisodeClick(episodeNumber - 1)}
                   className={`group h-10 min-w-10 px-3 py-2 flex items-center justify-center text-sm font-semibold rounded-lg transition-all duration-300 whitespace-nowrap font-mono relative overflow-hidden
                     ${isActive
                       ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-lg shadow-green-500/30 dark:from-green-600 dark:via-emerald-600 dark:to-teal-600 dark:shadow-green-500/20'
