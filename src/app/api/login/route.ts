@@ -231,8 +231,9 @@ export async function POST(req: NextRequest) {
             machineCodeTaken: true
           }, { status: 409 });
         }
-
+        console.log(`[BIND_DEBUG] Machine code '${machineCode}' is available for user '${username}'.`);
         const currentCodes = await db.getUserMachineCodes(username);
+        console.log(`[BIND_DEBUG] User '${username}' currently has ${currentCodes.length} devices:`, JSON.stringify(currentCodes));
         const isAlreadyBoundToThisUser = currentCodes.some(
           (code: any) => code.machineCode.toUpperCase() === machineCode.toUpperCase()
         );
@@ -252,6 +253,7 @@ export async function POST(req: NextRequest) {
           // 【修复】将设备信息同步到主 adminConfig 的用户对象中
           const userInConfig = config.UserConfig.Users.find(u => u.username === username);
           if (userInConfig) {
+            console.log(`[BIND_DEBUG] Found user '${username}' in config, updating devices array.`);
             if (!userInConfig.devices) {
               userInConfig.devices = [];
             }
@@ -260,8 +262,12 @@ export async function POST(req: NextRequest) {
               deviceInfo: deviceInfo || '',
               bindTime: Date.now()
             });
+            console.log(`[BIND_DEBUG] Saving updated adminConfig to DB.`);
             // 保存更新后的主配置
             await db.saveAdminConfig(config);
+            console.log(`[BIND_DEBUG] adminConfig saved.`);
+          } else {
+             console.warn(`[BIND_DEBUG] User '${username}' not found in adminConfig after successful login. Cannot sync device to config object.`);
             clearConfigCache(); // 新增：清除配置缓存
           }
         } else {
