@@ -11,8 +11,9 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  *:not(.artplayer):not(.artplayer *)::-webkit-scrollbar {
-    display: none;
+  /* 优化滚动条隐藏规则，避免全局影响，同时保留对 ArtPlayer 的排除 */
+  :not(div[data-radix-scroll-area-viewport]):not(.artplayer):not(.artplayer *):not(pre *)::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   @keyframes fadeIn {
