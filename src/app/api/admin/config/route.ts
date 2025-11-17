@@ -63,15 +63,20 @@ export async function GET(request: NextRequest) {
       }
       // 可以继续添加其他需要屏蔽的密钥
       // 获取所有用户的机器码信息
+      console.log('[BIND_DEBUG] /api/admin/config: Fetching all machine code users from DB...');
       const machineCodeUsers = await db.getMachineCodeUsers();
+      console.log('[BIND_DEBUG] /api/admin/config: Fetched machineCodeUsers data structure:', JSON.stringify(machineCodeUsers, null, 2));
       
       // 将机器码信息合并到用户信息中
       if (configForFrontend.UserConfig && configForFrontend.UserConfig.Users) {
+        console.log('[BIND_DEBUG] /api/admin/config: Merging machine code data into user list...');
         configForFrontend.UserConfig.Users.forEach((user: any) => {
-          if (machineCodeUsers[user.username]) {
+          if (machineCodeUsers && machineCodeUsers[user.username] && Array.isArray(machineCodeUsers[user.username].devices)) {
             user.devices = machineCodeUsers[user.username].devices;
+             console.log(`[BIND_DEBUG] /api/admin/config: Merged ${user.devices.length} devices for user '${user.username}'.`);
           } else {
             user.devices = []; // 使用空数组表示未绑定
+            console.log(`[BIND_DEBUG] /api/admin/config: No devices found for user '${user.username}' in machineCodeUsers data. Setting devices to empty array.`);
           }
         });
       }

@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
     }
 
     const conversations = await db.getConversations(authInfo.username);
-    // 为每个对话补充最后一条消息和未读计数
+    /* 
+    // 原始代码尝试为每个对话补充最后一条消息和未读计数，但可能导致问题。
+    // 暂时恢复为简单实现以确保核心功能正常。
     const detailedConversations = await Promise.all(
       conversations.map(async (conv: Conversation) => {
         // 使用 getMessages(conv.id, 1) 获取最新的一条消息来替代不存在的 getLastMessage
@@ -32,7 +34,8 @@ export async function GET(request: NextRequest) {
     );
     
     return NextResponse.json(detailedConversations);
-    // return NextResponse.json(conversations);
+    */
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error loading conversations:', error);
     return NextResponse.json({ error: '获取对话列表失败' }, { status: 500 });
@@ -64,8 +67,8 @@ export async function POST(request: NextRequest) {
     const conversation: Conversation = {
       id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: name || participants.filter((p: string) => p !== authInfo.username).join(', '),
-      participants,
       type: conversationType,
+      participants,
       created_at: Date.now(),
       updated_at: Date.now(),
       is_group: isGroup,

@@ -24,18 +24,21 @@ async function getShortDramaCategoriesInternal() {
 
   const data = await response.json();
   const categories = data.categories || [];
-  return categories.map((item: any) => ({
-    type_id: item.type_id,
-    type_name: item.type_name,
-  }));
+  return {
+    categories: categories.map((item: any) => ({
+      type_id: item.type_id,
+      type_name: item.type_name,
+    })),
+    total: categories.length,
+  };
 }
 
 export async function GET() {
   try {
-    const categories = await getShortDramaCategoriesInternal();
+    const result = await getShortDramaCategoriesInternal();
 
     // 设置与网页端一致的缓存策略（categories: 4小时）
-    const response = NextResponse.json(categories);
+    const response = NextResponse.json(result);
 
     console.log('🕐 [CATEGORIES] 设置4小时HTTP缓存 - 与网页端categories缓存一致');
 
@@ -68,7 +71,10 @@ export async function GET() {
       { type_id: 7, type_name: '其他' },
     ];
     
-    const response = NextResponse.json(fallbackCategories);
+    const response = NextResponse.json({
+        categories: fallbackCategories,
+        total: fallbackCategories.length
+    });
     // 对备用数据也设置缓存，避免短时间内对失效接口的频繁请求
     const cacheTime = 300; // 备用数据缓存5分钟
     response.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);

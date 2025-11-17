@@ -467,17 +467,38 @@ export async function POST(request: NextRequest) {
         break;
       }
       case 'unbindDevice': {
+        console.log(`[BIND_DEBUG] Received 'unbindDevice' action. Operator: ${username}, Target: ${targetUsername}`);
+        if (!targetEntry) {
+          console.error(`[BIND_DEBUG] Unbind failed: Target user '${targetUsername}' not found in config.`);
+          return NextResponse.json({ error: '目标用户不存在' }, { status: 404 });
+        }
         if (operatorRole !== 'owner' && operatorRole !== 'admin') {
+          console.error(`[BIND_DEBUG] Unbind failed: Operator '${username}' with role '${operatorRole}' has insufficient permissions.`);
           return NextResponse.json({ error: '权限不足' }, { status: 403 });
         }
         
         const { machineCode } = body as { machineCode?: string };
         if (!machineCode) {
+          console.error(`[BIND_DEBUG] Unbind failed: Machine code is missing from request body.`);
           return NextResponse.json({ error: '缺少要解绑的设备码' }, { status: 400 });
         }
+        console.log(`[BIND_DEBUG] Attempting to unbind machine code '${machineCode}' from user '${targetUsername}'.`);
 
+        // 【修复】从 adminConfig 的用户对象中移除设备
+        if (targetEntry.devices && Array.isArray(targetEntry.devices)) {
+          const devicesBefore = targetEntry.devices.length;
+          targetEntry.devices = targetEntry.devices.filter(
+            (device: any) => device.machineCode !== machineCode
+          );
+          const devicesAfter = targetEntry.devices.length;
+          console.log(`[BIND_DEBUG] Devices in config object for '${targetUsername}' changed from ${devicesBefore} to ${devicesAfter}.`);
+        } else {
+          console.log(`[BIND_DEBUG] No 'devices' array found in config for user '${targetUsername}'.`);
+        }
         // 调用数据库方法解绑单个设备
+        console.log(`[BIND_DEBUG] Calling db.deleteUserMachineCode('${targetUsername}', '${machineCode}').`);
         await db.deleteUserMachineCode(targetUsername!, machineCode);
+        console.log(`[BIND_DEBUG] db.deleteUserMachineCode completed.`);
 
         // 注意：此操作直接修改数据库，不涉及 adminConfig，因此不需要保存 adminConfig
         break;
