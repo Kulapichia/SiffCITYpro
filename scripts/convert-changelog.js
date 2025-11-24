@@ -169,7 +169,7 @@ function updatePackageJson(version) {
   try {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     packageJson.version = version;
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
     console.log(`✅ Updated package.json: ${version}`);
   } catch (error) {
     console.error(`❌ Failed to update package.json:`, error.message);
