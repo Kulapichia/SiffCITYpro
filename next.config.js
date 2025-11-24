@@ -10,7 +10,7 @@ const nextConfig = {
 
   reactStrictMode: false,
   // 使用 SWC 进行代码压缩，性能优于 Terser
-  swcMinify: true,
+  swcMinify: false,
   // 显式启用 Gzip 压缩
   compress: true,
   // 禁用 x-powered-by 头，提升安全性
