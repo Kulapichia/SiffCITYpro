@@ -10,7 +10,7 @@ const nextConfig = {
 
   reactStrictMode: false,
   // 使用 SWC 进行代码压缩，性能优于 Terser
-  swcMinify: false,
+  swcMinify: true,
   // 显式启用 Gzip 压缩
   compress: true,
   // 禁用 x-powered-by 头，提升安全性
@@ -22,7 +22,7 @@ const nextConfig = {
     // instrumentationHook 配置
     instrumentationHook: process.env.NODE_ENV === 'production',
     // 启用服务端代码压缩，优化 serverless function 性能
-    serverMinification: true,
+    // serverMinification: true,
   },
 
   // Uncoment to add domain whitelist
@@ -89,24 +89,6 @@ const nextConfig = {
       tls: false,
       crypto: false,
     };
-
-    // 生产环境代码保护
-    if (!dev) {
-      config.optimization.minimizer.forEach((plugin) => {
-        if (plugin.constructor.name === 'TerserPlugin') {
-          plugin.options.terserOptions = {
-            ...plugin.options.terserOptions,
-            compress: {
-              drop_console: true,
-              drop_debugger: true,
-            },
-            format: {
-              comments: false,
-            },
-          };
-        }
-      });
-    }
 
     // 针对 Electron 环境的服务端构建优化
     if (isServer) {
