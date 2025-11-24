@@ -9,8 +9,8 @@ export function getAuthInfoFromCookie(request: NextRequest): {
   loginTime?: number;
   role?: 'owner' | 'admin' | 'user';
 } | null {
-  // const authCookie = request.cookies.get('user_auth') || request.cookies.get('auth');
-  const authCookie = request.cookies.get('auth');
+  const authCookie = request.cookies.get('user_auth') || request.cookies.get('auth');
+  // const authCookie = request.cookies.get('auth');
   if (!authCookie) {
     return null;
   }
