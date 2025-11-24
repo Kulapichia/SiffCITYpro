@@ -646,7 +646,46 @@ export async function getCacheTime(): Promise<number> {
 
 export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
   const config = await getConfig();
-  const allApiSites = config.SourceConfig.filter((s) => !s.disabled);
+  // 确定成人内容显示权限，优先级：用户 > 用户组 > 全局
+  let showAdultContent = config.SiteConfig.ShowAdultContent;
+
+  if (user) {
+    const userConfig = config.UserConfig.Users.find((u) => u.username === user);
+
+    if (userConfig) {
+      // 用户级别优先
+      if (userConfig.showAdultContent !== undefined) {
+        showAdultContent = userConfig.showAdultContent;
+      }
+      // 如果用户没有设置，检查用户组设置
+      else if (userConfig.tags && userConfig.tags.length > 0 && config.UserConfig.Tags) {
+        // 如果用户有多个用户组，只要有一个用户组允许就允许（取并集）
+        const hasAnyTagAllowAdult = userConfig.tags.some(tagName => {
+          const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+          return tagConfig?.showAdultContent === true;
+        });
+        if (hasAnyTagAllowAdult) {
+          showAdultContent = true;
+        } else {
+          // 检查是否有任何用户组明确禁止
+          const hasAnyTagDenyAdult = userConfig.tags.some(tagName => {
+            const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+            return tagConfig?.showAdultContent === false;
+          });
+          if (hasAnyTagDenyAdult) {
+            showAdultContent = false;
+          }
+        }
+      }
+    }
+  }
+
+  // 过滤掉禁用的源，如果未启用成人内容则同时过滤掉成人资源
+  const allApiSites = config.SourceConfig.filter((s) => {
+    if (s.disabled) return false;
+    if (!showAdultContent && s.is_adult) return false;
+    return true;
+  });
 
   if (!user) {
     return allApiSites;
@@ -660,7 +699,12 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
   // 优先根据用户自己的 enabledApis 配置查找
   if (userConfig.enabledApis && userConfig.enabledApis.length > 0) {
     const userApiSitesSet = new Set(userConfig.enabledApis);
-    return allApiSites.filter((s) => userApiSitesSet.has(s.key));
+    return allApiSites.filter((s) => userApiSitesSet.has(s.key)).map((s) => ({
+      key: s.key,
+      name: s.name,
+      api: s.api,
+      detail: s.detail,
+    }));
   }
 
   // 如果没有 enabledApis 配置，则根据 tags 查找
@@ -676,7 +720,12 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
     });
 
     if (enabledApisFromTags.size > 0) {
-      return allApiSites.filter((s) => enabledApisFromTags.has(s.key));
+      return allApiSites.filter((s) => enabledApisFromTags.has(s.key)).map((s) => ({
+        key: s.key,
+        name: s.name,
+        api: s.api,
+        detail: s.detail,
+      }));
     }
   }
 
