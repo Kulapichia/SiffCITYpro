@@ -35,19 +35,7 @@ function triggerGlobalError(message: string) {
 
 // 为了向后兼容，保留UserStats类型别名
 export type UserStats = UserPlayStat;
-// ---- 收藏类型 ----
-export interface Favorite {
-  title: string;
-  source_name: string;
-  year: string;
-  cover: string;
-  total_episodes: number;
-  save_time: number;
-  search_title?: string;
-  origin?: 'vod' | 'live';
-  releaseDate?: string; // 上映日期 (YYYY-MM-DD)，用于即将上映内容
-  remarks?: string; // 备注信息（如"X天后上映"、"已上映"等）
-}
+
 // ---- 缓存数据结构 ----
 interface CacheData<T> {
   data: T;
