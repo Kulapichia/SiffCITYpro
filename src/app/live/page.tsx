@@ -1221,13 +1221,12 @@ function LivePageClient() {
     });
 
     // 监听缓冲区卡顿和自动恢复
+    // v1.6.15 改进：HLS.js 内部已优化 buffer stall 和 gap segment 处理
     hls.on(Hls.Events.ERROR, (event, data) => {
       if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
-        console.warn('Buffer stalled, attempting recovery...');
-        // 不做任何操作，让 HLS.js 自动处理
+        console.warn('[HLS v1.6.15] Buffer stalled - internal recovery improved');
       } else if (data.details === Hls.ErrorDetails.BUFFER_SEEK_OVER_HOLE) {
-        console.warn('Buffer hole detected, HLS.js will handle seeking...');
-        // 不做任何操作，让 HLS.js 自动跳过空洞
+        console.warn('[HLS v1.6.15] Buffer gap detected - internal handling improved');
       }
     });
 
@@ -1263,28 +1262,29 @@ function LivePageClient() {
       if (artPlayerRef.current) {
         cleanupPlayer();
       }
-
+      // 根据hls.js源码设计，直接让hls.js处理各种媒体类型和错误
+      // 不需要预检查，hls.js会在加载时自动检测和处理
       // precheck type
-      let type = 'm3u8';
-      const precheckUrl = `/api/live/precheck?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;
-      try {
-        const precheckResponse = await fetch(precheckUrl);
-        if (precheckResponse.ok) {
-          const precheckResult = await precheckResponse.json();
-          if (precheckResult.success) {
-            type = precheckResult.type;
-          }
-        }
-      } catch (e) {
-        console.error('预检查请求失败:', e);
-      }
+      // let type = 'm3u8';
+      // const precheckUrl = `/api/live/precheck?url=${encodeURIComponent(videoUrl)}&moontv-source=${currentSourceRef.current?.key || ''}`;
+      // try {
+        // const precheckResponse = await fetch(precheckUrl);
+        // if (precheckResponse.ok) {
+          // const precheckResult = await precheckResponse.json();
+          // if (precheckResult.success) {
+            // type = precheckResult.type;
+          // }
+        // }
+      // } catch (e) {
+        // console.error('预检查请求失败:', e);
+      // }
 
       // 如果不是 m3u8 类型，设置不支持的类型并返回
-      if (type !== 'm3u8') {
-        setUnsupportedType(type);
-        setIsVideoLoading(false);
-        return;
-      }
+      // if (type !== 'm3u8') {
+        // setUnsupportedType(type);
+        // setIsVideoLoading(false);
+        // return;
+      // }
 
       // 重置不支持的类型
       setUnsupportedType(null);
