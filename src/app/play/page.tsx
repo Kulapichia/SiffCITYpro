@@ -18,6 +18,7 @@ import {
   deleteFavorite,
   deletePlayRecord,
   generateStorageKey,
+  getAllFavorites,
   getAllPlayRecords,
   getSkipConfig,
   isFavorited,
