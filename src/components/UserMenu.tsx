@@ -2868,6 +2868,31 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
             {favorites.map((favorite) => {
               const { source, id } = parseKey(favorite.key);
+              // 智能计算即将上映状态
+              let calculatedRemarks = favorite.remarks;
+              let isNewRelease = false;
+
+              if (favorite.releaseDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const releaseDate = new Date(favorite.releaseDate);
+                const daysDiff = Math.ceil((releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                // 根据天数差异动态更新显示文字
+                if (daysDiff < 0) {
+                  const daysAgo = Math.abs(daysDiff);
+                  calculatedRemarks = `已上映${daysAgo}天`;
+                  // 7天内上映的标记为新上映
+                  if (daysAgo <= 7) {
+                    isNewRelease = true;
+                  }
+                } else if (daysDiff === 0) {
+                  calculatedRemarks = '今日上映';
+                  isNewRelease = true;
+                } else {
+                  calculatedRemarks = `${daysDiff}天后上映`;
+                }
+              }
               return (
                 <div key={favorite.key} className='relative'>
                   <VideoCard
@@ -2881,7 +2906,18 @@ export const UserMenu: React.FC<{ className?: string }> = ({ className }) => {
                     query={favorite.search_title}
                     from='favorite'
                     type={favorite.total_episodes > 1 ? 'tv' : ''}
+                    remarks={calculatedRemarks}
+                    releaseDate={favorite.releaseDate}
                   />
+                  {/* 新上映高亮标记 - 7天内上映的显示 */}
+                  {isNewRelease && (
+                    <div className='absolute top-2 left-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg ring-2 ring-white/50 animate-pulse z-40'>
+                      <span className='flex items-center gap-1'>
+                        <span className='text-[10px]'>🎉</span>
+                        新上映
+                      </span>
+                    </div>
+                  )}
                   {/* 收藏时间标签 */}
                   <div className='absolute top-2 right-2 bg-black/50 rounded px-2 py-1'>
                     <span className='text-xs text-white font-medium'>
