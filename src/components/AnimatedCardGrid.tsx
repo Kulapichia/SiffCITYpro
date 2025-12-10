@@ -25,19 +25,19 @@ const itemVariants = {
   hidden: {
     opacity: 0,
     y: 10, // 减少位移距离
-    scale: 0.95,
+    // scale: 0.95,
   },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
+    // scale: 1,
     transition: {
       duration: 0.2, // 使用简单的 duration 替代复杂的 spring 动画
       ease: 'easeOut' as const,
-      type: 'spring' as const,
-      stiffness: 100,
-      damping: 15,
-      mass: 0.5,
+      // type: 'spring' as const,
+      // stiffness: 100,
+      // damping: 15,
+      // mass: 0.5,
     },
   },
 };
