@@ -2,6 +2,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, Info, Play } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -171,10 +172,15 @@ export default function HeroBanner({
                 index === currentIndex ? 'opacity-100' : 'opacity-0 absolute'
               }`}
             >
-              <img
+              <Image
                 src={getProxiedImageUrl(item.poster)}
                 alt={item.title}
+                width={192}
+                height={288}
                 className='w-40 sm:w-48 md:w-40 lg:w-48 h-auto rounded-xl shadow-2xl ring-4 ring-white/30'
+                priority={index === 0}
+                quality={70}
+                sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, (max-width: 1024px) 160px, 192px"
               />
             </div>
           ))}
