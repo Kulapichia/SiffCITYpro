@@ -14,8 +14,8 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08, // 每个子元素延迟 80ms
-      delayChildren: 0.1,    // 首个子元素延迟 100ms
+      staggerChildren: 0.03, // 减少延迟到 30ms
+      delayChildren: 0,      // 移除首个元素延迟
     },
   },
 };
@@ -24,7 +24,7 @@ const containerVariants = {
 const itemVariants = {
   hidden: {
     opacity: 0,
-    y: 20,
+    y: 10, // 减少位移距离
     scale: 0.95,
   },
   visible: {
@@ -32,6 +32,8 @@ const itemVariants = {
     y: 0,
     scale: 1,
     transition: {
+      duration: 0.2, // 使用简单的 duration 替代复杂的 spring 动画
+      ease: 'easeOut' as const,
       type: 'spring' as const,
       stiffness: 100,
       damping: 15,
