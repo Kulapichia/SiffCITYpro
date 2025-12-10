@@ -48,6 +48,10 @@ export interface ShortDramaItem {
   score: number;
   episode_count: number;
   description?: string;
+  author?: string;        // 演员/导演信息
+  backdrop?: string;      // 高清背景图
+  vote_average?: number;  // 用户评分 (0-10)
+  tmdb_id?: number;       // TMDB ID
 }
 
 // 短剧解析结果数据结构
@@ -238,6 +242,14 @@ export interface SearchResult {
   douban_id?: number;
   isYellow?: boolean;
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
+  drama_name?: string; // 短剧名称（用于备用API fallback）
+  metadata?: {
+    // 备用API提供的额外元数据
+    author?: string;
+    backdrop?: string;
+    vote_average?: number;
+    tmdb_id?: number;
+  };
   // 添加缺失的属性
   country?: string;
   recommendations?: Recommendation[];
@@ -427,7 +439,7 @@ export interface PersonalizedReleaseRecommendation {
   generatedAt: number; // 生成时间戳
 }
 
-// --- 项目B类型定义 ---
+
 // 聊天消息数据结构
 export interface ChatMessage {
   id: string;
@@ -477,4 +489,26 @@ export interface WebSocketMessage {
   type: 'message' | 'friend_request' | 'friend_accepted' | 'user_status' | 'online_users' | 'connection_confirmed' | 'user_connect' | 'ping' | 'pong';
   data?: any;
   timestamp: number;
+}
+// 豆瓣短评数据结构
+export interface DoubanComment {
+  username: string;
+  user_id: string;
+  avatar: string;
+  rating: number; // 0-5, 0表示未评分
+  time: string;
+  location: string;
+  content: string;
+  useful_count: number;
+}
+
+export interface DoubanCommentsResult {
+  code: number;
+  message: string;
+  data?: {
+    comments: DoubanComment[];
+    start: number;
+    limit: number;
+    count: number;
+  };
 }
