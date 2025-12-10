@@ -77,7 +77,7 @@ function validateUsername(username: string): {
   if (!username || username.trim().length === 0) {
     return { valid: false, message: '用户名不能为空' };
   }
-  // 与项目A对齐，使用 /^[a-zA-Z0-9_]{3,20}$/
+  // 使用 /^[a-zA-Z0-9_]{3,20}$/
   // 检查用户名格式（只允许字母数字和下划线）
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
     return {
