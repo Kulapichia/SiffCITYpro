@@ -186,6 +186,13 @@ export interface AdminConfig {
     enableRateLimit: boolean;            // 是否启用频率限制
     rateLimit: number;                   // 每分钟允许的请求次数
   };
+
+  ShortDramaConfig?: {
+    primaryApiUrl: string;               // 主API地址
+    alternativeApiUrl: string;           // 备用API地址（私密）
+    enableAlternative: boolean;          // 是否启用备用API
+  };
+
   HomeCustomize?: any;
 }
 
