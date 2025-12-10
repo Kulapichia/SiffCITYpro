@@ -45,18 +45,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     const sortedRecords = recordsArray.sort(
       (a, b) => b.save_time - a.save_time
     );
-
-    // --- 添加去重逻辑 ---
-    const uniqueRecordsMap = new Map<string, PlayRecord & { key: string }>();
-    sortedRecords.forEach(record => {
-      const key = `${record.title}-${record.year}`;
-      if (!uniqueRecordsMap.has(key)) {
-        uniqueRecordsMap.set(key, record);
-      }
-    });
-    const deduplicatedAndSortedRecords = Array.from(uniqueRecordsMap.values());
-
-    setPlayRecords(deduplicatedAndSortedRecords);
+    setPlayRecords(sortedRecords);
   };
 
   useEffect(() => {
@@ -78,14 +67,14 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     fetchPlayRecords();
 
     // 监听播放记录更新事件
-    const unsubscribePlayRecords = subscribeToDataUpdates(
+    const unsubscribe = subscribeToDataUpdates(
       'playRecordsUpdated',
       (newRecords: Record<string, PlayRecord>) => {
         updatePlayRecords(newRecords);
       }
     );
 
-    return unsubscribePlayRecords;
+    return unsubscribe;
   }, []);
 
   // 获取watching updates数据（仅当有播放记录时）
