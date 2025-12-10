@@ -130,15 +130,19 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
   const actualTitle = title;
   const actualPoster = poster;
-  const actualSource = source;
-  const actualId = id;
+  // 为豆瓣内容生成收藏用的source和id（仅用于收藏，不用于播放）
+  const actualSource = source || (from === 'douban' && douban_id ? 'douban' : '');
+  const actualId = id || (from === 'douban' && douban_id ? douban_id.toString() : '');
   const actualDoubanId = dynamicDoubanId;
   const actualEpisodes = dynamicEpisodes;
   const actualYear = year;
   const actualQuery = query || '';
-  const actualSearchType = isAggregate
-    ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
-    : type;
+  const actualSearchType = useMemo(() =>
+    isAggregate
+      ? (actualEpisodes && actualEpisodes === 1 ? 'movie' : 'tv')
+      : type,
+    [isAggregate, actualEpisodes, type]
+  );
   // 判断是否为即将上映（未发布的内容）- 只有真正未上映的才算
   const isUpcoming = remarks && remarks.includes('天后上映');
 
