@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       const expires = new Date();
       expires.setDate(expires.getDate() + 7); // 7天过期
 
-      response.cookies.set('auth', cookieValue, {
+      response.cookies.set('user_auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
       const expires = new Date();
       expires.setDate(expires.getDate() + 7); // 7天过期
 
-      response.cookies.set('auth', cookieValue, {
+      response.cookies.set('user_auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
@@ -329,7 +329,7 @@ export async function POST(req: NextRequest) {
       const expires = new Date();
       expires.setDate(expires.getDate() + 7); // 7天过期
 
-      response.cookies.set('auth', cookieValue, {
+      response.cookies.set('user_auth', cookieValue, {
         path: '/',
         expires,
         sameSite: 'lax', // 改为 lax 以支持 PWA
