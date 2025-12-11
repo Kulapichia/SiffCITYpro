@@ -164,12 +164,12 @@ export default function HeroBanner({
       {/* 主要内容区域 - 移动端竖版，桌面端横版 */}
       <div className='relative h-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 md:gap-8 lg:gap-12 px-4 sm:px-6 md:px-8 lg:px-12 py-6 md:py-0'>
         {/* 海报图片 - 移动端居中大图，桌面端左侧 */}
-        <div className='flex-shrink-0'>
+        <div className='flex-shrink-0 relative'>
           {items.map((item, index) => (
             <div
               key={item.id}
-              className={`transition-opacity duration-700 ease-in-out ${
-                index === currentIndex ? 'opacity-100' : 'opacity-0 absolute'
+              className={`transition-opacity duration-500 ease-in-out ${
+                index === currentIndex ? 'opacity-100' : 'opacity-0 absolute inset-0'
               }`}
             >
               <Image
