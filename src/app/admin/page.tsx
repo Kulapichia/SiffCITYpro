@@ -659,6 +659,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const handleUserGroupAction = async (
     action: 'add' | 'edit' | 'delete',
     groupName: string,
+    enabledApis?: string[],
     showAdultContent?: boolean
   ) => {
     return withLoading(`userGroup_${action}_${groupName}`, async () => {
