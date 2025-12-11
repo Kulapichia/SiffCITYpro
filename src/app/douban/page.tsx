@@ -903,7 +903,7 @@ function DoubanPageClient() {
     // [滚动恢复整合] 适配滚动容器
     try {
       // 1. 滚动页面容器到顶部
-      document.body.scrollTo({
+      mainContainerRef.current?.scrollTo({
         top: 0,
         behavior: 'smooth',
       });
@@ -914,7 +914,7 @@ function DoubanPageClient() {
       }
     } catch (error) {
       // 如果平滑滚动完全失败，使用立即滚动
-      document.body.scrollTop = 0;
+      if (mainContainerRef.current) mainContainerRef.current.scrollTop = 0;
     }
   };
 
@@ -1119,7 +1119,12 @@ function DoubanPageClient() {
                         {/* 完成图标 */}
                         <div className='relative'>
                           <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
-                            <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <svg
+                              className='w-7 h-7 text-white'
+                              fill='none'
+                              stroke='currentColor'
+                              viewBox='0 0 24 24'
+                            >
                               <path
                                 strokeLinecap='round'
                                 strokeLinejoin='round'
