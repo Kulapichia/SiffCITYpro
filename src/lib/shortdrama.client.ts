@@ -278,61 +278,169 @@ async function parseWithAlternativeApi(
 ): Promise<ShortDramaParseResult> {
   try {
     const alternativeApiBase = alternativeApiUrl;
+
+    // 检查是否提供了备用API地址
     if (!alternativeApiBase) {
-      return { code: -1, msg: '备用API未启用' };
+      console.log('备用API地址未配置');
+      return {
+        code: -1,
+        msg: '备用API未启用',
+      };
     }
+
+    // Step 1: Search for the drama by name to get drama ID
     const searchUrl = `${alternativeApiBase}/api/v1/drama/dl?dramaName=${encodeURIComponent(dramaName)}`;
+    console.log('[Alternative API] Step 1 - Search URL:', searchUrl);
+
     const searchResponse = await fetch(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      mode: 'cors',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
     });
-    if (!searchResponse.ok) throw new Error(`Search failed: ${searchResponse.status}`);
-    const searchData = await searchResponse.json();
-    if (!searchData?.data?.[0]?.id) {
-      return { code: 1, msg: `未找到短剧"${dramaName}"` };
+
+    console.log('[Alternative API] Step 1 - Response status:', searchResponse.status);
+
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      console.error('[Alternative API] Step 1 - Error response:', errorText);
+      throw new Error(`Search failed: ${searchResponse.status}`);
     }
-    const dramaId = searchData.data[0].id;
+
+    const searchData = await searchResponse.json();
+
+    // 加强数据验证
+    if (!searchData || typeof searchData !== 'object') {
+      throw new Error('备用API返回数据格式错误');
+    }
+
+    if (!searchData.data || !Array.isArray(searchData.data) || searchData.data.length === 0) {
+      return {
+        code: 1,
+        msg: `未找到短剧"${dramaName}"`,
+      };
+    }
+
+    const firstDrama = searchData.data[0];
+    if (!firstDrama || !firstDrama.id) {
+      throw new Error('备用API返回的短剧数据不完整');
+    }
+
+    const dramaId = firstDrama.id;
+
+    // Step 2: Get all episodes for this drama
     const episodesUrl = `${alternativeApiBase}/api/v1/drama/dramas?dramaId=${dramaId}`;
     const episodesResponse = await fetch(episodesUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      mode: 'cors',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
     });
-    if (!episodesResponse.ok) throw new Error(`Episodes fetch failed: ${episodesResponse.status}`);
+
+    if (!episodesResponse.ok) {
+      throw new Error(`Episodes fetch failed: ${episodesResponse.status}`);
+    }
+
     const episodesData = await episodesResponse.json();
-    if (!episodesData?.data?.length) return { code: 1, msg: '该短剧暂无可用集数' };
-    const episodeIndex = Math.max(0, episode === 0 ? 0 : episode - 1);
-    if (episodeIndex >= episodesData.data.length) return { code: 1, msg: `集数 ${episode} 不存在` };
-    const episodeId = episodesData.data[episodeIndex].id;
+
+    // 验证集数数据
+    if (!episodesData || !episodesData.data || !Array.isArray(episodesData.data)) {
+      throw new Error('备用API返回的集数列表格式错误');
+    }
+
+    if (episodesData.data.length === 0) {
+      return {
+        code: 1,
+        msg: '该短剧暂无可用集数',
+      };
+    }
+
+    // 注意：episode 参数可能是 0（主API的第一集索引）或 1（从1开始计数）
+    // 备用API的数组索引是从0开始的
+    let episodeIndex: number;
+    if (episode === 0 || episode === 1) {
+      // 主API的episode=0 或 episode=1 都对应第一集
+      episodeIndex = 0;
+    } else {
+      // episode >= 2 时，映射到数组索引 episode-1
+      episodeIndex = episode - 1;
+    }
+
+    if (episodeIndex < 0 || episodeIndex >= episodesData.data.length) {
+      return {
+        code: 1,
+        msg: `集数 ${episode} 不存在（共${episodesData.data.length}集）`,
+      };
+    }
+
+    const targetEpisode = episodesData.data[episodeIndex];
+    if (!targetEpisode || !targetEpisode.id) {
+      throw new Error(`集数 ${episode} 的数据不完整`);
+    }
+
+    const episodeId = targetEpisode.id;
+
+    // Step 3: Get the direct link for the episode
     const directUrl = `${alternativeApiBase}/api/v1/drama/direct?episodeId=${episodeId}`;
     const directResponse = await fetch(directUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      mode: 'cors',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
     });
-    if (!directResponse.ok) throw new Error(`Direct link fetch failed: ${directResponse.status}`);
+
+    if (!directResponse.ok) {
+      throw new Error(`Direct link fetch failed: ${directResponse.status}`);
+    }
+
     const directData = await directResponse.json();
-    if (!directData?.url) throw new Error('备用API未返回播放链接');
+
+    // 验证播放链接数据
+    if (!directData || !directData.url) {
+      throw new Error('备用API未返回播放链接');
+    }
+
+    // 将 http:// 转换为 https:// 避免 Mixed Content 错误
+    const videoUrl = (directData.url || '').replace(/^http:\/\//i, 'https://');
+
+    // 备用API的视频链接通过代理访问（避免防盗链限制）
+    const proxyUrl = `/api/proxy/shortdrama?url=${encodeURIComponent(videoUrl)}`;
+
     return {
       code: 0,
       data: {
         videoId: dramaId,
-        videoName: searchData.data[0].name,
+        videoName: firstDrama.name,
         currentEpisode: episode,
         totalEpisodes: episodesData.data.length,
-        parsedUrl: directData.url, proxyUrl: directData.url,
-        cover: directData.pic || searchData.data[0].pic || '',
-        description: searchData.data[0].overview || '',
-        episode: { index: episode, label: `第${episode}集`, parsedUrl: directData.url, title: directData.title || `第${episode}集` },
+        parsedUrl: proxyUrl,
+        proxyUrl: proxyUrl,
+        cover: directData.pic || firstDrama.pic || '',
+        description: firstDrama.overview || '',
+        episode: {
+          index: episode,
+          label: `第${episode}集`,
+          parsedUrl: proxyUrl,
+          proxyUrl: proxyUrl,
+          title: directData.title || `第${episode}集`,
+        },
       },
+      // 额外的元数据供其他地方使用
       metadata: {
-        author: searchData.data[0].author || '',
-        backdrop: searchData.data[0].backdrop || searchData.data[0].pic || '',
-        vote_average: searchData.data[0].vote_average || 0,
-        tmdb_id: searchData.data[0].tmdb_id || undefined,
+        author: firstDrama.author || '',
+        backdrop: firstDrama.backdrop || firstDrama.pic || '',
+        vote_average: firstDrama.vote_average || 0,
+        tmdb_id: firstDrama.tmdb_id || undefined,
       }
     };
   } catch (error) {
     console.error('备用API解析失败:', error);
-    return { code: -1, msg: `备用API错误: ${error instanceof Error ? error.message : '未知错误'}` };
+    // 返回更详细的错误信息
+    const errorMsg = error instanceof Error ? error.message : '备用API请求失败';
+    return {
+      code: -1,
+      msg: `备用API错误: ${errorMsg}`,
+    };
   }
 }
 
@@ -344,6 +452,21 @@ export async function parseShortDramaEpisode(
   dramaName?: string,
   alternativeApiUrl?: string
 ): Promise<ShortDramaParseResult> {
+  // 如果提供了剧名和备用API，优先尝试备用API（因为主API链接经常失效）
+  if (dramaName && alternativeApiUrl) {
+    console.log('优先尝试备用API...');
+    try {
+      const alternativeResult = await parseWithAlternativeApi(dramaName, episode, alternativeApiUrl);
+      if (alternativeResult.code === 0) {
+        console.log('备用API成功！');
+        return alternativeResult;
+      }
+      console.log('备用API失败，fallback到主API:', alternativeResult.msg);
+    } catch (altError) {
+      console.log('备用API错误，fallback到主API:', altError);
+    }
+  }
+
   try {
     const params = new URLSearchParams({ id: id.toString(), episode: episode.toString() });
     if (useProxy) params.append('proxy', 'true');
