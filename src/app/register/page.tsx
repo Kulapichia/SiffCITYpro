@@ -97,11 +97,11 @@ function RegisterPageClient() {
     fetchBingWallpaper();
   }, []);
 
-  // 检查注册是否可用 (新架构)
+  // 检查注册是否可用
   useEffect(() => {
     const checkRegistrationAvailable = async () => {
       try {
-        // 用空数据进行“试运行”请求，这样不会创建用户，但能从API响应中判断注册状态
+        // 用空数据检测，这样不会创建用户但能得到正确的错误信息
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -110,24 +110,24 @@ function RegisterPageClient() {
         
         const data = await res.json();
         
-        // 如果是本地存储模式，直接重定向到登录页
-        if (data.message === '当前系统为本地存储模式，不支持用户注册功能。') {
+        // 如果是localStorage模式，跳转登录
+        if (data.error === 'localStorage 模式不支持用户注册') {
           router.replace('/login');
           return;
         }
         
-        // 如果管理员关闭了注册
-        if (data.message === '管理员已关闭用户注册功能。') {
+        // 如果是管理员关闭了注册
+        if (data.error === '管理员已关闭用户注册功能') {
           setRegistrationDisabled(true);
-          setDisabledReason('管理员已关闭用户注册功能。');
-          setShouldShowRegister(true); // 准备好显示“已禁用”页面
+          setDisabledReason('管理员已关闭用户注册功能');
+          setShouldShowRegister(true);
           return;
         }
         
-        // 其他情况（如“用户名不能为空”的验证错误）都意味着注册功能是开启的
-        setShouldShowRegister(true); // 准备好显示注册表单
+        // 其他情况显示注册表单（包括用户名已存在等正常的验证错误）
+        setShouldShowRegister(true);
       } catch (error) {
-        // 如果API请求本身失败（网络错误等），也默认显示注册页面，让用户可以尝试提交
+        // 网络错误也显示注册页面
         setShouldShowRegister(true);
       }
     };
@@ -175,7 +175,7 @@ function RegisterPageClient() {
         if (!data.needsApproval) {
           setTimeout(() => {
             const redirect = searchParams.get('redirect') || '/login?message=registration-success';
-            router.push(redirect);
+            router.replace(redirect);
           }, 2000); // 2秒后跳转，让用户看到成功消息
         }
       } else {
