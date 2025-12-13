@@ -2048,7 +2048,13 @@ function SearchPageClient() {
         className={`fixed bottom-20 md:bottom-6 right-6 z-[500] transition-all duration-300 ease-in-out ${showBackToTop
           ? 'opacity-100 translate-y-0 pointer-events-auto'
           : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
+        }`}
+        style={{
+          position: 'fixed',
+          right: '1.5rem',
+          bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '5rem' : '1.5rem',
+          left: 'auto'
+        }}
       >
         <button
           onClick={scrollToTop}
@@ -2060,7 +2066,7 @@ function SearchPageClient() {
         >
           {/* 内部发光圆圈 */}
           <div className='absolute inset-1 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-full backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:from-green-400/40 group-hover:to-emerald-400/40'>
-            <ChevronUp className='w-6 h-6 text-white/90 transition-all duration-300 group-hover:scale-110 group-hover:text-white drop-shadow-lg' />
+            <ChevronUp className='w-6 h-6 text-white/90 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 drop-shadow-lg' />
           </div>
 
           {/* 进度环 */}
