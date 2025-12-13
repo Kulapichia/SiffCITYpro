@@ -19,6 +19,21 @@ export async function fetchVideoDetail({
   id,
   fallbackTitle = '',
 }: FetchVideoDetailOptions): Promise<SearchResult> {
+
+  // 如果是短剧，走专门的短剧详情接口
+  if (source === 'shortdrama') {
+    try {
+      const response = await fetch(`/api/shortdrama/detail?id=${id}&episode=1`);
+      if (response.ok) {
+        return await response.json();
+      }
+      throw new Error(`获取短剧详情失败: ${response.statusText}`);
+    } catch (error) {
+      console.error('获取短剧详情异常:', error);
+      throw error;
+    }
+  }
+
   // 优先通过搜索接口查找精确匹配
   const apiSites = await getAvailableApiSites();
   const apiSite = apiSites.find((site) => site.key === source);
