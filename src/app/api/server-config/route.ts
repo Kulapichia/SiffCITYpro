@@ -23,9 +23,12 @@ export async function GET(request: NextRequest) {
   // 添加 Telegram 登录配置（仅公开必要信息）
   if (config.SiteConfig.TelegramAuth?.enabled) {
     console.log('Telegram config is enabled, adding to result');
-    result.TelegramAuth = {
+    result.TelegramAuthConfig = {
       enabled: true,
       botUsername: config.SiteConfig.TelegramAuth.botUsername,
+      buttonSize: config.SiteConfig.TelegramAuth.buttonSize || 'large',
+      showAvatar: config.SiteConfig.TelegramAuth.showAvatar ?? true,
+      requestWriteAccess: config.SiteConfig.TelegramAuth.requestWriteAccess ?? false,
       // 注意：不返回 botToken，保护敏感信息
     };
   } else {
