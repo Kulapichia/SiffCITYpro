@@ -66,6 +66,9 @@ type FavoriteItem = {
   search_title?: string;
   origin?: 'vod' | 'live';
   year?: string;
+  type?: 'movie' | 'tv' | 'anime' | 'shortdrama' | 'variety' | string;
+  remarks?: string;
+  releaseDate?: string;
 };
 
 // [滚动恢复整合] 定义需要缓存的状态接口
