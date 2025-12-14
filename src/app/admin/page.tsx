@@ -4576,6 +4576,9 @@ const SiteConfigComponent = ({
       botUsername: '',
       botToken: '',
       defaultRole: 'user',
+      buttonSize: 'large',
+      showAvatar: true,
+      requestWriteAccess: false,
     },
   });
   // 新增：API测试相关状态
