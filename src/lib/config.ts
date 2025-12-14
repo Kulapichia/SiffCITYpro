@@ -286,6 +286,9 @@ async function getInitConfig(configFile: string, subConfig: {
         botUsername: '',
         botToken: '',
         defaultRole: 'user',
+        buttonSize: 'large',
+        showAvatar: true,
+        requestWriteAccess: false,
       },
     },
     UserConfig: {
