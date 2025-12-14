@@ -1072,8 +1072,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                 <Star size={10} className="fill-current mb-0.5" />
                 <span className="text-[10px] sm:text-xs font-extrabold leading-none">{rate}</span>
               </div>
-            );
-          })()}
+            )}
+          ))()}
 
           {/* 豆瓣链接 */}
           {config.showDoubanLink && actualDoubanId && actualDoubanId !== 0 && (
