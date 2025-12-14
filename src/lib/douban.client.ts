@@ -857,7 +857,7 @@ export async function getDoubanActorMovies(
     const html = await response.text();
 
     // 解析HTML中的JSON数据
-    const dataMatch = html.match(/window\.__DATA__\s*=\s*({.*?});/s);
+    const dataMatch = html.match(/window\.__DATA__\s*=\s*({[\s\S]*?});/);
     if (!dataMatch) {
       throw new Error('无法解析搜索结果数据');
     }
@@ -935,6 +935,12 @@ interface DoubanCommentsParams {
   start?: number;
   limit?: number;
   sort?: 'new_score' | 'time';
+}
+
+interface DoubanCommentsResult {
+  code: number;
+  message: string;
+  data?: any;
 }
 
 export async function getDoubanComments(
