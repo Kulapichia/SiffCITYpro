@@ -307,7 +307,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       if (vod_tag) urlParams.set('vod_tag', vod_tag);
 
       url = `/play?${urlParams.toString()}`;
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release' || actualSource === 'douban' || actualSource === 'bangumi') {
       // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''
         }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
@@ -349,7 +349,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       // 直播内容跳转到直播页面
       const url = `/live?source=${actualSource.replace('live_', '')}&id=${actualId.replace('live_', '')}`;
       window.open(url, '_blank');
-    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release') {
+    } else if (from === 'douban' || (isAggregate && !actualSource && !actualId) || actualSource === 'upcoming_release' || actualSource === 'douban' || actualSource === 'bangumi') {
       // 豆瓣内容 或 聚合搜索 或 即将上映（已上映）内容 - 只用标题和年份搜索
       const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
       window.open(url, '_blank');
@@ -668,8 +668,8 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
 
   return (
     <>
-      <motion.div
-        className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:z-10'
+      <div
+        className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:drop-shadow-2xl'
         onClick={handleClick}
         // [滚动恢复整合] 移除独立的 onClick，因为 longPressProps 已经包含了 onClick: handleClick
         {...longPressEvents({})}
