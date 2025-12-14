@@ -9,8 +9,11 @@ export function getAuthInfoFromCookie(request: NextRequest): {
   loginTime?: number;
   role?: 'owner' | 'admin' | 'user';
 } | null {
-  const authCookie = request.cookies.get('user_auth') || request.cookies.get('auth');
-  // const authCookie = request.cookies.get('auth');
+  let authCookie = request.cookies.get('user_auth');
+  // 如果 user_auth 不存在，则尝试旧的/备用的 auth
+  if (!authCookie) {
+    authCookie = request.cookies.get('auth');
+  }
   if (!authCookie) {
     return null;
   }
@@ -54,8 +57,12 @@ export function getAuthInfoFromBrowserCookie(): {
       return acc;
     }, {} as Record<string, string>);
 
-    // 尝试新的 cookie 名称 user_auth，如果没有则尝试旧的 auth
-    const authCookie = cookies['user_auth'] || cookies['auth'];
+    // 优先尝试新的 cookie 名称 user_auth
+    let authCookie = cookies['user_auth'];
+    // 如果 user_auth 不存在，则尝试旧的/备用的 auth
+    if (!authCookie) {
+      authCookie = cookies['auth'];
+    }
     if (!authCookie) {
       return null;
     }
