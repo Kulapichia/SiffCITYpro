@@ -7736,6 +7736,9 @@ function AdminPageClient() {
                     botUsername: '',
                     autoRegister: true,
                     defaultRole: 'user',
+                    buttonSize: 'large',
+                    showAvatar: true,
+                    requestWriteAccess: false,
                   }
                 }
                 onSave={async (newConfig) => {
