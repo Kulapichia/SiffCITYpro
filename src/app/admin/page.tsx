@@ -2769,6 +2769,7 @@ const VideoSourceConfig = ({
         detail: '',
         disabled: false,
         from: 'custom',
+        is_adult: false,
       });
       setShowAddForm(false);
       // 清除检测结果
