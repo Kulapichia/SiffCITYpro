@@ -170,10 +170,10 @@ export function processImageUrl(originalUrl: string): string {
 
   
   // 对于其他图片，使用通用图片代理
-  const proxyUrl = getImageProxyUrl();
-  if (!proxyUrl) return originalUrl;
+  const generalProxyUrl = getImageProxyUrl();
+  if (!generalProxyUrl) return originalUrl;
 
-  return `${proxyUrl}${encodeURIComponent(originalUrl)}`;
+  return `${generalProxyUrl}${encodeURIComponent(originalUrl)}`;
 }
 
 /**
