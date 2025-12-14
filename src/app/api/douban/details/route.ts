@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getEdgeCacheTime } from '@/lib/edge-config';
+import { getCacheTime } from '@/lib/config';
+
 
 // 用户代理池
 const USER_AGENTS = [
@@ -86,7 +87,8 @@ export async function GET(request: Request) {
     // 解析详细信息
     const details = parseDoubanDetails(html, id);
 
-    const cacheTime = getEdgeCacheTime();
+    const cacheTime = await getCacheTime();
+
     return NextResponse.json(details, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
