@@ -451,6 +451,9 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
       botUsername: '',
       botToken: '',
       defaultRole: 'user',
+      buttonSize: 'large',
+      showAvatar: true,
+      requestWriteAccess: false,
     };
   }
   
