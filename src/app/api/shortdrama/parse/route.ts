@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime, API_CONFIG } from '@/lib/config';
-
+import { getCacheTime, API_CONFIG, getConfig } from '@/lib/config';
+import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const id = searchParams.get('id');
     const episode = searchParams.get('episode');
-
+    const name = searchParams.get('name'); // 可选：用于备用API
     if (!id || !episode) {
       return NextResponse.json(
         { error: '缺少必要参数: id, episode' },
@@ -86,8 +86,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 解析视频，默认使用代理
-    const result = await parseShortDramaEpisodeInternal(videoId, episodeNum, true);
+    // 读取配置以获取备用API地址
+    let alternativeApiUrl: string | undefined;
+    try {
+      const config = await getConfig();
+      const shortDramaConfig = config.ShortDramaConfig;
+      alternativeApiUrl = shortDramaConfig?.enableAlternative ? shortDramaConfig.alternativeApiUrl : undefined;
+    } catch (configError) {
+      console.error('读取短剧配置失败:', configError);
+      // 配置读取失败时，不使用备用API
+      alternativeApiUrl = undefined;
+    }
+
+    // 解析视频，默认使用代理，如果提供了剧名且配置了备用API则自动fallback
+    const result = await parseShortDramaEpisode(
+      videoId,
+      episodeNum,
+      true,
+      name || undefined,
+      alternativeApiUrl
+    );
 
     if (result.code !== 0) {
       return NextResponse.json(

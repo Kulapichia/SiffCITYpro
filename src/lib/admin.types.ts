@@ -31,6 +31,9 @@ export interface TelegramConfig {
   botUsername: string; // 修正字段名为 botUsername
   botToken: string; // Bot Token
   defaultRole: 'user' | 'admin'; // 自动注册默认角色
+  buttonSize: 'large' | 'medium' | 'small'; // 按钮大小
+  showAvatar: boolean; // 是否显示用户头像
+  requestWriteAccess: boolean; // 是否请求发送消息权限
 }
 
 export interface SiteConfig {
@@ -186,6 +189,13 @@ export interface AdminConfig {
     enableRateLimit: boolean;            // 是否启用频率限制
     rateLimit: number;                   // 每分钟允许的请求次数
   };
+
+  ShortDramaConfig?: {
+    primaryApiUrl: string;               // 主API地址
+    alternativeApiUrl: string;           // 备用API地址（私密）
+    enableAlternative: boolean;          // 是否启用备用API
+  };
+
   HomeCustomize?: any;
 }
 

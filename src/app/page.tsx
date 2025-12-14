@@ -66,6 +66,9 @@ type FavoriteItem = {
   search_title?: string;
   origin?: 'vod' | 'live';
   year?: string;
+  type?: 'movie' | 'tv' | 'anime' | 'shortdrama' | 'variety' | string;
+  remarks?: string;
+  releaseDate?: string;
 };
 
 // [滚动恢复整合] 定义需要缓存的状态接口
@@ -95,40 +98,225 @@ const FavoritesView = ({
   items: FavoriteItem[];
   onNavigate: () => void; // [滚动恢复整合] 定义 onNavigate 类型
 }) => {
+  const [favoriteFilter, setFavoriteFilter] = useState<'all' | 'movie' | 'tv' | 'anime' | 'shortdrama' | 'live' | 'variety'>('all');
+  const [favoriteSortBy, setFavoriteSortBy] = useState<'recent' | 'title' | 'rating'>('recent');
+
   const handleClearFavorites = useCallback(async () => {
     // A confirmation could be added here in a real app
-    await clearAllFavorites();
-    // The parent component will receive the update via subscription
+    if (confirm('确定要清空所有收藏吗？')) {
+      await clearAllFavorites();
+      // The parent component will receive the update via subscription, no need to setItems here
+    }
   }, []);
+
+  const filteredAndSortedItems = (() => {
+    let filtered = items;
+    if (favoriteFilter === 'movie') {
+      filtered = items.filter(item => {
+        if (item.type) return item.type === 'movie';
+        if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+        if (item.source === 'bangumi') return false;
+        if (item.origin === 'live') return false;
+        return item.episodes === 1;
+      });
+    } else if (favoriteFilter === 'tv') {
+      filtered = items.filter(item => {
+        if (item.type) return item.type === 'tv';
+        if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+        if (item.source === 'bangumi') return false;
+        if (item.origin === 'live') return false;
+        return item.episodes > 1;
+      });
+    } else if (favoriteFilter === 'anime') {
+      filtered = items.filter(item => {
+        if (item.type) return item.type === 'anime';
+        return item.source === 'bangumi';
+      });
+    } else if (favoriteFilter === 'shortdrama') {
+      filtered = items.filter(item => {
+        if (item.type) return item.type === 'shortdrama';
+        return item.source === 'shortdrama' || item.source_name === '短剧';
+      });
+    } else if (favoriteFilter === 'live') {
+      filtered = items.filter(item => item.origin === 'live');
+    } else if (favoriteFilter === 'variety') {
+      filtered = items.filter(item => {
+        if (item.type) return item.type === 'variety';
+        return false;
+      });
+    }
+
+    if (favoriteSortBy === 'title') {
+      return [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+    }
+    // 'recent' is the default sort (by save_time), so no extra sorting needed.
+    return filtered;
+  })();
+
+  const stats = {
+    total: items.length,
+    movie: items.filter(item => {
+      if (item.type) return item.type === 'movie';
+      if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+      if (item.source === 'bangumi') return false;
+      if (item.origin === 'live') return false;
+      return item.episodes === 1;
+    }).length,
+    tv: items.filter(item => {
+      if (item.type) return item.type === 'tv';
+      if (item.source === 'shortdrama' || item.source_name === '短剧') return false;
+      if (item.source === 'bangumi') return false;
+      if (item.origin === 'live') return false;
+      return item.episodes > 1;
+    }).length,
+    anime: items.filter(item => {
+      if (item.type) return item.type === 'anime';
+      return item.source === 'bangumi';
+    }).length,
+    shortdrama: items.filter(item => {
+      if (item.type) return item.type === 'shortdrama';
+      return item.source === 'shortdrama' || item.source_name === '短剧';
+    }).length,
+    live: items.filter(item => item.origin === 'live').length,
+    variety: items.filter(item => {
+      if (item.type) return item.type === 'variety';
+      return false;
+    }).length,
+  };
 
   return (
     <section className='mb-8'>
-      <div className='mb-4 flex items-center justify-between'>
+      <div className='mb-6 flex items-center justify-between'>
         <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
           我的收藏
         </h2>
         {items.length > 0 && (
           <button
-            className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
             onClick={handleClearFavorites}
           >
-            清空
+            清空收藏
           </button>
         )}
       </div>
+
+      {items.length > 0 && (
+        <div className='mb-4 flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400'>
+          <span className='px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full'>
+            共 <strong className='text-gray-900 dark:text-gray-100'>{stats.total}</strong> 项
+          </span>
+          {stats.movie > 0 && (
+            <span className='px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full'>
+              电影 {stats.movie}
+            </span>
+          )}
+          {stats.tv > 0 && (
+            <span className='px-3 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full'>
+              剧集 {stats.tv}
+            </span>
+          )}
+          {stats.anime > 0 && (
+            <span className='px-3 py-1 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 rounded-full'>
+              动漫 {stats.anime}
+            </span>
+          )}
+          {stats.shortdrama > 0 && (
+            <span className='px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 rounded-full'>
+              短剧 {stats.shortdrama}
+            </span>
+          )}
+          {stats.live > 0 && (
+            <span className='px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-full'>
+              直播 {stats.live}
+            </span>
+          )}
+          {stats.variety > 0 && (
+            <span className='px-3 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-full'>
+              综艺 {stats.variety}
+            </span>
+          )}
+        </div>
+      )}
+      
+      {items.length > 0 && (
+        <div className='mb-4 flex flex-wrap gap-2'>
+          {[
+            { key: 'all' as const, label: '全部', icon: '📚' },
+            { key: 'movie' as const, label: '电影', icon: '🎬' },
+            { key: 'tv' as const, label: '剧集', icon: '📺' },
+            { key: 'anime' as const, label: '动漫', icon: '🎌' },
+            { key: 'shortdrama' as const, label: '短剧', icon: '🎭' },
+            { key: 'live' as const, label: '直播', icon: '📡' },
+            { key: 'variety' as const, label: '综艺', icon: '🎪' },
+          ].map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => setFavoriteFilter(key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                favoriteFilter === key
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span className='mr-1'>{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className='mb-4 flex items-center gap-2 text-sm'>
+          <span className='text-gray-600 dark:text-gray-400'>排序：</span>
+          <div className='flex gap-2'>
+            {[
+              { key: 'recent' as const, label: '最近添加' },
+              { key: 'title' as const, label: '标题 A-Z' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFavoriteSortBy(key)}
+                className={`px-3 py-1 rounded-md transition-colors ${
+                  favoriteSortBy === key
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
-        {items.length > 0 ? (
-          items.map((item) => (
-            <div key={item.id + item.source} className='w-full'>
-              <VideoCard
-                query={item.search_title}
-                {...item}
-                from='favorite'
-                type={item.episodes > 1 ? 'tv' : ''}
-                onNavigate={onNavigate} // [滚动恢复整合] 传递 onNavigate
-              />
-            </div>
-          ))
+        {filteredAndSortedItems.length > 0 ? (
+          filteredAndSortedItems.map((item) => {
+            let calculatedRemarks = item.remarks;
+            if (item.releaseDate) {
+              const now = new Date();
+              const releaseDate = new Date(item.releaseDate);
+              const daysDiff = Math.ceil((releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              if (daysDiff < 0) {
+                calculatedRemarks = `已上映${Math.abs(daysDiff)}天`;
+              } else if (daysDiff === 0) {
+                calculatedRemarks = '今日上映';
+              } else {
+                calculatedRemarks = `${daysDiff}天后上映`;
+              }
+            }
+            return (
+              <div key={item.id + item.source} className='w-full'>
+                <VideoCard
+                  query={item.search_title}
+                  {...item}
+                  from='favorite'
+                  remarks={calculatedRemarks}
+                  onNavigate={onNavigate} // [滚动恢复整合] 传递 onNavigate
+                />
+              </div>
+            );
+          })
         ) : (
           <div className='col-span-full flex flex-col items-center justify-center py-16 px-4'>
             {/* SVG 插画 - 空收藏夹 */}

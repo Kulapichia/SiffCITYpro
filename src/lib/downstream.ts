@@ -31,32 +31,34 @@ function parsePlayUrl(playUrl: string | undefined): { episodes: string[]; titles
   let bestEpisodes: string[] = [];
   let bestTitles: string[] = [];
 
-  // 先用 $$$ 分割不同的播放源
-  const sources = playUrl.split('$$$');
-  sources.forEach((source) => {
-    const currentEpisodes: string[] = [];
-    const currentTitles: string[] = [];
-    // 分集之间#分割
-    const episodesData = source.split('#');
+  // 使用正则表达式从 vod_play_url 提取 m3u8 链接
+  if (playUrl) {
+    // 先用 $$$ 分割
+    const vod_play_url_array = playUrl.split('$$$');
+    // 分集之间#分割，标题和播放链接 $ 分割
+    vod_play_url_array.forEach((url: string) => {
+      const matchEpisodes: string[] = [];
+      const matchTitles: string[] = [];
 
-    episodesData.forEach((episodeInfo) => {
+      const title_url_array = url.split('#');
+      title_url_array.forEach((title_url: string) => {
       // 标题和播放链接 $ 分割
-      const parts = episodeInfo.split('$');
-      if (
-        parts.length === 2 &&
-        parts[1].endsWith('.m3u8')
-      ) {
-        currentTitles.push(parts[0]);
-        currentEpisodes.push(parts[1]);
+        const episode_title_url = title_url.split('$');
+        if (
+          episode_title_url.length === 2 &&
+          episode_title_url[1].endsWith('.m3u8')
+        ) {
+          matchTitles.push(episode_title_url[0]);
+          matchEpisodes.push(episode_title_url[1]);
+        }
+      });
+    // 选择剧集数量最多的播放源
+      if (matchEpisodes.length > bestEpisodes.length) {
+        bestEpisodes = matchEpisodes;
+        bestTitles = matchTitles;
       }
     });
-
-    // 选择剧集数量最多的播放源
-    if (currentEpisodes.length > bestEpisodes.length) {
-      bestEpisodes = currentEpisodes;
-      bestTitles = currentTitles;
-    }
-  });
+  }
 
   return { episodes: bestEpisodes, titles: bestTitles };
 }

@@ -817,8 +817,8 @@ export default function SkipController({
     // 取消时从 localStorage 读取用户设置，不能硬编码默认值
     const savedEnableAutoSkip = localStorage.getItem('enableAutoSkip');
     const savedEnableAutoNextEpisode = localStorage.getItem('enableAutoNextEpisode');
-    const userAutoSkip = savedEnableAutoSkip !== null ? JSON.parse(savedEnableAutoSkip) : false;
-    const userAutoNextEpisode = savedEnableAutoNextEpisode !== null ? JSON.parse(savedEnableAutoNextEpisode) : false;
+    const userAutoSkip = savedEnableAutoSkip !== null ? JSON.parse(savedEnableAutoSkip) : true;
+    const userAutoNextEpisode = savedEnableAutoNextEpisode !== null ? JSON.parse(savedEnableAutoNextEpisode) : true;
 
     setBatchSettings({
       openingStart: '0:00',

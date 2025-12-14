@@ -45,18 +45,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     const sortedRecords = recordsArray.sort(
       (a, b) => b.save_time - a.save_time
     );
-
-    // --- 添加去重逻辑 ---
-    const uniqueRecordsMap = new Map<string, PlayRecord & { key: string }>();
-    sortedRecords.forEach(record => {
-      const key = `${record.title}-${record.year}`;
-      if (!uniqueRecordsMap.has(key)) {
-        uniqueRecordsMap.set(key, record);
-      }
-    });
-    const deduplicatedAndSortedRecords = Array.from(uniqueRecordsMap.values());
-
-    setPlayRecords(deduplicatedAndSortedRecords);
+    setPlayRecords(sortedRecords);
   };
 
   useEffect(() => {
@@ -78,14 +67,14 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     fetchPlayRecords();
 
     // 监听播放记录更新事件
-    const unsubscribePlayRecords = subscribeToDataUpdates(
+    const unsubscribe = subscribeToDataUpdates(
       'playRecordsUpdated',
       (newRecords: Record<string, PlayRecord>) => {
         updatePlayRecords(newRecords);
       }
     );
 
-    return unsubscribePlayRecords;
+    return unsubscribe;
   }, []);
 
   // 获取watching updates数据（仅当有播放记录时）
@@ -124,6 +113,15 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     // 初始加载
     updateWatchingUpdates();
 
+    // 🔧 优化：订阅播放记录更新事件，实时同步数据
+    const unsubscribePlayRecords = subscribeToDataUpdates(
+      'playRecordsUpdated',
+      (newRecords: Record<string, PlayRecord>) => {
+        console.log('ContinueWatching: 收到播放记录更新事件，立即同步数据');
+        updatePlayRecords(newRecords);
+      }
+    );
+
     // 订阅watching updates事件
     const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
       console.log('ContinueWatching: 收到watching updates更新事件');
@@ -132,6 +130,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     });
 
     return () => {
+      unsubscribePlayRecords();
       unsubscribeWatchingUpdates();
     };
   }, [loading, playRecords.length]); // 依赖播放记录加载状态
@@ -219,7 +218,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
               </div>
             ))
           : // 显示真实数据
-            playRecords.map((record) => {
+            playRecords.map((record, index) => {
               const { source, id } = parseKey(record.key);
               const newEpisodesCount = getNewEpisodesCount(record);
               const latestTotalEpisodes = getLatestTotalEpisodes(record);
@@ -228,7 +227,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                   key={record.key}
                   className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44 relative group/card'
                 >
-                  <div className='relative group-hover/card:z-[500] transition-all duration-300'>
+                  <div className='relative group-hover/card:z-[5] transition-all duration-300'>
                     <VideoCard
                       id={id}
                       title={record.title}
@@ -248,11 +247,12 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                       }
                       type={latestTotalEpisodes > 1 ? 'tv' : ''}
                       remarks={record.remarks}
+                      priority={index < 4}
                     />
                   </div>
                   {/* 新集数徽章 */}
                   {newEpisodesCount > 0 && (
-                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-[502]'>
+                    <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-10'>
                       +{newEpisodesCount}集
                     </div>
                   )}

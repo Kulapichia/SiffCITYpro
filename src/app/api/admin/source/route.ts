@@ -24,6 +24,8 @@ type Action =
   | 'edit'
   | 'import_defaults'
   | 'update_adult'
+  | 'mark_adult'
+  | 'unmark_adult'
   | 'batch_mark_adult'
   | 'batch_unmark_adult';
 
@@ -66,6 +68,12 @@ export async function POST(request: NextRequest) {
       'batch_delete_invalid',
       'batch_import',
       'edit',
+      'import_defaults',
+      'update_adult',
+      'mark_adult',
+      'unmark_adult',
+      'batch_mark_adult',
+      'batch_unmark_adult',
     ];
     if (!username || !action || !ACTIONS.includes(action)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
@@ -150,6 +158,28 @@ export async function POST(request: NextRequest) {
         entry.detail = detail || '';
         break;
       }
+
+      case 'mark_adult': {
+        const { key } = body as { key?: string };
+        if (!key)
+          return NextResponse.json({ error: '缺少 key 参数' }, { status: 400 });
+        const entry = adminConfig.SourceConfig.find((s) => s.key === key);
+        if (!entry)
+          return NextResponse.json({ error: '源不存在' }, { status: 404 });
+        entry.is_adult = true;
+        break;
+      }
+      case 'unmark_adult': {
+        const { key } = body as { key?: string };
+        if (!key)
+          return NextResponse.json({ error: '缺少 key 参数' }, { status: 400 });
+        const entry = adminConfig.SourceConfig.find((s) => s.key === key);
+        if (!entry)
+          return NextResponse.json({ error: '源不存在' }, { status: 404 });
+        entry.is_adult = false;
+        break;
+      }
+
       case 'delete': {
         const { key } = body as { key?: string };
         if (!key)

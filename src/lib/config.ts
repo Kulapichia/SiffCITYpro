@@ -286,6 +286,9 @@ async function getInitConfig(configFile: string, subConfig: {
         botUsername: '',
         botToken: '',
         defaultRole: 'user',
+        buttonSize: 'large',
+        showAvatar: true,
+        requestWriteAccess: false,
       },
     },
     UserConfig: {
@@ -448,6 +451,9 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
       botUsername: '',
       botToken: '',
       defaultRole: 'user',
+      buttonSize: 'large',
+      showAvatar: true,
+      requestWriteAccess: false,
     };
   }
   
@@ -484,7 +490,14 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
       enabledCategories: ['Film & Animation', 'Music', 'Gaming', 'News & Politics', 'Entertainment'] // 默认启用的分类
     };
   }
-
+  // 确保短剧配置有默认值
+  if (!adminConfig.ShortDramaConfig) {
+    adminConfig.ShortDramaConfig = {
+      primaryApiUrl: 'https://api.r2afosne.dpdns.org',  // 默认主API
+      alternativeApiUrl: '',                            // 默认为空，需要管理员配置
+      enableAlternative: false,                         // 默认关闭备用API
+    };
+  }
   // 🔥 关键修复：每次都从数据库获取最新的用户列表
   try {
     const dbUsers = await db.getAllUsers();

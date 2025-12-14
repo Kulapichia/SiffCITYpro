@@ -62,9 +62,14 @@ function DoubanPageClient() {
   const pathname = usePathname();
   const { mainContainerRef } = useSite();
 
-  // 虚拟化开关状态 (从全局上下文获取)
-  const { virtualScrollEnabled: useVirtualization, setVirtualScrollEnabled } =
-    useVirtualScroll();
+  // 虚拟化开关状态
+  const [useVirtualization, setUseVirtualization] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('useDoubanVirtualization');
+      return saved !== null ? JSON.parse(saved) : true; // 默认启用
+    }
+    return true;
+  });
 
   // 用于存储最新参数值的 refs
   const currentParamsRef = useRef({
@@ -163,7 +168,7 @@ function DoubanPageClient() {
   // 保存虚拟化设置
   const toggleVirtualization = () => {
     const newValue = !useVirtualization;
-    setVirtualScrollEnabled(newValue);
+    setUseVirtualization(newValue);
     if (typeof window !== 'undefined') {
       localStorage.setItem('useDoubanVirtualization', JSON.stringify(newValue));
     }
@@ -1032,28 +1037,34 @@ function DoubanPageClient() {
                         <DoubanCardSkeleton key={index} />
                       ))
                     : // 显示实际数据
-                      doubanData.map((item, index) => (
-                        <div
-                          key={`${item.title}-${item.id}-${index}`}
-                          className='w-full'
-                        >
-                          <VideoCard
-                            from='douban'
-                            title={item.title}
-                            poster={item.poster}
-                            douban_id={Number(item.id)}
-                            rate={item.rate}
-                            year={item.year}
-                            type={type === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
-                            isBangumi={
-                              type === 'anime' &&
-                              primarySelection === '每日放送'
-                            }
-                            // [滚动恢复整合] 传递保存状态的回调函数
-                            onNavigate={saveScrollState}
-                          />
-                        </div>
-                      ))}
+                      doubanData.map((item, index) => {
+                        const mappedType = type === 'movie' ? 'movie' : type === 'show' ? 'variety' : type === 'tv' ? 'tv' : type === 'anime' ? 'anime' : '';
+                        return (
+                          <div
+                            key={`${item.title}-${item.id}-${index}`}
+                            className='w-full'
+                          >
+                            <VideoCard
+                              from='douban'
+                              source='douban'
+                              id={item.id}
+                              source_name='豆瓣'
+                              title={item.title}
+                              poster={item.poster}
+                              douban_id={Number(item.id)}
+                              rate={item.rate}
+                              year={item.year}
+                              type={mappedType}
+                              isBangumi={
+                                type === 'anime' &&
+                                primarySelection === '每日放送'
+                              }
+                              // [滚动恢复整合] 传递保存状态的回调函数
+                              onNavigate={saveScrollState}
+                            />
+                          </div>
+                        );
+                      })}
                 </div>
 
                 {/* 加载更多指示器 */}

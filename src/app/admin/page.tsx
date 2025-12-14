@@ -75,6 +75,7 @@ import PageLayout from '@/components/PageLayout';
 import ThemeManager from '@/components/ThemeManager';
 import SourceBrowser from '@/components/SourceBrowser';
 import SourceTestModule from '@/components/SourceTestModule';
+import ShortDramaConfig from '@/components/ShortDramaConfig';
 
 // 视频源数据类型
 interface DataSource {
@@ -85,6 +86,7 @@ interface DataSource {
   disabled?: boolean;
   from: 'config' | 'custom';
   lastCheck?: { status: string; latency: number };
+  is_adult?: boolean;
 }
 
 // 直播源数据类型
@@ -157,7 +159,7 @@ const CollapsibleTab = ({
 // 获取用户头像的函数
 const getUserAvatar = async (username: string): Promise<string | null> => {
   try {
-    const response = await fetch(`/api/avatar?user=${encodeURIComponent(username)}`);
+    const response = await fetch(`/api/avatar?user=${encodeURIComponent(username)}`, { credentials: 'include' });
     if (response.ok) {
       const data = await response.json();
       return data.avatar || null;
@@ -261,6 +263,7 @@ const DeviceEntry = ({ device, user, canManage, onRefresh, showAlert }: { device
       const response = await fetch('/api/admin/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'unbindDevice',
           targetUsername: user.username,
@@ -395,12 +398,14 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const [editingUserGroup, setEditingUserGroup] = useState<{
     name: string;
     enabledApis: string[];
+    showAdultContent?: boolean;
   } | null>(null);
   const [showConfigureApisModal, setShowConfigureApisModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
     username: string;
     role: 'user' | 'admin' | 'owner';
     enabledApis?: string[];
+    showAdultContent?: boolean;
     tags?: string[];
   } | null>(null);
   const [selectedApis, setSelectedApis] = useState<string[]>([]);
@@ -452,18 +457,21 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const handleUserGroupAction = async (
     action: 'add' | 'edit' | 'delete',
     groupName: string,
-    enabledApis?: string[]
+    enabledApis?: string[],
+    showAdultContent?: boolean
   ) => {
     return withLoading(`userGroup_${action}_${groupName}`, async () => {
       try {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'userGroup',
             groupAction: action,
             groupName,
             enabledApis,
+            showAdultContent,
           }),
         });
 
@@ -492,12 +500,12 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   const handleAddUserGroup = () => {
     if (!newUserGroup.name.trim()) return;
-    handleUserGroupAction('add', newUserGroup.name, newUserGroup.enabledApis);
+    handleUserGroupAction('add', newUserGroup.name, newUserGroup.enabledApis, newUserGroup.showAdultContent);
   };
 
   const handleEditUserGroup = () => {
     if (!editingUserGroup?.name.trim()) return;
-    handleUserGroupAction('edit', editingUserGroup.name, editingUserGroup.enabledApis);
+    handleUserGroupAction('edit', editingUserGroup.name, editingUserGroup.enabledApis, editingUserGroup.showAdultContent);
   };
 
   const handleDeleteUserGroup = (groupName: string) => {
@@ -538,6 +546,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             targetUsername: username,
             action: 'updateUserGroups',
@@ -682,6 +691,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'batchUpdateUserGroups',
             usernames: Array.from(selectedUsers),
@@ -730,6 +740,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             targetUsername: selectedUser.username,
             action: 'updateUserApis',
@@ -774,6 +785,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
       const res = await fetch('/api/admin/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           targetUsername,
           ...(targetPassword ? { targetPassword } : {}),
@@ -1707,7 +1719,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
               </div>
 
               {/* 成人内容控制 */}
-              <div className='mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+              <div className='p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
                 <label className='flex items-center justify-between cursor-pointer'>
                   <div className='flex-1'>
                     <div className='flex items-center space-x-2'>
@@ -1717,14 +1729,19 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       <span className='text-lg'>🔞</span>
                     </div>
                     <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
-                      允许此用户查看被标记为成人资源的视频源（需要同时启用站点级别和用户组级别的成人内容开关，优先级：用户 &gt; 用户组 &gt; 全局）
+                      允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
                     </p>
                   </div>
                   <div className='relative inline-block ml-4'>
                     <input
                       type='checkbox'
-                      checked={selectedShowAdultContent}
-                      onChange={(e) => setSelectedShowAdultContent(e.target.checked)}
+                      checked={newUserGroup.showAdultContent}
+                      onChange={(e) =>
+                        setNewUserGroup((prev) => ({
+                          ...prev,
+                          showAdultContent: e.target.checked,
+                        }))
+                      }
                       className='sr-only peer'
                     />
                     <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
@@ -2140,6 +2157,37 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       全选
                     </button>
                   </div>
+                </div>
+
+                {/* 成人内容控制 - 新增 */}
+                <div className='p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+                  <label className='flex items-center justify-between cursor-pointer'>
+                    <div className='flex-1'>
+                      <div className='flex items-center space-x-2'>
+                        <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
+                          显示成人内容
+                        </span>
+                        <span className='text-lg'>🔞</span>
+                      </div>
+                      <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
+                        允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
+                      </p>
+                    </div>
+                    <div className='relative inline-block ml-4'>
+                      <input
+                        type='checkbox'
+                        checked={editingUserGroup?.showAdultContent || false}
+                        onChange={(e) =>
+                          setEditingUserGroup((prev) => prev ? ({
+                            ...prev,
+                            showAdultContent: e.target.checked,
+                          }) : null)
+                        }
+                        className='sr-only peer'
+                      />
+                      <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
+                    </div>
+                  </label>
                 </div>
 
                 {/* 操作按钮 */}
@@ -2719,6 +2767,7 @@ const VideoSourceConfig = ({
         name: newSource.name,
         api: newSource.api,
         detail: newSource.detail,
+        is_adult: newSource.is_adult,
       });
       setNewSource({
         name: '',
@@ -2727,6 +2776,7 @@ const VideoSourceConfig = ({
         detail: '',
         disabled: false,
         from: 'custom',
+        is_adult: false,
       });
       setShowAddForm(false);
       // 清除检测结果
@@ -2834,6 +2884,7 @@ const VideoSourceConfig = ({
       const resp = await fetch('/api/admin/source', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -2851,7 +2902,7 @@ const VideoSourceConfig = ({
   };
 
   const handleToggleAdult = async (key: string, is_adult: boolean) => {
-    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
+    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: 'update_adult', key, is_adult }));
   };
 
   const handleBatchMarkAdult = async (is_adult: boolean) => {
@@ -3620,9 +3671,12 @@ const VideoSourceConfig = ({
               type='text'
               placeholder='名称'
               value={newSource.name}
-              onChange={(e) =>
-                setNewSource((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => {
+                const name = e.target.value;
+                // 通过正则表达式自动判断是否为成人内容
+                const isAdult = /^(AV-|成人|伦理|福利|里番|R18)/i.test(name);
+                setNewSource((prev) => ({ ...prev, name, is_adult: isAdult }));
+              }}
               className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             />
             <input
@@ -3653,7 +3707,29 @@ const VideoSourceConfig = ({
               className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             />
           </div>
-          
+
+          {/* 成人资源标记 */}
+          <div className='flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+            <label className='flex items-center space-x-2 cursor-pointer'>
+              <input
+                type='checkbox'
+                checked={newSource.is_adult || false}
+                onChange={(e) =>
+                  setNewSource((prev) => ({ ...prev, is_adult: e.target.checked }))
+                }
+                className='w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+              />
+              <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                标记为成人资源 <span className='text-red-600'>🔞</span>
+              </span>
+            </label>
+            {newSource.is_adult && (
+              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'>
+                成人资源
+              </span>
+            )}
+          </div>
+
           {/* 新增视频源有效性检测结果显示 */}
           {newSourceValidationResult.status && (
             <div className='p-3 rounded-lg border'>
@@ -3964,6 +4040,7 @@ const CategoryConfig = ({
       const resp = await fetch('/api/admin/category', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -4339,6 +4416,7 @@ const ConfigFileComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         const resp = await fetch('/api/admin/config_file', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             configFile: configContent,
             subscriptionUrl,
@@ -4566,6 +4644,9 @@ const SiteConfigComponent = ({
       botUsername: '',
       botToken: '',
       defaultRole: 'user',
+      buttonSize: 'large',
+      showAvatar: true,
+      requestWriteAccess: false,
     },
   });
   // 新增：API测试相关状态
@@ -4848,6 +4929,7 @@ const SiteConfigComponent = ({
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(settingsToSave),
         });
         if (!resp.ok) {
@@ -5205,6 +5287,40 @@ const SiteConfigComponent = ({
         </div>
         <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
           禁用黄色内容的过滤功能，允许显示所有内容。
+        </p>
+      </div>
+
+      {/* 显示成人内容 */}
+      <div>
+        <div className='flex items-center justify-between'>
+          <label
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            显示成人内容 <span className='text-red-600 dark:text-red-400'>🔞</span>
+          </label>
+          <button
+            type='button'
+            onClick={() =>
+              setSiteSettings((prev: SiteConfig) => ({
+                ...prev,
+                ShowAdultContent: !prev.ShowAdultContent,
+              }))
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${siteSettings.ShowAdultContent
+              ? 'bg-gradient-to-r from-red-600 to-pink-600 focus:ring-red-500'
+              : buttonStyles.toggleOff + ' focus:ring-gray-500'
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full ${buttonStyles.toggleThumb} transition-transform ${siteSettings.ShowAdultContent
+                ? buttonStyles.toggleThumbOn
+                : buttonStyles.toggleThumbOff
+                }`}
+            />
+          </button>
+        </div>
+        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+          开启后将显示标记为成人资源的视频源内容。关闭后将自动过滤所有成人内容。
         </p>
       </div>
 
@@ -5843,6 +5959,7 @@ const LiveSourceConfig = ({
       const resp = await fetch('/api/admin/live', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -6622,7 +6739,7 @@ const RegistrationConfig = ({
   // 获取注册数据
   const fetchRegistrationData = async () => {
     try {
-      const response = await fetch('/api/admin/registration');
+      const response = await fetch('/api/admin/registration', { credentials: 'include' });
       if (!response.ok) {
         throw new Error('Failed to fetch registration data');
       }
@@ -6686,6 +6803,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'updateSettings',
             settings: newSettings,
@@ -6721,6 +6839,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'approve',
             username,
@@ -6756,6 +6875,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'reject',
             username,
@@ -6800,6 +6920,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: `batch${action.charAt(0).toUpperCase() + action.slice(1)}`,
             usernames: selectedPendingUsers,
@@ -7465,6 +7586,7 @@ function AdminPageClient() {
     netdiskConfig: false,
     aiRecommendConfig: false,
     youtubeConfig: false,
+    shortDramaConfig: false,
     tvboxSecurityConfig: false,
     configFile: false,
     cacheManager: false,
@@ -7481,7 +7603,7 @@ function AdminPageClient() {
   // 获取机器码用户列表的逻辑已合并到 fetchConfig 中
   const fetchMachineCodeUsers = useCallback(async () => {
     try {
-      const response = await fetch('/api/machine-code?action=list');
+      const response = await fetch('/api/machine-code?action=list', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setMachineCodeUsers(data.users || {});
@@ -7499,7 +7621,7 @@ function AdminPageClient() {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/admin/config`);
+      const response = await fetch(`/api/admin/config`, { credentials: 'include' });
 
       if (!response.ok) {
         const data = (await response.json()) as any;
@@ -7551,7 +7673,7 @@ function AdminPageClient() {
   const handleConfirmResetConfig = async () => {
     await withLoading('resetConfig', async () => {
       try {
-        const response = await fetch(`/api/admin/reset`);
+        const response = await fetch(`/api/admin/reset`, { credentials: 'include' });
         if (!response.ok) {
           throw new Error(`重置失败: ${response.status}`);
         }
@@ -7691,6 +7813,9 @@ function AdminPageClient() {
                     botUsername: '',
                     autoRegister: true,
                     defaultRole: 'user',
+                    buttonSize: 'large',
+                    showAvatar: true,
+                    requestWriteAccess: false,
                   }
                 }
                 onSave={async (newConfig) => {
@@ -7864,6 +7989,21 @@ function AdminPageClient() {
               onToggle={() => toggleTab('youtubeConfig')}
             >
               <YouTubeConfig config={config} refreshConfig={fetchConfig} />
+            </CollapsibleTab>
+
+            {/* 短剧API配置标签 */}
+            <CollapsibleTab
+              title='短剧API配置'
+              icon={
+                <Video
+                  size={20}
+                  className='text-purple-600 dark:text-purple-400'
+                />
+              }
+              isExpanded={expandedTabs.shortDramaConfig}
+              onToggle={() => toggleTab('shortDramaConfig')}
+            >
+              <ShortDramaConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}

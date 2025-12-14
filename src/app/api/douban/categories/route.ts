@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getEdgeCacheTime } from '@/lib/edge-config';
+import { getCacheTime } from '@/lib/config';
+
 import { fetchDoubanData } from '@/lib/douban';
 import { RawDoubanItemSchema } from '@/lib/schemas';
 import { DoubanItem, DoubanResult } from '@/lib/types';
@@ -89,7 +90,7 @@ export async function GET(request: Request) {
       list: list,
     };
 
-    const cacheTime = getEdgeCacheTime();
+    const cacheTime = await getCacheTime();
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

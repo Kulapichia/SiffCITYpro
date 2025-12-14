@@ -69,7 +69,7 @@ export const useResponsiveGrid = (
     // 使用递归重试机制
     let cleanup: (() => void) | null = null;
     let retryCount = 0;
-    const maxRetries = 50; // 增加重试次数，应对更慢的渲染场景
+    const maxRetries = 20; // 增加重试次数，应对更慢的渲染场景
     
     const setupObserver = () => {
       retryCount++;
@@ -77,7 +77,7 @@ export const useResponsiveGrid = (
       if (!containerRef?.current) {
         if (retryCount < maxRetries) {
           console.log(`containerRef not ready, retry ${retryCount}/${maxRetries}...`);
-          setTimeout(setupObserver, 20); // 稍微增加重试间隔
+          setTimeout(setupObserver, 10); // 稍微增加重试间隔
         } else {
           console.log('Max retries reached, using fallback');
           calculateDimensions();
@@ -98,7 +98,7 @@ export const useResponsiveGrid = (
       if (element.offsetWidth === 0) {
         if (retryCount < maxRetries) {
           console.log(`Element width is 0, retry ${retryCount}/${maxRetries}...`);
-          setTimeout(setupObserver, 20);
+          setTimeout(setupObserver, 10);
         } else {
           console.log('Max retries reached for width, using fallback');
           calculateDimensions();

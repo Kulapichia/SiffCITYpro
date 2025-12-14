@@ -10,6 +10,9 @@ interface TelegramAuthConfigProps {
     botUsername: string;
     autoRegister: boolean;
     defaultRole: 'user' | 'admin';
+    buttonSize: string;
+    showAvatar: boolean;
+    requestWriteAccess: boolean;
   };
   onSave: (config: TelegramAuthConfigProps['config']) => Promise<void>;
 }

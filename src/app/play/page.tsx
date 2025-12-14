@@ -12,6 +12,7 @@ import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
 import SkipController, { SkipSettingsButton } from '@/components/SkipController';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
+import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import { ClientCache } from '@/lib/client-cache';
 import { triggerGlobalError } from '@/components/GlobalErrorIndicator';
 import {
@@ -31,10 +32,26 @@ import {
   SkipSegment,
 } from '@/lib/db.client';
 import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal';
-import { getDoubanDetails } from '@/lib/douban.client';
+import { getDoubanDetails, getDoubanComments } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import VideoCard from '@/components/VideoCard';
 
+// 根据 type_name 推断内容类型的辅助函数
+const inferTypeFromName = (typeName?: string, episodeCount?: number): string => {
+  if (!typeName) {
+    // 如果没有 type_name，使用集数判断（向后兼容）
+    return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+  }
+  const lowerType = typeName.toLowerCase();
+  if (lowerType.includes('综艺') || lowerType.includes('variety')) return 'variety';
+  if (lowerType.includes('电影') || lowerType.includes('movie')) return 'movie';
+  if (lowerType.includes('电视剧') || lowerType.includes('剧集') || lowerType.includes('tv') || lowerType.includes('series')) return 'tv';
+  if (lowerType.includes('动漫') || lowerType.includes('动画') || lowerType.includes('anime')) return 'anime';
+  if (lowerType.includes('纪录片') || lowerType.includes('documentary')) return 'documentary';
+  // 默认根据集数判断
+  return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+};
 // 为UI交互和数据库存储创建一个统一的类型
 type UiAndDbSkipConfig = EpisodeSkipConfig & {
   enable: boolean;
@@ -469,6 +486,11 @@ function PlayPageClient() {
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
 
+  // 豆瓣短评状态
+  const [movieComments, setMovieComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+  
   // 返回顶部按钮显示状态
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -4008,6 +4030,8 @@ function PlayPageClient() {
         await deleteFavorite(currentSourceRef.current, currentIdRef.current);
         setFavorited(false);
       } else {
+        // 根据 type_name 推断内容类型
+        const contentType = inferTypeFromName(detailRef.current?.type_name, detailRef.current?.episodes.length);
         // 如果未收藏，添加收藏
         await saveFavorite(currentSourceRef.current, currentIdRef.current, {
           title: videoTitleRef.current,
@@ -4017,6 +4041,7 @@ function PlayPageClient() {
           total_episodes: detailRef.current?.episodes.length || 1,
           save_time: Date.now(),
           search_title: searchTitle,
+          type: contentType,
         });
         setFavorited(true);
       }
@@ -5138,9 +5163,18 @@ function PlayPageClient() {
               }
             })
           ] : []),
+          // 毛玻璃效果控制栏插件
+          artplayerPluginLiquidGlass()
         ],
       });
+      // [整合] 监听并保存播放速度和画质
+      artPlayerRef.current.on('playbackRate', (rate: number) => {
+        localStorage.setItem('artplayer_playbackRate', rate.toString());
+      });
 
+      artPlayerRef.current.on('quality', (quality: any) => {
+        localStorage.setItem('artplayer_quality', JSON.stringify(quality));
+      });
       // Electron 环境下，使用系统级全屏替代网页全屏
       if (typeof window !== 'undefined' && (window as any).electronAPI) {
         const fullscreenBtn = artPlayerRef.current?.template?.$fullscreen;
@@ -5741,9 +5775,11 @@ function PlayPageClient() {
 
       artPlayerRef.current.on('video:volumechange', () => {
         lastVolumeRef.current = artPlayerRef.current.volume;
+        localStorage.setItem('artplayer_volume', artPlayerRef.current.volume.toString());
       });
       artPlayerRef.current.on('video:ratechange', () => {
         lastPlaybackRateRef.current = artPlayerRef.current.playbackRate;
+        localStorage.setItem('artplayer_playbackRate', artPlayerRef.current.playbackRate.toString());
       });
 
       // 监听视频可播放事件，这时恢复播放进度更可靠

@@ -26,6 +26,21 @@ import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
 import TMDBFilterPanel, { TMDBFilterState } from '@/components/TMDBFilterPanel';
 
 function SearchPageClient() {
+  // 根据 type_name 推断内容类型的辅助函数
+  const inferTypeFromName = (typeName?: string, episodeCount?: number): string => {
+    if (!typeName) {
+      // 如果没有 type_name，使用集数判断（向后兼容）
+      return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+    }
+    const lowerType = typeName.toLowerCase();
+    if (lowerType.includes('综艺') || lowerType.includes('variety')) return 'variety';
+    if (lowerType.includes('电影') || lowerType.includes('movie')) return 'movie';
+    if (lowerType.includes('电视剧') || lowerType.includes('剧集') || lowerType.includes('tv') || lowerType.includes('series')) return 'tv';
+    if (lowerType.includes('动漫') || lowerType.includes('动画') || lowerType.includes('anime')) return 'anime';
+    if (lowerType.includes('纪录片') || lowerType.includes('documentary')) return 'documentary';
+    // 默认根据集数判断
+    return episodeCount && episodeCount > 1 ? 'tv' : 'movie';
+  };
   // 搜索历史
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   // 返回顶部按钮显示状态
@@ -1192,7 +1207,7 @@ function SearchPageClient() {
 
   return (
     <PageLayout activePath='/search'>
-      <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible mb-10'>
+      <div className='overflow-visible mb-10 -mt-6 md:mt-0'>
         {/* 搜索框区域 - 美化版 */}
         <div className='mb-8'>
           {/* 搜索类型选项卡 - 美化版 */}
@@ -1862,7 +1877,7 @@ function SearchPageClient() {
                             }
                             year={item.year}
                             from='search'
-                            type={item.episodes.length > 1 ? 'tv' : 'movie'}
+                            type={inferTypeFromName(item.type_name, item.episodes.length)}
                           />
                         </div>
                       ))}
@@ -2033,7 +2048,13 @@ function SearchPageClient() {
         className={`fixed bottom-20 md:bottom-6 right-6 z-[500] transition-all duration-300 ease-in-out ${showBackToTop
           ? 'opacity-100 translate-y-0 pointer-events-auto'
           : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
+        }`}
+        style={{
+          position: 'fixed',
+          right: '1.5rem',
+          bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '5rem' : '1.5rem',
+          left: 'auto'
+        }}
       >
         <button
           onClick={scrollToTop}
@@ -2045,7 +2066,7 @@ function SearchPageClient() {
         >
           {/* 内部发光圆圈 */}
           <div className='absolute inset-1 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-full backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:from-green-400/40 group-hover:to-emerald-400/40'>
-            <ChevronUp className='w-6 h-6 text-white/90 transition-all duration-300 group-hover:scale-110 group-hover:text-white drop-shadow-lg' />
+            <ChevronUp className='w-6 h-6 text-white/90 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 drop-shadow-lg' />
           </div>
 
           {/* 进度环 */}
