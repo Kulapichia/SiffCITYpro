@@ -2760,6 +2760,7 @@ const VideoSourceConfig = ({
         name: newSource.name,
         api: newSource.api,
         detail: newSource.detail,
+        is_adult: newSource.is_adult,
       });
       setNewSource({
         name: '',
@@ -3697,7 +3698,29 @@ const VideoSourceConfig = ({
               className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             />
           </div>
-          
+
+          {/* 成人资源标记 */}
+          <div className='flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+            <label className='flex items-center space-x-2 cursor-pointer'>
+              <input
+                type='checkbox'
+                checked={newSource.is_adult || false}
+                onChange={(e) =>
+                  setNewSource((prev) => ({ ...prev, is_adult: e.target.checked }))
+                }
+                className='w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+              />
+              <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                标记为成人资源 <span className='text-red-600'>🔞</span>
+              </span>
+            </label>
+            {newSource.is_adult && (
+              <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'>
+                成人资源
+              </span>
+            )}
+          </div>
+
           {/* 新增视频源有效性检测结果显示 */}
           {newSourceValidationResult.status && (
             <div className='p-3 rounded-lg border'>
