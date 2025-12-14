@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getEdgeCacheTime } from '@/lib/edge-config';
+import { getCacheTime } from '@/lib/config';
+
 
 // 用户代理池
 const USER_AGENTS = [
@@ -103,7 +104,7 @@ export async function GET(request: Request) {
     // 解析短评列表
     const comments = parseDoubanComments(html);
 
-    const cacheTime = getEdgeCacheTime();
+    const cacheTime = await getCacheTime();
     return NextResponse.json({
       code: 200,
       message: '获取成功',
