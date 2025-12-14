@@ -12,6 +12,7 @@ import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
 import SkipController, { SkipSettingsButton } from '@/components/SkipController';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
+import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import { ClientCache } from '@/lib/client-cache';
 import { triggerGlobalError } from '@/components/GlobalErrorIndicator';
 import {
@@ -5162,9 +5163,18 @@ function PlayPageClient() {
               }
             })
           ] : []),
+          // 毛玻璃效果控制栏插件
+          artplayerPluginLiquidGlass()
         ],
       });
+      // [整合] 监听并保存播放速度和画质
+      artPlayerRef.current.on('playbackRate', (rate: number) => {
+        localStorage.setItem('artplayer_playbackRate', rate.toString());
+      });
 
+      artPlayerRef.current.on('quality', (quality: any) => {
+        localStorage.setItem('artplayer_quality', JSON.stringify(quality));
+      });
       // Electron 环境下，使用系统级全屏替代网页全屏
       if (typeof window !== 'undefined' && (window as any).electronAPI) {
         const fullscreenBtn = artPlayerRef.current?.template?.$fullscreen;
@@ -5765,9 +5775,11 @@ function PlayPageClient() {
 
       artPlayerRef.current.on('video:volumechange', () => {
         lastVolumeRef.current = artPlayerRef.current.volume;
+        localStorage.setItem('artplayer_volume', artPlayerRef.current.volume.toString());
       });
       artPlayerRef.current.on('video:ratechange', () => {
         lastPlaybackRateRef.current = artPlayerRef.current.playbackRate;
+        localStorage.setItem('artplayer_playbackRate', artPlayerRef.current.playbackRate.toString());
       });
 
       // 监听视频可播放事件，这时恢复播放进度更可靠
