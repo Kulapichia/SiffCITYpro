@@ -396,12 +396,14 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   const [editingUserGroup, setEditingUserGroup] = useState<{
     name: string;
     enabledApis: string[];
+    showAdultContent?: boolean;
   } | null>(null);
   const [showConfigureApisModal, setShowConfigureApisModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
     username: string;
     role: 'user' | 'admin' | 'owner';
     enabledApis?: string[];
+    showAdultContent?: boolean;
     tags?: string[];
   } | null>(null);
   const [selectedApis, setSelectedApis] = useState<string[]>([]);
@@ -467,18 +469,6 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
             groupName,
             enabledApis,
             showAdultContent,
-          }),
-        });
-    return withLoading(`userGroup_${action}_${groupName}`, async () => {
-      try {
-        const res = await fetch('/api/admin/user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'userGroup',
-            groupAction: action,
-            groupName,
-            enabledApis,
           }),
         });
 
