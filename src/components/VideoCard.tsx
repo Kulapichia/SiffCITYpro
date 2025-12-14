@@ -190,9 +190,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
   }, [from, actualSource, actualId, isUpcoming]);
 
   const handleToggleFavorite = useCallback(
-    async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    async () => {
       // 即将上映的内容允许收藏
       if ((from === 'douban' && !isUpcoming) || (from === 'shortdrama') || !actualSource || !actualId) return;
 
@@ -572,13 +570,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             ) : (
               <Heart size={20} className="fill-transparent stroke-red-500" />
             ),
-            onClick: () => {
-              const mockEvent = {
-                preventDefault: () => { },
-                stopPropagation: () => { },
-              } as React.MouseEvent;
-              handleToggleFavorite(mockEvent);
-            },
+            onClick: handleToggleFavorite,
             color: currentFavorited ? ('danger' as const) : ('default' as const),
           });
         } else {
@@ -601,13 +593,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
           ) : (
             <Heart size={20} className="fill-transparent stroke-red-500" />
           ),
-          onClick: () => {
-            const mockEvent = {
-              preventDefault: () => { },
-              stopPropagation: () => { },
-            } as React.MouseEvent;
-            handleToggleFavorite(mockEvent);
-          },
+          onClick: handleToggleFavorite,
           color: currentFavorited ? ('danger' as const) : ('default' as const),
         });
       }
@@ -877,7 +863,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
               {config.showHeart && from !== 'search' && (
                 <div className="p-1.5 bg-black/40 backdrop-blur-sm rounded-full">
                   <Heart
-                    onClick={handleToggleFavorite}
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleFavorite(); }}
                     size={20}
                     className={`transition-all duration-300 ease-out ${favorited
                       ? 'fill-red-600 stroke-red-600'
