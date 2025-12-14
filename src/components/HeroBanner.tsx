@@ -49,7 +49,7 @@ export default function HeroBanner({
   // 预加载图片
   useEffect(() => {
     items.forEach((item) => {
-      const img = new Image();
+      const img = new window.Image();
       const imageUrl = item.backdrop || item.poster;
       img.src = getProxiedImageUrl(imageUrl);
     });
