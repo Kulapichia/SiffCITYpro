@@ -481,13 +481,19 @@ export async function parseShortDramaEpisode(
     const response = await fetch(apiUrl, fetchOptions);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    if (data.code === 1) {
+    const parsedUrl = data.episode?.parsedUrl || data.parsedUrl || '';
+
+    // 如果主API返回失败码，或者成功但没有返回有效链接，则尝试备用API
+    if (data.code === 1 || !parsedUrl) {
       if (dramaName && alternativeApiUrl) {
-        console.log('主API失败，尝试使用备用API...');
+        const failureReason = data.code === 1 ? '返回失败代码' : '未返回有效链接';
+        console.log(`主API失败(${failureReason})，尝试使用备用API...`);
         return await parseWithAlternativeApi(dramaName, episode, alternativeApiUrl);
       }
-      return { code: data.code, msg: data.msg || '解析失败' };
+      // 如果没有备用API，则返回失败
+      return { code: data.code || 1, msg: data.msg || '解析失败或未返回有效链接' };
     }
+
     // API成功时直接返回数据对象，根据实际结构解析
     return {
       code: 0,
@@ -496,7 +502,7 @@ export async function parseShortDramaEpisode(
         videoName: data.videoName || '',
         currentEpisode: data.episode?.index || episode,
         totalEpisodes: data.totalEpisodes || 1,
-        parsedUrl: data.episode?.parsedUrl || data.parsedUrl || '',
+        parsedUrl: parsedUrl, // 使用已解析的变量
         proxyUrl: data.episode?.proxyUrl || '', // proxyUrl在episode对象内
         cover: data.cover || '',
         description: data.description || '',
