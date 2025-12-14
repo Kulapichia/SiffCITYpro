@@ -1981,15 +1981,15 @@ div[data-media-provider] video {
 }
 
 /* 隐藏移动端竖屏时的 pip 按钮 */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .art-control-pip {
     display: none !important;
   }
-
+  /* 网页全屏在移动端意义不大，继续隐藏节省空间 */
   .art-control-fullscreenWeb {
     display: none !important;
   }
-
+  /* 音量控制在移动端有物理按键，隐藏以节省空间 */
   .art-control-volume {
     display: none !important;
   }
