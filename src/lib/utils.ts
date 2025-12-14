@@ -167,7 +167,7 @@ export function processImageUrl(originalUrl: string): string {
     default:
       return originalUrl;
   }
-}
+
   
   // 对于其他图片，使用通用图片代理
   const proxyUrl = getImageProxyUrl();
