@@ -17,7 +17,7 @@
 
 <div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-14.2.23-000?logo=nextdotjs)![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178c6?logo=typescript)![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.17-38bdf8?logo=tailwindcss)![ArtPlayer](https://img.shields.io/badge/ArtPlayer-5.3.0-ff6b6b)![HLS.js](https://img.shields.io/badge/HLS.js-1.6.13-ec407a)![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey)![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)![Version](https://img.shields.io/badge/Version-5.7.0-orange)
+![Next.js](https://img.shields.io/badge/Next.js-14.2.23-000?logo=nextdotjs)![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178c6?logo=typescript)![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.17-38bdf8?logo=tailwindcss)![ArtPlayer](https://img.shields.io/badge/ArtPlayer-5.3.0-ff6b6b)![HLS.js](https://img.shields.io/badge/HLS.js-1.6.13-ec407a)![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey)![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)![Version](https://img.shields.io/badge/Version-5.7.1-orange)
 
 </div>
 
@@ -929,7 +929,7 @@ services:
 
 完整的功能更新和 Bug 修复记录请查看 [CHANGELOG](CHANGELOG)。
 
-### 最新版本：v5.7.0 (2025-12-06)
+### 最新版本：v5.7.1 (2025-12-06)
 
 #### 新增功能
 - 🎭 演员头像和推荐影片功能：在播放页面展示演员头像和类似影片推荐
@@ -958,7 +958,7 @@ services:
 - 🔧 修复日期计算不一致性：修复首页和发布日历之间的日期计算差异
 
 ### 重大里程碑版本
-- **v5.7.0**：演员头像和推荐影片、直播源搜索、图片代理优化、移动端导航修复
+- **v5.7.1**：演员头像和推荐影片、直播源搜索、图片代理优化、移动端导航修复
 - **v5.6.3**：短剧多源搜索、智能源过滤、即将上映智能分布、全面z-index冲突修复
 - **v5.6.2**：即将上映日历、英雄横幅全品类支持、直播DVR检测、移动端横幅优化
 - **v5.6.1**：英雄横幅与现代化导航UI、TVBox智能搜索代理、导出格式选择
