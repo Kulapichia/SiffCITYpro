@@ -105,7 +105,7 @@ export function compareVersions(remoteVersion: string): UpdateStatus {
     const currentParts = CURRENT_VERSION.split('.').map((part) => {
       const num = parseInt(part, 10);
       if (isNaN(num) || num < 0) {
-        throw new Error(`无效的本地版本号格式: ${CURRENT_VERSION}`);
+        throw new Error(`无效的版本号格式: ${CURRENT_VERSION}`);
       }
       return num;
     });
@@ -113,22 +113,33 @@ export function compareVersions(remoteVersion: string): UpdateStatus {
     const remoteParts = remoteVersion.split('.').map((part) => {
       const num = parseInt(part, 10);
       if (isNaN(num) || num < 0) {
-        throw new Error(`无效的远程版本号格式: ${remoteVersion}`);
+        hrow new Error(`无效的版本号格式: ${remoteVersion}`);
       }
       return num;
     });
 
-    // 确定比较的长度
-    const len = Math.max(currentParts.length, remoteParts.length);
+    // 标准化版本号到3个部分
+    const normalizeVersion = (parts: number[]) => {
+      if (parts.length >= 3) {
+        return parts.slice(0, 3); // 取前三个元素
+      } else {
+        // 不足3个的部分补0
+        const normalized = [...parts];
+        while (normalized.length < 3) {
+          normalized.push(0);
+        }
+        return normalized;
+      }
+    };
+
+    const normalizedCurrent = normalizeVersion(currentParts);
+    const normalizedRemote = normalizeVersion(remoteParts);
 
     // 逐级比较版本号
-    for (let i = 0; i < len; i++) {
-      const remotePart = remoteParts[i] || 0; // 不足部分补0
-      const currentPart = currentParts[i] || 0; // 不足部分补0
-
-      if (remotePart > currentPart) {
+    for (let i = 0; i < 3; i++) {
+      if (normalizedRemote[i] > normalizedCurrent[i]) {
         return UpdateStatus.HAS_UPDATE;
-      } else if (remotePart < currentPart) {
+      } else if (normalizedRemote[i] < normalizedCurrent[i]) {
         return UpdateStatus.NO_UPDATE;
       }
       // 如果当前级别相等，继续比较下一级
