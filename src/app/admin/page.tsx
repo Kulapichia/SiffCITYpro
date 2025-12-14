@@ -86,6 +86,7 @@ interface DataSource {
   disabled?: boolean;
   from: 'config' | 'custom';
   lastCheck?: { status: string; latency: number };
+  is_adult?: boolean;
 }
 
 // 直播源数据类型
