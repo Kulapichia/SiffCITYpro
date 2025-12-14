@@ -2902,7 +2902,7 @@ const VideoSourceConfig = ({
   };
 
   const handleToggleAdult = async (key: string, is_adult: boolean) => {
-    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: is_adult ? 'mark_adult' : 'unmark_adult', key }));
+    await withLoading(`toggleAdult_${key}`, () => callSourceApi({ action: 'update_adult', key, is_adult }));
   };
 
   const handleBatchMarkAdult = async (is_adult: boolean) => {
