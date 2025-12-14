@@ -159,7 +159,7 @@ const CollapsibleTab = ({
 // 获取用户头像的函数
 const getUserAvatar = async (username: string): Promise<string | null> => {
   try {
-    const response = await fetch(`/api/avatar?user=${encodeURIComponent(username)}`);
+    const response = await fetch(`/api/avatar?user=${encodeURIComponent(username)}`, { credentials: 'include' });
     if (response.ok) {
       const data = await response.json();
       return data.avatar || null;
@@ -263,6 +263,7 @@ const DeviceEntry = ({ device, user, canManage, onRefresh, showAlert }: { device
       const response = await fetch('/api/admin/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'unbindDevice',
           targetUsername: user.username,
@@ -464,6 +465,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'userGroup',
             groupAction: action,
@@ -544,6 +546,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             targetUsername: username,
             action: 'updateUserGroups',
@@ -688,6 +691,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'batchUpdateUserGroups',
             usernames: Array.from(selectedUsers),
@@ -736,6 +740,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         const res = await fetch('/api/admin/user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             targetUsername: selectedUser.username,
             action: 'updateUserApis',
@@ -780,6 +785,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
       const res = await fetch('/api/admin/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           targetUsername,
           ...(targetPassword ? { targetPassword } : {}),
@@ -2878,6 +2884,7 @@ const VideoSourceConfig = ({
       const resp = await fetch('/api/admin/source', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -4033,6 +4040,7 @@ const CategoryConfig = ({
       const resp = await fetch('/api/admin/category', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -4408,6 +4416,7 @@ const ConfigFileComponent = ({ config, refreshConfig }: { config: AdminConfig | 
         const resp = await fetch('/api/admin/config_file', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             configFile: configContent,
             subscriptionUrl,
@@ -4920,6 +4929,7 @@ const SiteConfigComponent = ({
         const resp = await fetch('/api/admin/site', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(settingsToSave),
         });
         if (!resp.ok) {
@@ -5949,6 +5959,7 @@ const LiveSourceConfig = ({
       const resp = await fetch('/api/admin/live', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...body }),
       });
 
@@ -6728,7 +6739,7 @@ const RegistrationConfig = ({
   // 获取注册数据
   const fetchRegistrationData = async () => {
     try {
-      const response = await fetch('/api/admin/registration');
+      const response = await fetch('/api/admin/registration', { credentials: 'include' });
       if (!response.ok) {
         throw new Error('Failed to fetch registration data');
       }
@@ -6792,6 +6803,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'updateSettings',
             settings: newSettings,
@@ -6827,6 +6839,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'approve',
             username,
@@ -6862,6 +6875,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: 'reject',
             username,
@@ -6906,6 +6920,7 @@ const RegistrationConfig = ({
         const response = await fetch('/api/admin/registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             action: `batch${action.charAt(0).toUpperCase() + action.slice(1)}`,
             usernames: selectedPendingUsers,
@@ -7588,7 +7603,7 @@ function AdminPageClient() {
   // 获取机器码用户列表的逻辑已合并到 fetchConfig 中
   const fetchMachineCodeUsers = useCallback(async () => {
     try {
-      const response = await fetch('/api/machine-code?action=list');
+      const response = await fetch('/api/machine-code?action=list', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setMachineCodeUsers(data.users || {});
@@ -7606,7 +7621,7 @@ function AdminPageClient() {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/admin/config`);
+      const response = await fetch(`/api/admin/config`, { credentials: 'include' });
 
       if (!response.ok) {
         const data = (await response.json()) as any;
@@ -7658,7 +7673,7 @@ function AdminPageClient() {
   const handleConfirmResetConfig = async () => {
     await withLoading('resetConfig', async () => {
       try {
-        const response = await fetch(`/api/admin/reset`);
+        const response = await fetch(`/api/admin/reset`, { credentials: 'include' });
         if (!response.ok) {
           throw new Error(`重置失败: ${response.status}`);
         }
