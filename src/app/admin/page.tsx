@@ -2152,6 +2152,37 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   </div>
                 </div>
 
+                {/* 成人内容控制 - 新增 */}
+                <div className='p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+                  <label className='flex items-center justify-between cursor-pointer'>
+                    <div className='flex-1'>
+                      <div className='flex items-center space-x-2'>
+                        <span className='text-base font-medium text-gray-900 dark:text-gray-100'>
+                          显示成人内容
+                        </span>
+                        <span className='text-lg'>🔞</span>
+                      </div>
+                      <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
+                        允许此用户组查看被标记为成人资源的视频源（需要同时启用站点级别的成人内容开关）
+                      </p>
+                    </div>
+                    <div className='relative inline-block ml-4'>
+                      <input
+                        type='checkbox'
+                        checked={editingUserGroup?.showAdultContent || false}
+                        onChange={(e) =>
+                          setEditingUserGroup((prev) => prev ? ({
+                            ...prev,
+                            showAdultContent: e.target.checked,
+                          }) : null)
+                        }
+                        className='sr-only peer'
+                      />
+                      <div className='w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-pink-600'></div>
+                    </div>
+                  </label>
+                </div>
+
                 {/* 操作按钮 */}
                 <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700'>
                   <button
@@ -3630,9 +3661,12 @@ const VideoSourceConfig = ({
               type='text'
               placeholder='名称'
               value={newSource.name}
-              onChange={(e) =>
-                setNewSource((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => {
+                const name = e.target.value;
+                // 通过正则表达式自动判断是否为成人内容
+                const isAdult = /^(AV-|成人|伦理|福利|里番|R18)/i.test(name);
+                setNewSource((prev) => ({ ...prev, name, is_adult: isAdult }));
+              }}
               className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             />
             <input
