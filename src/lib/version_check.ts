@@ -113,7 +113,7 @@ export function compareVersions(remoteVersion: string): UpdateStatus {
     const remoteParts = remoteVersion.split('.').map((part) => {
       const num = parseInt(part, 10);
       if (isNaN(num) || num < 0) {
-        hrow new Error(`无效的版本号格式: ${remoteVersion}`);
+        throw new Error(`无效的版本号格式: ${remoteVersion}`);
       }
       return num;
     });
