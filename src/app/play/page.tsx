@@ -2221,6 +2221,7 @@ function PlayPageClient() {
         setCelebrityWorks(response.data);
       } else {
         setCelebrityWorks([]);
+      }
     } catch (error) {
       console.error('获取演员作品出错:', error);
       setCelebrityWorks([]);
