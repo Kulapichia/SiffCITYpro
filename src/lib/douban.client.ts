@@ -708,42 +708,116 @@ export async function getDoubanDetails(id: string): Promise<{
  */
 interface DoubanActorSearchParams {
   celebrityName: string;
+  type?: 'movie' | 'tv';
   pageLimit?: number;
   pageStart?: number;
 }
 
 export async function getDoubanActorMovies(
   params: DoubanActorSearchParams
-): Promise<{
-  code: number;
-  message: string;
-  data?: any;
-}> {
-  const { celebrityName, pageLimit = 20, pageStart = 0 } = params;
+): Promise<DoubanResult> {
+  const { celebrityName, type = 'movie', pageLimit = 20, pageStart = 0 } = params;
 
   // 验证参数
   if (!celebrityName?.trim()) {
-    return {
-      code: 400,
-      message: '演员名字不能为空'
-    };
+    throw new Error('演员名字不能为空');
   }
-  
+
+  // 检查缓存
+  const cacheKey = getCacheKey('actor', { celebrityName, type, pageLimit, pageStart });
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    console.log(`豆瓣演员搜索缓存命中: ${celebrityName}/${type}`);
+    return cached;
+  }
+
   try {
-    const response = await fetch(
-      `/api/douban/actor?name=${encodeURIComponent(celebrityName)}&limit=${pageLimit}&start=${pageStart}`
-    );
-    
+    // 使用豆瓣搜索API
+    const searchUrl = `https://search.douban.com/movie/subject_search?search_text=${encodeURIComponent(celebrityName.trim())}`;
+
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Referer': 'https://www.douban.com/',
+      }
+    });
+
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    
-    return await response.json();
-    
+
+    const html = await response.text();
+
+    // 解析HTML中的JSON数据
+    const dataMatch = html.match(/window\.__DATA__\s*=\s*({[\s\S]*?});/);
+    if (!dataMatch) {
+      throw new Error('无法解析搜索结果数据');
+    }
+
+    const searchData = JSON.parse(dataMatch[1]);
+    const items = searchData.items || [];
+
+    // 过滤掉第一个结果（通常是演员本人的资料页）和不相关的结果
+    let filteredItems = items.slice(1).filter((item: any) => {
+      // 过滤掉书籍等非影视内容
+      const abstract = item.abstract || '';
+      const isBook = abstract.includes('出版') || abstract.includes('页数') || item.url?.includes('/book/');
+      const isPerson = item.url?.includes('/celebrity/');
+      return !isBook && !isPerson;
+    });
+
+    // 按类型过滤
+    if (type === 'movie') {
+      filteredItems = filteredItems.filter((item: any) => {
+        const abstract = item.abstract || '';
+        return !abstract.includes('季') && !abstract.includes('集') && !abstract.includes('剧集');
+      });
+    } else if (type === 'tv') {
+      filteredItems = filteredItems.filter((item: any) => {
+        const abstract = item.abstract || '';
+        return abstract.includes('季') || abstract.includes('集') || abstract.includes('剧集') || abstract.includes('电视');
+      });
+    }
+
+    // 分页处理
+    const startIndex = pageStart;
+    const endIndex = startIndex + pageLimit;
+    const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+    // 转换数据格式
+    const list: DoubanItem[] = paginatedItems.map((item: any) => {
+      // 从abstract中提取年份
+      const yearMatch = item.abstract?.match(/(\d{4})/);
+      const year = yearMatch ? yearMatch[1] : '';
+
+      return {
+        id: item.id?.toString() || '',
+        title: item.title || '',
+        poster: item.cover_url || '',
+        rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
+        year: year
+      };
+    });
+
+    const result = {
+      code: 200,
+      message: '获取成功',
+      list: list
+    };
+
+    // 保存到缓存
+    await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.lists);
+    console.log(`豆瓣演员搜索已缓存: ${celebrityName}/${type}，找到 ${list.length} 个结果`);
+
+    return result;
   } catch (error) {
+    console.error(`搜索演员 ${celebrityName} 失败:`, error);
     return {
       code: 500,
-      message: `搜索演员作品失败: ${(error as Error).message}`,
+      message: `搜索演员 ${celebrityName} 失败: ${(error as Error).message}`,
+      list: []
     };
   }
 }
