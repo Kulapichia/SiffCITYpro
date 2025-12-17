@@ -703,54 +703,6 @@ export async function getDoubanDetails(id: string): Promise<{
   }
 }
 
-/**
- * 按演员名字搜索相关电影/电视剧
- * 此函数遵循项目的统一架构：客户端调用后端的封装API，而不是直接在客户端进行爬取和解析。
- */
-interface DoubanActorSearchParams {
-  celebrityName: string;
-  pageLimit?: number;
-  pageStart?: number;
-}
-
-export async function getDoubanActorMovies(
-  params: DoubanActorSearchParams
-): Promise<{
-  code: number;
-  message: string;
-  data?: any;
-}> {
-  const { celebrityName, pageLimit = 20, pageStart = 0 } = params;
-
-  // 验证参数
-  if (!celebrityName?.trim()) {
-    return {
-      code: 400,
-      message: '演员名字不能为空'
-    };
-  }
-  
-  try {
-    // 调用后端的 API 路由
-    const response = await fetch(
-      `/api/douban/actor?name=${encodeURIComponent(celebrityName)}&limit=${pageLimit}&start=${pageStart}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    // 直接返回后端处理好的 JSON 数据
-    return await response.json();
-    
-  } catch (error) {
-    console.error(`搜索演员作品失败 (getDoubanActorMovies):`, error);
-    return {
-      code: 500,
-      message: `搜索演员作品失败: ${(error as Error).message}`,
-    };
-  }
-}
 
 async function fetchDoubanRecommends(
   params: DoubanRecommendsParams,
@@ -985,12 +937,6 @@ interface DoubanCommentsParams {
   start?: number;
   limit?: number;
   sort?: 'new_score' | 'time';
-}
-
-interface DoubanCommentsResult {
-  code: number;
-  message: string;
-  data?: any;
 }
 
 export async function getDoubanComments(
