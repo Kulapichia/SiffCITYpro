@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,no-console,no-case-declarations */
 
 import { ClientCache } from './client-cache';
-import { DoubanItem, DoubanResult } from './types';
-
+import { DoubanItem, DoubanResult, DoubanCommentsResult } from './types';
 // 豆瓣数据缓存配置（秒）
 const DOUBAN_CACHE_EXPIRE = {
   details: 4 * 60 * 60,    // 详情4小时（变化较少）
@@ -665,6 +664,8 @@ export async function getDoubanDetails(id: string): Promise<{
     episode_length?: number;
     first_aired?: string;
     plot_summary?: string;
+    celebrities?: any[]; // 新增，以匹配后端返回的结构
+    recommendations?: any[]; // 新增，以匹配后端返回的结构
   };
 }> {
   // 检查缓存 - 如果缓存中没有plot_summary则重新获取
@@ -698,6 +699,51 @@ export async function getDoubanDetails(id: string): Promise<{
     return {
       code: 500,
       message: `获取豆瓣详情失败: ${(error as Error).message}`,
+    };
+  }
+}
+
+/**
+ * 按演员名字搜索相关电影/电视剧
+ */
+interface DoubanActorSearchParams {
+  celebrityName: string;
+  pageLimit?: number;
+  pageStart?: number;
+}
+
+export async function getDoubanActorMovies(
+  params: DoubanActorSearchParams
+): Promise<{
+  code: number;
+  message: string;
+  data?: any;
+}> {
+  const { celebrityName, pageLimit = 20, pageStart = 0 } = params;
+
+  // 验证参数
+  if (!celebrityName?.trim()) {
+    return {
+      code: 400,
+      message: '演员名字不能为空'
+    };
+  }
+  
+  try {
+    const response = await fetch(
+      `/api/douban/actor?name=${encodeURIComponent(celebrityName)}&limit=${pageLimit}&start=${pageStart}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    return await response.json();
+    
+  } catch (error) {
+    return {
+      code: 500,
+      message: `搜索演员作品失败: ${(error as Error).message}`,
     };
   }
 }
