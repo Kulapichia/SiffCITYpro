@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,no-console,no-case-declarations */
 
 import { ClientCache } from './client-cache';
-import { DoubanItem, DoubanResult } from './types';
-
+import { DoubanItem, DoubanResult, DoubanCommentsResult } from './types';
 // 豆瓣数据缓存配置（秒）
 const DOUBAN_CACHE_EXPIRE = {
   details: 4 * 60 * 60,    // 详情4小时（变化较少）
@@ -665,6 +664,8 @@ export async function getDoubanDetails(id: string): Promise<{
     episode_length?: number;
     first_aired?: string;
     plot_summary?: string;
+    celebrities?: any[]; // 新增，以匹配后端返回的结构
+    recommendations?: any[]; // 新增，以匹配后端返回的结构
   };
 }> {
   // 检查缓存 - 如果缓存中没有plot_summary则重新获取
@@ -701,6 +702,7 @@ export async function getDoubanDetails(id: string): Promise<{
     };
   }
 }
+
 
 async function fetchDoubanRecommends(
   params: DoubanRecommendsParams,
@@ -935,12 +937,6 @@ interface DoubanCommentsParams {
   start?: number;
   limit?: number;
   sort?: 'new_score' | 'time';
-}
-
-interface DoubanCommentsResult {
-  code: number;
-  message: string;
-  data?: any;
 }
 
 export async function getDoubanComments(
